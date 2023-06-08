@@ -37,21 +37,21 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 
 clean:
 	rm -rf $(BUILD_DIR)
-	@echo "$(CYAN)██╗    ██╗$(PINK)███████╗$(BLUE)██████╗ $(YELLOW)███████╗$(GREEN)███████╗$(RED)██████╗ $(CYAN)██╗   ██╗$(RESET)"
-	@echo "$(CYAN)██║    ██║$(PINK)██╔════╝$(BLUE)██╔══██╗$(YELLOW)██╔════╝$(GREEN)██╔════╝$(RED)██╔══██╗$(CYAN)██║   ██║$(RESET)"
-	@echo "$(CYAN)██║ █╗ ██║$(PINK)█████╗  $(BLUE)██████╔╝$(YELLOW)███████╗$(GREEN)█████╗  $(RED)██████╔╝$(CYAN)██║   ██║$(RESET)"
-	@echo "$(CYAN)██║███╗██║$(PINK)██╔══╝  $(BLUE)██╔══██╗$(YELLOW)╚════██║$(GREEN)██╔══╝  $(RED)██╔══██╗$(CYAN)╚██╗ ██╔╝$(RESET)"
-	@echo "$(CYAN)╚███╔███╔╝$(PINK)███████╗$(BLUE)██████╔╝$(YELLOW)███████║$(GREEN)███████╗$(RED)██║  ██║$(CYAN) ╚████╔╝ $(RESET)"
-	@echo "$(CYAN) ╚══╝╚══╝ $(PINK)╚══════╝$(BLUE)╚═════╝ $(YELLOW)╚══════╝$(GREEN)╚══════╝$(RED)╚═╝  ╚═╝$(CYAN)  ╚═══╝  $(RESET)$(BRIGHT)$(GREEN)CLEANED SUCCESFULLY$(RESET)"
+	@echo "$(CYAN)██╗    ██╗$(PINK)███████╗$(RESET)██████╗ $(YELLOW)███████╗$(RESET)███████╗██████╗ $(CYAN)██╗   ██╗$(RESET)"
+	@echo "$(CYAN)██║    ██║$(PINK)██╔════╝$(RESET)██╔══██╗$(YELLOW)██╔════╝$(RESET)██╔════╝██╔══██╗$(CYAN)██║   ██║$(RESET)"
+	@echo "$(CYAN)██║ █╗ ██║$(PINK)█████╗  $(RESET)██████╔╝$(YELLOW)███████╗$(RESET)█████╗  ██████╔╝$(CYAN)██║   ██║$(RESET)"
+	@echo "$(CYAN)██║███╗██║$(PINK)██╔══╝  $(RESET)██╔══██╗$(YELLOW)╚════██║$(RESET)██╔══╝  ██╔══██╗$(CYAN)╚██╗ ██╔╝$(RESET)"
+	@echo "$(CYAN)╚███╔███╔╝$(PINK)███████╗$(RESET)██████╔╝$(YELLOW)███████║$(RESET)███████╗██║  ██║$(CYAN) ╚████╔╝ $(RESET)"
+	@echo "$(CYAN) ╚══╝╚══╝ $(PINK)╚══════╝$(RESET)╚═════╝ $(YELLOW)╚══════╝$(RESET)╚══════╝╚═╝  ╚═╝$(CYAN)  ╚═══╝  $(RESET)$(BRIGHT)$(GREEN)CLEANED SUCCESFULLY$(RESET)"
 
 fclean: clean
 	rm -rf $(NAME)
-	@echo "$(CYAN)██╗    ██╗$(PINK)███████╗$(BLUE)██████╗ $(YELLOW)███████╗$(GREEN)███████╗$(RED)██████╗ $(CYAN)██╗   ██╗$(RESET)"
-	@echo "$(CYAN)██║    ██║$(PINK)██╔════╝$(BLUE)██╔══██╗$(YELLOW)██╔════╝$(GREEN)██╔════╝$(RED)██╔══██╗$(CYAN)██║   ██║$(RESET)"
-	@echo "$(CYAN)██║ █╗ ██║$(PINK)█████╗  $(BLUE)██████╔╝$(YELLOW)███████╗$(GREEN)█████╗  $(RED)██████╔╝$(CYAN)██║   ██║$(RESET)"
-	@echo "$(CYAN)██║███╗██║$(PINK)██╔══╝  $(BLUE)██╔══██╗$(YELLOW)╚════██║$(GREEN)██╔══╝  $(RED)██╔══██╗$(CYAN)╚██╗ ██╔╝$(RESET)"
-	@echo "$(CYAN)╚███╔███╔╝$(PINK)███████╗$(BLUE)██████╔╝$(YELLOW)███████║$(GREEN)███████╗$(RED)██║  ██║$(CYAN) ╚████╔╝ $(RESET)"
-	@echo "$(CYAN) ╚══╝╚══╝ $(PINK)╚══════╝$(BLUE)╚═════╝ $(YELLOW)╚══════╝$(GREEN)╚══════╝$(RED)╚═╝  ╚═╝$(CYAN)  ╚═══╝  $(RESET)$(BRIGHT)$(GREEN)FULLY CLEANED SUCCESFULLY$(RESET)"
+	@echo "██╗    ██╗███████╗██████╗ ███████╗███████╗██████╗ ██╗   ██╗"
+	@echo "██║    ██║██╔════╝██╔══██╗██╔════╝██╔════╝██╔══██╗██║   ██║"
+	@echo "██║ █╗ ██║█████╗  ██████╔╝███████╗█████╗  ██████╔╝██║   ██║"
+	@echo "██║███╗██║██╔══╝  ██╔══██╗╚════██║██╔══╝  ██╔══██╗╚██╗ ██╔╝"
+	@echo "╚███╔███╔╝███████╗██████╔╝███████║███████╗██║  ██║ ╚████╔╝ "
+	@echo " ╚══╝╚══╝ ╚══════╝╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  $(BRIGHT)$(GREEN)FULLY CLEANED SUCCESFULLY$(RESET)"
 
 
 re: fclean all
