@@ -53,7 +53,6 @@ fclean: clean
 	@echo "╚███╔███╔╝███████╗██████╔╝███████║███████╗██║  ██║ ╚████╔╝ "
 	@echo " ╚══╝╚══╝ ╚══════╝╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  $(BRIGHT)$(GREEN)FULLY CLEANED SUCCESFULLY$(RESET)"
 
-
 re: fclean all
 
 debug: CXXFLAGS = -fsanitize=address 
