@@ -74,6 +74,8 @@ void	watch_loop(int kq, int listenfd)
 					write_exit("kevent error");
 					return ;
 				}
+				int uidx;
+				//users[]
 				close(fd);
 			}
 			else if ((int)evList[i].ident == listenfd)
@@ -102,7 +104,6 @@ void	watch_loop(int kq, int listenfd)
 					htmlFile.open("data/index.html");
 					while (std::getline (htmlFile, line))
 						fileBuf += line;
-					printf("Len: %lu\n", fileBuf.length());
 					snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK \r\nContent-Type: text/html\r\nContent-Length: %lu\r\n\r\n%s", fileBuf.length(), fileBuf.c_str());
 					write(fd, (char*)buff, std::strlen((char*)buff));
 					htmlFile.close();
@@ -131,20 +132,21 @@ bool	Server::start()
 	if (this->running)
 		return (false);
 	int		listenfd;//.n;//connfd; //connfd will actually talk to the client that's connected
-	struct	sockaddr_in	servaddr;
+	struct	sockaddr_in	servAddr;
 
 	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) //AF_INET = internet socket, SOCK_STREAM = tcp stream
 		return (write_exit("socket error"));
 	//setting up address you're listening on
-	std::memset(&servaddr, '\0', sizeof(servaddr));
-	servaddr.sin_family		= AF_INET;
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY); // will respond to anything
-	servaddr.sin_port		= htons(SERVER_PORT); //port you're listening on
+	std::memset(&servAddr, '\0', sizeof(servAddr));
+	servAddr.sin_family		= AF_INET;
+	servAddr.sin_addr.s_addr = htonl(INADDR_ANY); // will respond to anything
+	servAddr.sin_port		= htons(SERVER_PORT); //port you're listening on
 
-	if ((bind(listenfd, (SA *) &servaddr, sizeof(servaddr))) < 0)//bind listening socket to address
+	if ((bind(listenfd, (SA *) &servAddr, sizeof(servAddr))) < 0)//bind listening socket to address
 		return (write_exit("bind error"));
 	if ((listen(listenfd, 10)) < 0)
 		return (write_exit("listen error"));
+
 	int kq;
 	struct kevent evSet;
 	kq = kqueue();
