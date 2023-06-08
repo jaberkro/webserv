@@ -1,8 +1,8 @@
 #ifndef REQUEST_HPP
 # define REQUEST_HPP
 
-#include <string>
-#include <map>
+# include <string>
+# include <map>
 
 /* HOW TO INCORPORATE THIS IN server.cpp:
 
@@ -15,24 +15,35 @@
 	+ add Request.cpp in the Makefile
  */
 
-class Request {
+# define HEADER_END "\r\n\r\n"
+# define SPACES " \t\v\r\f"
+# define UPPERCASE "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+class Request 
+{
 	public:
 
 		Request(int connfd);
 		~Request(void);
-		void	processReq(void);
-		void	parse(std::string line);
+		void		processReq(void);
+		void		parseFieldLine(std::string &line);
+		bool		parseStartLine(std::string &line);
+		std::string	getMethod() const;
+		std::string	getTarget() const;
+		std::string	getProtocolVersion() const;
+		int			getConnFD() const;
 
 	private:
 
-		int									_connfd;	// fd from which the request is read
-		const std::string					_method;
-		const std::string					_target;
-		const std::string					_protocolVersion;
+		void	extractStr(std::string &buffer, std::string &line, size_t pos);
+		void	removeTrailingSpaces(std::string &line);
+		std::string					_method;
+		std::string					_target;
+		std::string					_protocolVersion;
 		std::map<std::string, std::string>	_headers;
 		// std::map<std::string, std::string>	_trailers;
-		const std::string					_body;
+		std::string					_body;
+		int							_connFD;
 
 };
 
