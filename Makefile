@@ -1,5 +1,6 @@
 NAME = webserv
-CXXFLAGS = -Wall -Wextra -Werror -std=c++11 -pedantic
+# CXXFLAGS = -Wall -Wextra -Werror -std=c++11 -pedantic
+CXXFLAGS =  -std=c++11 
 INCLUDE = -I ./include 
 
 SRC_DIR = src
@@ -7,7 +8,8 @@ BUILD_DIR = obj
 
 SRC = 	main.cpp \
 		server.cpp \
-		Request.cpp
+		Request.cpp \
+		Response.cpp
 
 OBJ := $(addprefix $(BUILD_DIR)/, $(SRC:.cpp=.o))
 SRC := $(addprefix $(SRC_DIR)/, $(SRC))
@@ -42,7 +44,7 @@ fclean: clean
 
 re: fclean all
 
-debug: CXXFLAGS = -fsanitize=address 
+debug: CXXFLAGS += -g -fsanitize=address 
 debug: re
 
 .PHONY: all, clean, fclean, re, debug

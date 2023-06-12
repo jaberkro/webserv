@@ -9,13 +9,13 @@ class Response {
 
 	public:
 
-		Response(Request &req);
+		Response(Request req);
 		~Response(void);
-		std::string	createResponse(void);
+		void	createResponse(uint8_t *response);
 
 	private:
 
-		Request								&req;
+		Request								_req;
 		std::string							_statusCode;
 		std::string							_reason;
 		std::map<std::string, std::string>	_headers;

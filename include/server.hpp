@@ -5,7 +5,7 @@
 
 #define SA struct sockaddr
 #define SERVER_PORT 80
-#define MAXLINE 4096
+#define MAXLINE 80000
 
 class Server
 {

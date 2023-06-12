@@ -34,6 +34,11 @@ int	Request::getConnFD() const
 	return (this->_connFD);
 }
 
+std::map<std::string, std::string> &	Request::getHeaders()
+{
+	return (this->_headers);
+}
+
 
 bool	Request::parseStartLine(std::string &line)
 {
@@ -114,6 +119,7 @@ void	Request::processReq(void)
 		// 	std::cout << it->first << " -> " << it->second << std::endl;
 		if (processingBuffer == "\r\n")
 			break;
+
 		// if Content-Length specified (while received <= Content-Length)
 		// while (firstLineComplete & headersComplete)
 		// {
@@ -145,3 +151,12 @@ void	Request::removeTrailingSpaces(std::string &line)
 	line.erase(line.find_last_not_of(SPACES) + 1, std::string::npos);
 }
 
+void	Request::printRequest()
+{
+	std::cout << "***" << std::endl;
+	std::cout << this->_method << " " << this->_target << std::endl;
+	for (std::map<std::string,std::string>::iterator it = this->_headers.begin(); \
+	it != this->_headers.end(); it++)
+		std::cout << it->first << ": " << it->second << std::endl;
+	std::cout << "***" << std::endl;
+}

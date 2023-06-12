@@ -18,13 +18,15 @@ bool	write_exit(std::string error)
 
 bool	Server::start()
 {
-	std::vector<Request>	allReq;
+	Request		*newReq;
+	Response	*newResp;
+	uint8_t		*response; // needs to be malloced 
 	if (this->running)
 		return (false);
 	int		listenfd, connfd;
 	// int	n; //connfd will actually talk to the client that's connected
 	struct	sockaddr_in	servaddr;
-	uint8_t buff[MAXLINE + 1];
+	// uint8_t buff[MAXLINE + 1];
 	// uint8_t recvline[MAXLINE + 1];
 
 	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) //AF_INET = internet socket, SOCK_STREAM = tcp stream
@@ -47,12 +49,21 @@ bool	Server::start()
 		//accept blocks until an incoming connection arrives. returns an fd to the connection
 		std::cout << "Waiting for a connection on port " << SERVER_PORT << std::endl;
 		connfd = accept(listenfd, (SA *) NULL, NULL); //set to NULL because doesn't matter who connects, just accept
-		Request	newReq(connfd);
-		newReq.processReq();
-		allReq.push_back(newReq);
-		Response	newResp(allReq[0]);
-		newResp.createResponse();
-
+		// Request	newReq(connfd);
+		newReq = new Request(connfd);
+		newReq->processReq();
+		// allReq[0].printRequest();
+		// allReq.push_back(newReq);
+		// std::cout  << &newReq << ", allReq[last]: " << &allReq[allReq.size() - 1] << std::endl;
+		std::cout << "newReq: " << newReq->getTarget() << std::endl;
+		// std::cout << "allReq[0]: " << allReq[0].getTarget() << std::endl;
+		// std::cout << "allReq[last]: " << allReq[allReq.size() - 1].getTarget() << std::endl;
+		newResp = new Response(*newReq);
+		delete newReq;
+		// allReq.pop_front();
+		// allResp.push_back(newResp);
+		newResp->createResponse(&response);
+		delete newResp;
 		// std::memset(recvline, 0, MAXLINE);
 		// while ((n = read(connfd, recvline, MAXLINE - 1)) > 0)
 		// {
@@ -66,16 +77,16 @@ bool	Server::start()
 		// if (n < 0) //can't read negative bytes
 		// 	return (write_exit("read error"));
 		
-		std::string	fileBuf;
-		std::string	line;
-		std::ifstream	htmlFile;
-		htmlFile.open("data/www/index.html");
-		while (std::getline (htmlFile, line))
-			fileBuf += line;
-		snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK \r\nContent-Type: text/html\r\nContent-Length: %lu\r\n\r\n%s", fileBuf.length(), fileBuf.c_str()); //can write formatted output to sized buf
-		// snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK \r\n\r\nWe socket this"); //can write formatted output to sized buf
-		std::cout << "About to return " << buff << std::endl;
-		write(connfd, (char*)buff, std::strlen((char*)buff));
+		// std::string	fileBuf;
+		// std::string	line;
+		// std::ifstream	htmlFile;
+		// htmlFile.open("data/www/index.html");
+		// while (std::getline (htmlFile, line))
+		// 	fileBuf += line;
+		// snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK \r\nContent-Type: text/html\r\nContent-Length: %lu\r\n\r\n%s", fileBuf.length(), fileBuf.c_str()); //can write formatted output to sized buf
+		// // snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK \r\n\r\nWe socket this"); //can write formatted output to sized buf
+		std::cout << "About to return " << response << std::endl;
+		write(connfd, (char*)response, std::strlen((char*)response));
 		// std::memset(buff, 0, MAXLINE);
 		// fileBuf.clear();
 		// std::ifstream	imgFile;
@@ -85,7 +96,7 @@ bool	Server::start()
 		// snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK \r\nContent-Type: image/jpg\r\nContent-Lenght: 75447\r\n\r\n%s", fileBuf.c_str()); //can write formatted output to sized buf
 		// write(connfd, (char*)buff, std::strlen((char*)buff));
 		
-		htmlFile.close();
+		// htmlFile.close();
 		// imgFile.close();
 		close(connfd);
 	}
