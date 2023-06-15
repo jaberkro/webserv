@@ -9,9 +9,12 @@ class Response {
 
 	public:
 
-		Response(Request req);
-		~Response(void);
-		void	createResponse(uint8_t *response);
+		Response( Request req );
+		~Response( void );
+		uint8_t	*createResponse( void );
+		uint8_t	*createResponseImg( void );
+		uint8_t	*createResponseHtml( void );
+		size_t	getMsgLength( void ) const;
 
 	private:
 
@@ -20,9 +23,11 @@ class Response {
 		std::string							_reason;
 		std::map<std::string, std::string>	_headers;
 		std::string							_content;
+		size_t								_msgLength;
 		// std::string							_protocolVersion;
 		// std::map<std::string, std::string>	_trailers;
 		// int									_connFD;
+		size_t	getFileSize( std::string filePath );
 
 };
 
