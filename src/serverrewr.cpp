@@ -1,4 +1,5 @@
 #include "../include/server.hpp"
+#include "../include/socket.hpp"
 #include <cstdio>
 #include <cstring>
 #include <arpa/inet.h>
@@ -7,18 +8,13 @@
 #include <sys/event.h>
 #include <fstream>
 
-#define NUSERS 10
+// #define NUSERS 10
 
-struct uc { //this should go in the class!!
-    int uc_fd;
-    char *uc_addr;
-} users[NUSERS];
+// struct uc { //this should go in the class!!
+//     int uc_fd;
+//     char *uc_addr;
+// } users[NUSERS];
 
-
-#include <fstream>
-#include "Request.hpp"
-#include "Response.hpp"
-#include <vector>
 
 bool	write_exit(std::string error)
 {
@@ -27,22 +23,23 @@ bool	write_exit(std::string error)
 }
 
 /* find the index of a file descriptor or a new slot if fd=0 */
-int	conn_index(int fd) 
+int	Socket::connIndex(int fd) 
 {
     int uidx;
-    for (uidx = 0; uidx < NUSERS; uidx++)
+    for (uidx = 0; uidx < 10; uidx++)
         if (users[uidx].uc_fd == fd)
             return uidx;
     return -1;
 }
 
-int conn_add(int fd) 
+int Socket::connAdd(int fd) 
 {
     int uidx;
-    if (fd < 1) return -1;
-    if ((uidx = conn_index(0)) == -1)
+    if (fd < 1) 
+		return -1;
+    if ((uidx = this->connIndex(0)) == -1)
         return -1;
-    if (uidx == NUSERS) {
+    if (uidx == 10) {
         close(fd);
         return -1;
     }
@@ -52,11 +49,11 @@ int conn_add(int fd)
 }
 
 /* remove a connection and close it's fd */
-int conn_del(int fd) {
+int Socket::connDelete(int fd) {
     int uidx;
     if (fd < 1) 
 		return -1;
-    if ((uidx = conn_index(fd)) == -1)
+    if ((uidx = connIndex(fd)) == -1)
         return -1;
 
     users[uidx].uc_fd = 0;
@@ -66,7 +63,7 @@ int conn_del(int fd) {
     return close(fd);
 }
 
-void	watch_loop(int kq, int listenfd)
+void	Socket::watchLoop()
 {
 	struct kevent evSet;
 	struct kevent evList[32];
@@ -74,9 +71,19 @@ void	watch_loop(int kq, int listenfd)
 	struct sockaddr_storage addr;
 	socklen_t socklen = sizeof(addr);
 	int fd;
+	this->kq = kqueue();
+	printf("kq = %d\n", kq);
+	EV_SET(&evSet, listenfd, EVFILT_READ, EV_ADD, 0, 0, NULL);//EV_SET is a macro that fills the kevent struct
+	if (kevent(this->kq, &evSet, 1, NULL, 0, NULL) == -1)
+		return ;//(write_exit("kqueue/kevent error"));
 	while (1)
 	{
-		nev = kevent(kq, NULL, 0, evList, 32, NULL);
+		printf("TEST\n");
+		printf("kq there = %d\n", kq);
+
+		nev = kevent(this->kq, NULL, 0, evList, 32, NULL);
+		printf("TEST2\n");
+
 		if (nev < 1)
 		{
 			write_exit("kevent error");
@@ -94,9 +101,10 @@ void	watch_loop(int kq, int listenfd)
 					write_exit("kevent error");
 					return ;
 				}
+				// int uidx;
 				//users[]
-				conn_del(fd);
 				// close(fd);
+				connAdd(fd);
 			}
 			else if ((int)evList[i].ident == listenfd)
 			{
@@ -108,7 +116,7 @@ void	watch_loop(int kq, int listenfd)
 					write_exit("accept error");
 					return ;
 				}
-				if (conn_add(fd) == 0)
+				if (this->connAdd(fd) == 0)
 				{
 					EV_SET(&evSet, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 					if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
@@ -147,14 +155,8 @@ void	watch_loop(int kq, int listenfd)
 	}
 }
 
-bool	Server::start()
+bool	Socket::setUpConn()
 {
-	Request		*newReq;
-	Response	*newResp;
-	uint8_t		*response; // needs to be malloced 
-	if (this->running)
-		return (false);
-	int		listenfd, connfd;
 	struct	sockaddr_in	servAddr;
 
 	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) //AF_INET = internet socket, SOCK_STREAM = tcp stream
@@ -163,47 +165,57 @@ bool	Server::start()
 	std::memset(&servAddr, '\0', sizeof(servAddr));
 	servAddr.sin_family		= AF_INET;
 	servAddr.sin_addr.s_addr = htonl(INADDR_ANY); // will respond to anything
-	servAddr.sin_port		= htons(SERVER_PORT); //port you're listening on
+	servAddr.sin_port		= htons(port); //port you're listening on
 
 	if ((bind(listenfd, (SA *) &servAddr, sizeof(servAddr))) < 0)//bind listening socket to address
 		return (write_exit("bind error"));
 	if ((listen(listenfd, 10)) < 0)
 		return (write_exit("listen error"));
-
-	int kq;
-	struct kevent evSet;
-	kq = kqueue();
-	EV_SET(&evSet, listenfd, EVFILT_READ, EV_ADD, 0, 0, NULL);//EV_SET is a macro that fills the kevent struct
-	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
-		return (write_exit("kqueue/kevent error"));
-	watch_loop(kq, listenfd);
-	return (true);	
+	// this->kq = kqueue();
+	// printf("kq = %d\n", kq);
+	// EV_SET(&evSet, listenfd, EVFILT_READ, EV_ADD, 0, 0, NULL);//EV_SET is a macro that fills the kevent struct
+	// if (kevent(this->kq, &evSet, 1, NULL, 0, NULL) == -1)
+	// 	return (write_exit("kqueue/kevent error"));
+	this->watchLoop();
+	return (true);
 }
 
-/* 
-		while(1)
-	{
-		std::cout << "Waiting for a connection on port " << SERVER_PORT << std::endl;
-		connfd = accept(listenfd, (SA *) NULL, NULL); //set to NULL because doesn't matter who connects, just accept
-		newReq = new Request(connfd);
-		newReq->processReq();
-		// newReq->printRequest();
-		newResp = new Response(*newReq);
-		delete newReq;
-		
-		response = newResp->createResponse();
-		
-		if (response)
-		{
-			// std::cout << "About to return " << newResp->getMsgLength() << "bytes: " << response << std::endl;
-			send(connfd, (char*)response, newResp->getMsgLength(), 0);
-			delete response;
-		}
-		delete newResp;
+bool	Server::start()
+{
+	if (this->running)
+		return (false);
+	unsigned short testprt = 80;
+	Socket	sck(testprt);
+	sck.setUpConn();
 
-		close(connfd);
-	} 
-*/
+	//std::for_each(sockets.cbegin(), sockets.cend(), Socket::setUpConn());
+	
+
+	// int		listenfd;//.n;//connfd; //connfd will actually talk to the client that's connected
+	// struct	sockaddr_in	servAddr;
+
+	// if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) //AF_INET = internet socket, SOCK_STREAM = tcp stream
+	// 	return (write_exit("socket error"));
+	// //setting up address you're listening on
+	// std::memset(&servAddr, '\0', sizeof(servAddr));
+	// servAddr.sin_family		= AF_INET;
+	// servAddr.sin_addr.s_addr = htonl(INADDR_ANY); // will respond to anything
+	// servAddr.sin_port		= htons(SERVER_PORT); //port you're listening on
+
+	// if ((bind(listenfd, (SA *) &servAddr, sizeof(servAddr))) < 0)//bind listening socket to address
+	// 	return (write_exit("bind error"));
+	// if ((listen(listenfd, 10)) < 0)
+	// 	return (write_exit("listen error"));
+
+	// int kq;
+	// struct kevent evSet;
+	// kq = kqueue();
+	// EV_SET(&evSet, listenfd, EVFILT_READ, EV_ADD, 0, 0, NULL);//EV_SET is a macro that fills the kevent struct
+	// if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+	// 	return (write_exit("kqueue/kevent error"));
+	// watch_loop(kq, listenfd);
+	return (true);	
+}
 
 // void	Server::server()
 // {
@@ -212,3 +224,4 @@ bool	Server::start()
 // 	server.start(ipAddress, port);
 // 	server.stop();
 // }
+

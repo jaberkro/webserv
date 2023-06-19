@@ -9,7 +9,8 @@ BUILD_DIR = obj
 SRC = 	main.cpp \
 		server.cpp \
 		Request.cpp \
-		Response.cpp
+		Response.cpp \
+		socket.cpp
 
 OBJ := $(addprefix $(BUILD_DIR)/, $(SRC:.cpp=.o))
 SRC := $(addprefix $(SRC_DIR)/, $(SRC))
