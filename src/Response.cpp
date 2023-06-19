@@ -63,11 +63,11 @@ uint8_t *	Response::createResponseImg(void)
 	"%s 200 OK\r\nContent-Type: %s\r\nContent-Length: %zu\r\n\r\n", \
 	this->_req.getProtocolVersion().c_str(), contentType.c_str(), lengthFile);
 	this->_msgLength = std::strlen((char *)response);
-	std::cout << "end idx is " << this->_msgLength << std::endl;
+	// std::cout << "end idx is " << this->_msgLength << std::endl;
 	imgBuf = file.rdbuf();
 	for ( size_t i = 0; i < lengthFile; i++ ) {
 		response[this->_msgLength + i] = imgBuf->sbumpc();
-		std::cout << i << ":" << static_cast<int>(response[this->_msgLength + i]) << " ";
+		// std::cout << i << ":" << static_cast<int>(response[this->_msgLength + i]) << " ";
 	}
 	this->_msgLength += lengthFile;
 	file.close();
@@ -81,6 +81,14 @@ uint8_t *	Response::createResponse(void)
 
 	if (this->_req.getMethod() == "GET")
 	{
+		// compare target (only URI part, no arguments!) with all locations server->getLocations
+			// map? location: root? -> not enough, there may be more items; maybe nested map?
+			// locationsPrefixes and locationsRegex
+			// locationsRegex cannot be a map because it must be in the order as in config file
+		// choose the one with biggest overlap
+		// then check the regex ones, if match, continue there, otherwise return to the longest overlap
+		// add the target to the location's root
+		
 		if (this->_req.getTarget().find(".jpg") < std::string::npos)
 			return (this->createResponseImg());
 		else
@@ -98,7 +106,7 @@ size_t	Response::getFileSize(std::string filePath)
 	if (file.is_open())
 	{
 		len = file.tellg();
-		std::cout << "--> Len is " << len << std::endl;
+		// std::cout << "--> Len is " << len << std::endl;
 		file.clear();
 		file.close();
 		return (len);

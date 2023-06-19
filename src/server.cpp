@@ -45,6 +45,10 @@ bool	Server::start()
 		newReq = new Request(connfd);
 		newReq->processReq();
 		// newReq->printRequest();
+		
+		// determine which server should handle this request
+			// find the server that corresponds to the request field's Host (?)
+			// otherwise give it to the default one
 		newResp = new Response(*newReq);
 		delete newReq;
 		
