@@ -74,6 +74,36 @@ void	watch_loop(int kq, int listenfd)
 	struct sockaddr_storage addr;
 	socklen_t socklen = sizeof(addr);
 	int fd;
+	Request		*newReq;
+	Response	*newResp;
+	uint8_t		*response; // needs to be malloced 
+	serverBlock	srvBlock;
+
+	locBlock	loc1;
+	std::pair<std::string,std::string>	index1("index", "index.html");
+	locBlock	loc2;
+	std::pair<std::string,std::string>	root2("root", "data/www");
+	std::pair<int,std::string>	error2(404, "/404.html");
+	locBlock	loc3;
+	std::pair<std::string,std::string>	root3("root", "data/images");
+	std::pair<int,std::string>	error3(404, "/404.html");
+
+	// filling the dummy location blocks
+	loc1.locationModifier = "=";
+	loc1.locationMatch = "/";
+	loc1.locationDirectives.push_back(index1);
+	srvBlock.locations.push_back(loc1);
+	loc2.locationModifier = "";
+	loc2.locationMatch = "/";
+	loc2.locationDirectives.push_back(root2);
+	loc2.errorPages.push_back(error2);
+	srvBlock.locations.push_back(loc2);
+	loc3.locationModifier = "";
+	loc3.locationMatch = "/images";
+	loc3.locationDirectives.push_back(root3);
+	loc3.errorPages.push_back(error3);
+	srvBlock.locations.push_back(loc3);
+
 	while (1)
 	{
 		nev = kevent(kq, NULL, 0, evList, 32, NULL);
@@ -100,7 +130,7 @@ void	watch_loop(int kq, int listenfd)
 			}
 			else if ((int)evList[i].ident == listenfd)
 			{
-				printf("Here1\n");
+				// printf("Here1\n");
 
 				fd = accept(evList[i].ident, (struct sockaddr *)&addr, &socklen);
 				if (fd == -1)
@@ -116,23 +146,50 @@ void	watch_loop(int kq, int listenfd)
 						write_exit("accept error");
 						return ;
 					}
-					uint8_t buff[MAXLINE + 1];
-					//snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK \r\nContent-Type: text/html\r\nContent-Length: 20\r\n\r\nWe socket thisssssss"); //can write formatted output to sized buf
-					std::string   fileBuf;
-					std::string line;
-					std::ifstream   htmlFile;
-					htmlFile.open("data/index.html");
-					while (std::getline (htmlFile, line))
-						fileBuf += line;
-					snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK \r\nContent-Type: text/html\r\nContent-Length: %lu\r\n\r\n%s", fileBuf.length(), fileBuf.c_str());
-					write(fd, (char*)buff, std::strlen((char*)buff));
-					htmlFile.close();
+			// READ AND WRITE ALWAYS USING KQ!
+					newReq = new Request(fd);
+					newReq->processReq();
+					newReq->printRequest();
+			// determine which server should handle this request
+			// 1. parse "listen" directives, if multiple matches with equal specificity:
+			// 2. parse "server name" directives find the server that corresponds to the request field's Host
+			// otherwise give it to the default one
+					// serverBlockInit(serverBlock);
+				// testing whether dummy structure was filled
+					// std::cout << "Server block info:" << std::endl;
+					// std::cout << serverBlock.locations[0].locationModifier << " " \
+					// << serverBlock.locations[0].locationMatch << " " \
+					// << serverBlock.locations[0].locationDirectives[0].first << ": " \
+					// << serverBlock.locations[0].locationDirectives[0].second << std::endl;
+					// std::cout << serverBlock.locations[1].locationModifier << " " \
+					// << serverBlock.locations[1].locationMatch << " " \
+					// << serverBlock.locations[1].locationDirectives[0].first << ": " \
+					// << serverBlock.locations[1].locationDirectives[0].second \
+					// << " " << serverBlock.locations[1].errorPages[0].first << ": " \
+					// << serverBlock.locations[1].errorPages[0].second << std::endl;
+					// std::cout << serverBlock.locations[2].locationModifier << " " \
+					// << serverBlock.locations[2].locationMatch << " " \
+					// << serverBlock.locations[2].locationDirectives[0].first << ": " \
+					// << serverBlock.locations[2].locationDirectives[0].second \
+					// << " " << serverBlock.locations[2].errorPages[0].first << ": " \
+					// << serverBlock.locations[2].errorPages[0].second << std::endl;
+					newResp = new Response(*newReq);
+					delete newReq;
+					response = newResp->createResponse(srvBlock);
+					
+					if (response)
+					{
+						// std::cout << "About to return " << newResp->getMsgLength() << "bytes: " << response << std::endl;
+						send(fd, (char*)response, newResp->getMsgLength(), 0);
+						delete response;
+					}
+					delete newResp;
 				}
 				else
 				{
 					printf("Connection refused\n");
-					close(fd);
 				}
+				close(fd);
 			}
 			else if (evList[i].filter == EVFILT_READ)
 			{
@@ -149,9 +206,6 @@ void	watch_loop(int kq, int listenfd)
 
 bool	Server::start()
 {
-	Request		*newReq;
-	Response	*newResp;
-	uint8_t		*response; // needs to be malloced 
 	if (this->running)
 		return (false);
 	int		listenfd, connfd;
@@ -180,34 +234,7 @@ bool	Server::start()
 	return (true);	
 }
 
-/* 
-		while(1)
-	{
-		std::cout << "Waiting for a connection on port " << SERVER_PORT << std::endl;
-		connfd = accept(listenfd, (SA *) NULL, NULL); //set to NULL because doesn't matter who connects, just accept
-		newReq = new Request(connfd);
-		newReq->processReq();
-		// newReq->printRequest();
-		
-		// determine which server should handle this request
-			// find the server that corresponds to the request field's Host (?)
-			// otherwise give it to the default one
-		newResp = new Response(*newReq);
-		delete newReq;
-		
-		response = newResp->createResponse();
-		
-		if (response)
-		{
-			// std::cout << "About to return " << newResp->getMsgLength() << "bytes: " << response << std::endl;
-			send(connfd, (char*)response, newResp->getMsgLength(), 0);
-			delete response;
-		}
-		delete newResp;
 
-		close(connfd);
-	} 
-*/
 
 // void	Server::server()
 // {

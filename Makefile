@@ -10,7 +10,7 @@ SRC = 	main.cpp \
 		server.cpp \
 		Request.cpp \
 		Response.cpp \
-		socket.cpp
+		socket.cpp 
 
 OBJ := $(addprefix $(BUILD_DIR)/, $(SRC:.cpp=.o))
 SRC := $(addprefix $(SRC_DIR)/, $(SRC))

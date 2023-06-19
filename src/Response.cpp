@@ -7,6 +7,9 @@
 #include "server.hpp"
 #include <cstdio>
 
+#include <vector>
+#include <map>
+
 Response::Response(Request req) : _req (req) {}
 
 Response::~Response(void) {}
@@ -75,16 +78,19 @@ uint8_t *	Response::createResponseImg(void)
 	
 }
 
-uint8_t *	Response::createResponse(void)
+uint8_t *	Response::createResponse(serverBlock const & sb)
 {
-	ssize_t			read;
-
+	std::vector<std::map<std::string,std::string>>	locations;
+	
 	if (this->_req.getMethod() == "GET")
 	{
+		// CONTINUE HERE 
+	
 		// compare target (only URI part, no arguments!) with all locations server->getLocations
+			// 1. check the ones with "=" sign for exact matches
+			// 2. if no exact matches found, evaluate non-exact prefixes 
 			// map? location: root? -> not enough, there may be more items; maybe nested map?
-			// locationsPrefixes and locationsRegex
-			// locationsRegex cannot be a map because it must be in the order as in config file
+			// locationsPrefixes 
 		// choose the one with biggest overlap
 		// then check the regex ones, if match, continue there, otherwise return to the longest overlap
 		// add the target to the location's root

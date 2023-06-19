@@ -11,7 +11,7 @@ class Response {
 
 		Response( Request req );
 		~Response( void );
-		uint8_t	*createResponse( void );
+		uint8_t	*createResponse( serverBlock const & sb );
 		uint8_t	*createResponseImg( void );
 		uint8_t	*createResponseHtml( void );
 		size_t	getMsgLength( void ) const;
