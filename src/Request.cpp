@@ -1,11 +1,21 @@
 #include "Request.hpp"
-#include "../include/server.hpp"
+#include "server.hpp"
 #include <sys/socket.h>
 
 
 Request::Request(int connfd) : _connFD (connfd) {}
 
 Request::~Request(void) {}
+
+Request::Request(Request &)
+{
+
+}
+
+Request &	Request::operator=(Request &)
+{
+	return (*this);
+}
 
 /* 
 	This function parses the start line of a request and saves the data in the 
@@ -39,7 +49,13 @@ std::map<std::string, std::string> &	Request::getHeaders()
 	return (this->_headers);
 }
 
-
+/**
+ * @brief 
+ * 
+ * @param line 
+ * @return true 
+ * @return false 
+ */
 bool	Request::parseStartLine(std::string &line)
 {
 	size_t	end;
@@ -63,6 +79,12 @@ bool	Request::parseStartLine(std::string &line)
 	This function parses each line of a request's header and saves the data in the 
 	corresponding member variables
  */
+
+/**
+ * @brief 
+ * 
+ * @param line 
+ */
 void	Request::parseFieldLine(std::string &line) 
 {
 	std::string	key, value;
@@ -85,6 +107,11 @@ void	Request::parseFieldLine(std::string &line)
 /* 
 	This function reads a request from the socket, splits it into separate lines 
 	and sends each line to the parsing function for further processing
+ */
+
+/**
+ * @brief 
+ * 
  */
 void	Request::processReq(void) 
 {
@@ -145,12 +172,22 @@ void	Request::extractStr(std::string &buffer, std::string &line, size_t nlPos)
 /* 
 	This function removes the trailing spaces from the beginning and end of a string
  */
+
+/**
+ * @brief 
+ * 
+ * @param line 
+ */
 void	Request::removeTrailingSpaces(std::string &line)
 {
 	line.erase(0, line.find_first_not_of(SPACES));
 	line.erase(line.find_last_not_of(SPACES) + 1, std::string::npos);
 }
 
+/**
+ * @brief 
+ * 
+ */
 void	Request::printRequest()
 {
 	std::cout << "***" << std::endl;

@@ -10,10 +10,24 @@
 #include <vector>
 #include <map>
 
-Response::Response(Request req) : _req (req) {}
+Response::Response(Request req) : _req (req), _errorCode (0) {}
 
 Response::~Response(void) {}
 
+Response::Response(Response &r) : _req (r.getRequest()), _errorCode (r.getErrorCode()) {}
+
+Response &	Response::operator=(Response &)
+{
+	return (*this);
+}
+
+
+
+/**
+ * @brief 
+ * 
+ * @return uint8_t* 
+ */
 uint8_t *	Response::createResponseHtml(void)
 {
 	std::string		pathToFile;
@@ -38,6 +52,11 @@ uint8_t *	Response::createResponseHtml(void)
 	return (response);
 }
 
+/**
+ * @brief 
+ * 
+ * @return uint8_t* 
+ */
 uint8_t *	Response::createResponseImg(void)
 {
 	std::string		pathToFile;
@@ -78,9 +97,33 @@ uint8_t *	Response::createResponseImg(void)
 	
 }
 
-uint8_t *	Response::createResponse(serverBlock const & sb)
+/**
+ * @brief 
+ * 
+ * @param sb 
+ * @return uint8_t* 
+ */
+uint8_t *	Response::createResponse()
 {
-	std::vector<std::map<std::string,std::string>>	locations;
+	std::vector<Location>	locations;
+	Location				a;
+	Location				b;
+	Location				c;
+
+	a.setLocationMatch("/");
+	a.setLocationModifier("=");
+	a.addDirective("index", "index.html");
+	b.setLocationMatch("/");
+	b.setLocationModifier("");
+	b.addDirective("root", "data/www");
+	b.addErrorPage(404, "/404.html");
+	c.setLocationMatch("/images");
+	c.setLocationModifier("");
+	c.addDirective("root", "data/images");
+	c.addErrorPage(404, "/404.html");
+	locations.push_back(a);
+	locations.push_back(b);
+	locations.push_back(c);
 	
 	if (this->_req.getMethod() == "GET")
 	{
@@ -103,6 +146,12 @@ uint8_t *	Response::createResponse(serverBlock const & sb)
 	return (NULL);
 }
 
+/**
+ * @brief 
+ * 
+ * @param filePath 
+ * @return size_t 
+ */
 size_t	Response::getFileSize(std::string filePath)
 {
 	std::ifstream	file;
@@ -120,8 +169,22 @@ size_t	Response::getFileSize(std::string filePath)
 	return (0);
 }
 
+/**
+ * @brief 
+ * 
+ * @return size_t 
+ */
 size_t	Response::getMsgLength( void ) const
 {
 	return (this->_msgLength);
 }
 
+Request &	Response::getRequest(void)
+{
+	return (this->_req);
+}
+
+int	Response::getErrorCode(void)
+{
+	return (this->_errorCode);
+}

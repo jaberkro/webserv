@@ -1,6 +1,6 @@
 NAME = webserv
-# CXXFLAGS = -Wall -Wextra -Werror -std=c++11 -pedantic
-CXXFLAGS =  -std=c++11 
+CXXFLAGS = -Wall -Wextra -Werror -std=c++11 -pedantic
+# CXXFLAGS =  -std=c++11 
 INCLUDE = -I ./include 
 
 SRC_DIR = src
@@ -10,7 +10,8 @@ SRC = 	main.cpp \
 		server.cpp \
 		Request.cpp \
 		Response.cpp \
-		socket.cpp 
+		socket.cpp \
+		Location.cpp
 
 OBJ := $(addprefix $(BUILD_DIR)/, $(SRC:.cpp=.o))
 SRC := $(addprefix $(SRC_DIR)/, $(SRC))

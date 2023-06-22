@@ -4,17 +4,22 @@
 #include <string>
 #include <map>
 # include "Request.hpp"
+# include "Location.hpp"
 
 class Response {
 
 	public:
 
-		Response( Request req );
-		~Response( void );
-		uint8_t	*createResponse( serverBlock const & sb );
-		uint8_t	*createResponseImg( void );
-		uint8_t	*createResponseHtml( void );
-		size_t	getMsgLength( void ) const;
+		Response(Request req);
+		~Response(void);
+		Response(Response &);
+		Response &	operator=(Response &);
+		uint8_t	*createResponse();
+		uint8_t	*createResponseImg(void);
+		uint8_t	*createResponseHtml(void);
+		size_t	getMsgLength(void) const;
+		Request &	getRequest(void);
+		int			getErrorCode(void);
 
 	private:
 
@@ -24,10 +29,11 @@ class Response {
 		std::map<std::string, std::string>	_headers;
 		std::string							_content;
 		size_t								_msgLength;
+		int									_errorCode;
 		// std::string							_protocolVersion;
 		// std::map<std::string, std::string>	_trailers;
 		// int									_connFD;
-		size_t	getFileSize( std::string filePath );
+		size_t	getFileSize(std::string filePath);
 
 };
 

@@ -1,4 +1,4 @@
-#include "../include/server.hpp"
+#include "server.hpp"
 #include <cstdio>
 #include <cstring>
 #include <arpa/inet.h>
@@ -77,32 +77,10 @@ void	watch_loop(int kq, int listenfd)
 	Request		*newReq;
 	Response	*newResp;
 	uint8_t		*response; // needs to be malloced 
-	serverBlock	srvBlock;
 
-	locBlock	loc1;
-	std::pair<std::string,std::string>	index1("index", "index.html");
-	locBlock	loc2;
-	std::pair<std::string,std::string>	root2("root", "data/www");
-	std::pair<int,std::string>	error2(404, "/404.html");
-	locBlock	loc3;
-	std::pair<std::string,std::string>	root3("root", "data/images");
-	std::pair<int,std::string>	error3(404, "/404.html");
+	
 
-	// filling the dummy location blocks
-	loc1.locationModifier = "=";
-	loc1.locationMatch = "/";
-	loc1.locationDirectives.push_back(index1);
-	srvBlock.locations.push_back(loc1);
-	loc2.locationModifier = "";
-	loc2.locationMatch = "/";
-	loc2.locationDirectives.push_back(root2);
-	loc2.errorPages.push_back(error2);
-	srvBlock.locations.push_back(loc2);
-	loc3.locationModifier = "";
-	loc3.locationMatch = "/images";
-	loc3.locationDirectives.push_back(root3);
-	loc3.errorPages.push_back(error3);
-	srvBlock.locations.push_back(loc3);
+	
 
 	while (1)
 	{
@@ -175,7 +153,7 @@ void	watch_loop(int kq, int listenfd)
 					// << serverBlock.locations[2].errorPages[0].second << std::endl;
 					newResp = new Response(*newReq);
 					delete newReq;
-					response = newResp->createResponse(srvBlock);
+					response = newResp->createResponse();
 					
 					if (response)
 					{
@@ -208,7 +186,7 @@ bool	Server::start()
 {
 	if (this->running)
 		return (false);
-	int		listenfd, connfd;
+	int		listenfd;
 	struct	sockaddr_in	servAddr;
 
 	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) //AF_INET = internet socket, SOCK_STREAM = tcp stream
