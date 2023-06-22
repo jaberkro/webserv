@@ -128,32 +128,14 @@ void	watch_loop(int kq, int listenfd)
 					newReq = new Request(fd);
 					newReq->processReq();
 					newReq->printRequest();
-			// determine which server should handle this request
+			// determine which server should handle this request (Request::identifyServer)
 			// 1. parse "listen" directives, if multiple matches with equal specificity:
 			// 2. parse "server name" directives find the server that corresponds to the request field's Host
 			// otherwise give it to the default one
-					// serverBlockInit(serverBlock);
-				// testing whether dummy structure was filled
-					// std::cout << "Server block info:" << std::endl;
-					// std::cout << serverBlock.locations[0].locationModifier << " " \
-					// << serverBlock.locations[0].locationMatch << " " \
-					// << serverBlock.locations[0].locationDirectives[0].first << ": " \
-					// << serverBlock.locations[0].locationDirectives[0].second << std::endl;
-					// std::cout << serverBlock.locations[1].locationModifier << " " \
-					// << serverBlock.locations[1].locationMatch << " " \
-					// << serverBlock.locations[1].locationDirectives[0].first << ": " \
-					// << serverBlock.locations[1].locationDirectives[0].second \
-					// << " " << serverBlock.locations[1].errorPages[0].first << ": " \
-					// << serverBlock.locations[1].errorPages[0].second << std::endl;
-					// std::cout << serverBlock.locations[2].locationModifier << " " \
-					// << serverBlock.locations[2].locationMatch << " " \
-					// << serverBlock.locations[2].locationDirectives[0].first << ": " \
-					// << serverBlock.locations[2].locationDirectives[0].second \
-					// << " " << serverBlock.locations[2].errorPages[0].first << ": " \
-					// << serverBlock.locations[2].errorPages[0].second << std::endl;
+			
 					newResp = new Response(*newReq);
 					delete newReq;
-					response = newResp->createResponse();
+					response = newResp->createResponse(); // argument is ref to the Server
 					
 					if (response)
 					{

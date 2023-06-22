@@ -25,8 +25,8 @@ class Request
 
 		Request(int connfd);
 		~Request(void);
-		Request(Request &);
-		Request &	operator=(Request &);
+		// Request(Request &);
+		// Request &	operator=(Request &);
 
 		void								processReq(void);
 		void								parseFieldLine(std::string &line);

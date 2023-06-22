@@ -7,15 +7,15 @@ Request::Request(int connfd) : _connFD (connfd) {}
 
 Request::~Request(void) {}
 
-Request::Request(Request &)
-{
+// Request::Request(Request &)
+// {
 
-}
+// }
 
-Request &	Request::operator=(Request &)
-{
-	return (*this);
-}
+// Request &	Request::operator=(Request &)
+// {
+// 	return (*this);
+// }
 
 /* 
 	This function parses the start line of a request and saves the data in the 

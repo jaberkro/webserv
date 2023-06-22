@@ -19,12 +19,17 @@ class Location
 		// functions
 		Location();
 		~Location();
-		Location(Location &);
-		Location &	operator=(Location &);
-		void	setLocationMatch(std::string str);
-		void	setLocationModifier(std::string str);
-		void	addDirective(std::string key, std::string value);
-		void	addErrorPage(int key, std::string value);
+		Location(Location const &);
+		Location &		operator=(Location const &);
+		std::string const &	getLocationMatch(void) const;
+		std::string const &	getLocationModifier(void) const;
+		std::vector<std::pair<std::string,std::string>> const &	getLocationDirectives(void) const;
+		std::vector<std::pair<int,std::string>> const &	getErrorPages(void) const;
+		
+		void			setLocationMatch(std::string str);
+		void			setLocationModifier(std::string str);
+		void			addDirective(std::string key, std::string value);
+		void			addErrorPage(int key, std::string value);
 };
 
 #endif

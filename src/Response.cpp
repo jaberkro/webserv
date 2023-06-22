@@ -97,6 +97,42 @@ uint8_t *	Response::createResponseImg(void)
 	
 }
 
+std::vector<Location>::iterator	Response::findClosestMatch(std::string target, std::vector<Location> & locations)
+{
+	size_t	overlap = 0;
+	std::vector<Location>::iterator longest;
+	std::vector<Location>::iterator it;
+	size_t	idx = 0;
+
+	std::cout << "Close Match function"	<< std::endl;
+	for (it = locations.begin(); it != locations.end(); it++)
+	{
+		std::string const & locPrefix = it->getLocationMatch();
+		// the loop is incorrect, it has to check parts, not just characters!
+		while (target[idx] && locPrefix[idx] && target[idx] == locPrefix[idx])
+			idx++;
+		if (idx > overlap)
+		{
+			overlap = idx;
+			longest = it;
+		}
+	}
+	return (longest);
+}
+
+std::vector<Location>::iterator	Response::findExactMatch(std::string target, std::vector<Location> & locations)
+{
+	std::vector<Location>::iterator it;
+	
+	std::cout << "Exact Match function"	<< std::endl;
+	for (it = locations.begin(); it != locations.end(); it++)
+	{
+		if (it->getLocationModifier() == "=" && target.compare(it->getLocationMatch()) == 0)
+			return (it);
+	}
+	return (it);
+}
+
 /**
  * @brief 
  * 
@@ -109,6 +145,8 @@ uint8_t *	Response::createResponse()
 	Location				a;
 	Location				b;
 	Location				c;
+
+	std::string				targetUri = this->_req.getTarget(); // upgrade to make a substring
 
 	a.setLocationMatch("/");
 	a.setLocationModifier("=");
@@ -125,8 +163,20 @@ uint8_t *	Response::createResponse()
 	locations.push_back(b);
 	locations.push_back(c);
 	
+	std::cout << "Method is " << this->_req.getMethod() << std::endl;
+
 	if (this->_req.getMethod() == "GET")
 	{
+		std::vector<Location>::iterator	itLoc;
+
+		itLoc = findExactMatch(targetUri, locations);
+		if (itLoc == locations.end())
+		{
+			itLoc = findClosestMatch(targetUri, locations);
+			std::cout << "Closest match: " << itLoc->getLocationMatch() << std::endl;
+		}
+		else
+			std::cout << "Exact match: " << itLoc->getLocationMatch() << std::endl;
 		// CONTINUE HERE 
 	
 		// compare target (only URI part, no arguments!) with all locations server->getLocations
@@ -135,13 +185,15 @@ uint8_t *	Response::createResponse()
 			// map? location: root? -> not enough, there may be more items; maybe nested map?
 			// locationsPrefixes 
 		// choose the one with biggest overlap
-		// then check the regex ones, if match, continue there, otherwise return to the longest overlap
+
 		// add the target to the location's root
+
+
 		
-		if (this->_req.getTarget().find(".jpg") < std::string::npos)
-			return (this->createResponseImg());
-		else
-			return (this->createResponseHtml());
+		// if (this->_req.getTarget().find(".jpg") < std::string::npos)
+		// 	return (this->createResponseImg());
+		// else
+		// 	return (this->createResponseHtml());
 	}
 	return (NULL);
 }

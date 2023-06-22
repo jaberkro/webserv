@@ -20,6 +20,8 @@ class Response {
 		size_t	getMsgLength(void) const;
 		Request &	getRequest(void);
 		int			getErrorCode(void);
+		std::vector<Location>::iterator	findExactMatch(std::string target, std::vector<Location> & locations);
+		std::vector<Location>::iterator	findClosestMatch(std::string target, std::vector<Location> & locations);
 
 	private:
 
