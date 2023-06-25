@@ -8,9 +8,14 @@ BUILD_DIR = obj
 SRC = main.cpp \
 	config/Config.cpp \
 	config/Server.cpp \
+	config/Location.cpp \
 	parser/parse.cpp \
-	parser/http.cpp \
-	parser/utils.cpp
+	parser/utils.cpp \
+	parser/blocks/http.cpp \
+	parser/blocks/server.cpp \
+	parser/blocks/location.cpp \
+	parser/blocks/lines/listen.cpp \
+	parser/blocks/lines/serverName.cpp
 
 OBJ := $(addprefix $(BUILD_DIR)/, $(SRC:.cpp=.o))
 SRC := $(addprefix $(SRC_DIR)/, $(SRC))
