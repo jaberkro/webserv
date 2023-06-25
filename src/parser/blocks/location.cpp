@@ -16,7 +16,7 @@ static std::string findMatch(std::string &line)
 
 static std::string findModifier(std::string &line)
 {
-	if (line.size() < 3)
+	if (line.size() < 2)
 	{
 		std::cout << "Error: invalid location block near [location " << line << "]" << std::endl;
 		exit(EXIT_FAILURE);
