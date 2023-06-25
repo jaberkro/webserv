@@ -11,7 +11,11 @@ class Config
 		Config& operator=(const Config &src);
 		~Config();
 
-		void						addServer(Server &Server);
+		// std::vector<Server::Server>::iterator serverIterator;
+
+		// serverIterator			getServers(void);
+
+		void						addServer(Server Server);
 		const Server& 				getServer(int i) const;
 		const std::vector<Server>& 	getServers() const;
 

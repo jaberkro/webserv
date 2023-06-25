@@ -3,18 +3,7 @@
 
 Server::Server()
 {
-	this->_ports.push_back(80);
-	this->_hosts.push_back("localhost");
-	this->_serverNames.push_back("");
 	// std::cout << "Default constructor called on Server" << std::endl;
-}
-
-Server::Server(std::vector<unsigned short> ports, std::vector<std::string> hosts, std::vector<std::string> serverNames)
-{
-	this->_ports = ports;
-	this->_hosts = hosts;
-	this->_serverNames = serverNames;
-	// std::cout << "Parametric constructor called on Server" << std::endl;
 }
 
 Server::Server(const Server &src)
@@ -25,9 +14,9 @@ Server::Server(const Server &src)
 
 Server& Server::operator=(const Server &src)
 {
-	this->_ports = src._ports;
-	this->_hosts = src._hosts;
+	this->_listens = src._listens;
 	this->_serverNames = src._serverNames;
+	this->_locations = src._locations;
 	// std::cout << "Copy assignment operator called on Server" << std::endl;
 	return (*this);
 }
@@ -37,29 +26,39 @@ Server::~Server(void)
 	// std::cout << "Destructor called on Server" << std::endl;
 }
 
-void Server::addPort(unsigned short port)
+void Server::addListen(std::pair<std::string, unsigned short> listen)
 {
-	this->_ports.push_back(port);
+	this->_listens.push_back(listen);
 }
 
-unsigned short Server::getPort(int i) const
+void Server::addServerName(std::string name)
 {
-	return (this->_ports.at(i));
+	this->_serverNames.push_back(name);
 }
 
-const std::vector<unsigned short> Server::getPorts(void) const
+void Server::addLocation(Location location)
 {
-	return (this->_ports);
+	this->_locations.push_back(location);
+}
+
+const std::vector<std::pair<std::string, unsigned short> >	Server::getListens(void) const
+{
+	return (this->_listens);
 }
 
 const std::string Server::getHost(int i) const
 {
-	return (this->_hosts.at(i));
+	return (std::get<0>(this->_listens.at(i)));
 }
 
-const std::vector<std::string> Server::getHosts(void) const
+unsigned short Server::getPort(int i) const
 {
-	return (this->_hosts);
+	return (std::get<1>(this->_listens.at(i)));
+}
+
+const std::vector<std::string> Server::getServerNames(void) const
+{
+	return (this->_serverNames);
 }
 
 const std::string Server::getServerName(int i) const
@@ -67,7 +66,23 @@ const std::string Server::getServerName(int i) const
 	return (this->_serverNames.at(i));
 }
 
-const std::vector<std::string> Server::getServerNames(void) const
+const std::vector<Location> Server::getLocations(void) const
 {
-	return (this->_serverNames);
+	return (this->_locations);
 }
+
+const Location Server::getLocation(int i) const
+{
+	return (this->_locations.at(i));
+}
+
+
+// Server::pairIterator Server::getListens(void)
+// {
+// 	return (this->_listens.begin());
+// }
+
+// Server::stringIterator Server::getServerNames(void)
+// {
+// 	return (this->_serverNames.begin());
+// }

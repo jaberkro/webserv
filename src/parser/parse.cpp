@@ -1,6 +1,5 @@
 #include "Config.hpp"
 #include "parse.hpp"
-#include "webserv.hpp"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -34,9 +33,16 @@ void parse(Config &config, char *configFile)
 	std::string		line;
 
 	file = openFile(configFile);
-	getValidLine(file, line);
-	if (line == "http {")
+	while (getValidLine(file, line))
 	{
-		parseHTTP(config, file);
+		if (line == "http {")
+		{
+			parseHTTP(config, file);
+		}
+		else
+		{
+			std::cout << "Error: can't parse [" << line << "]" << std::endl;
+			exit(EXIT_FAILURE);
+		}
 	}
 }

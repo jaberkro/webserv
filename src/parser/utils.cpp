@@ -1,6 +1,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+
 /**
  * @brief remove whitespace at beginning of an std::string
  * 
@@ -11,12 +12,14 @@ std::string	ltrim(std::string s)
 {
 	size_t i = 0;
 
-	while (i < s.size() - 1 && (s.at(i) == '\t' || s.at(i) == ' ' || s.at(i) == '\v' || s.at(i) == '\b' || s.at(i) == '\r'))
+	while (i < s.size() && (s.at(i) == '\t' || s.at(i) == ' ' || s.at(i) == '\v' || s.at(i) == '\b' || s.at(i) == '\r'))
 	{
 		i++;
 	}
-	if (i == s.size() - 1)
+	if (i == s.size())
 		return ("");
+	else if (i == 0)
+		return (s);
 	return (s.substr(i));
 }
 
@@ -44,5 +47,25 @@ int	getValidLine(std::fstream &file, std::string &line)
 	}
 	if (line.back() == ';')
 		line.pop_back();
+	line = ltrim(line);
 	return (1);
+}
+
+/**
+ * @brief find the first space or horizontal tab
+ * 
+ * @return size_t the index of the first space or horizontal tab found, 
+ * size of string if no tab or space was found, 0 if line is empty
+ */
+size_t	findFirstWhitespace(std::string line)
+{
+	if (line == "")
+		return (0);
+	if (line.find(" ") == std::string::npos && line.find("\t") == std::string::npos)
+		return (line.size());
+	else if (line.find(" ") == std::string::npos)
+		return (line.find("\t"));
+	else if (line.find("\t") == std::string::npos)
+		return (line.find(" "));
+	return (std::min(line.find(" "), line.find("\t")));
 }

@@ -7,21 +7,32 @@ void	printConfig(Config &config)
 	std::cout << "config:" << std::endl;
 	for (size_t i = 0; i < config.getServers().size(); i++)
 	{
-		std::cout << "\tserver " << i << ":" << std::endl;
-		for (size_t j = 0; j < config.getServer(i).getPorts().size(); j++)
+		std::cout << "\tserver " << i << ":";
+		for (size_t j = 0; j < config.getServer(i).getListens().size(); j++)
 		{
-			std::cout << "\t\thost: " << config.getServer(i).getHost(j) << "\t\t";
-			std::cout << "port: " << config.getServer(i).getPort(j) << std::endl;
+			std::cout << "\n\t\thost: " << config.getServer(i).getHost(j) << "\t\t";
+			std::cout << "port: " << config.getServer(i).getPort(j);
 		}
-		std::cout << "\t\tserver_name:";
+		if (config.getServer(i).getServerNames().size() > 0)
+			std::cout << "\n\t\tserver_name:";
 		for (size_t j = 0; j < config.getServer(i).getServerNames().size(); j++)
 		{
 			std::cout << " " << config.getServer(i).getServerName(j);
+		}
+		// std::cout << std::endl;
+		for (size_t j = 0; j < config.getServer(i).getLocations().size(); j++)
+		{
+			std::cout << "\n\t\tlocation:\n\t\t\tmodifier: ";
+			std::cout << config.getServer(i).getLocation(j).getModifier();
+			std::cout << "\n\t\t\tmatch: ";
+			std::cout << config.getServer(i).getLocation(j).getMatch();
+
 		}
 		std::cout << std::endl;
 	}
 	std::cout << std::endl;
 }
+
 
 int	main(int argc, char **argv)
 {

@@ -25,7 +25,7 @@ Config::~Config(void)
 	// std::cout << "Destructor called on Config" << std::endl;
 }
 
-void Config::addServer(Server &server)
+void Config::addServer(Server server)
 {
 	this->_servers.push_back(server);
 }
@@ -39,3 +39,8 @@ const std::vector<Server>& Config::getServers() const
 {
 	return (this->_servers);
 }
+
+// Config::serverIterator Config::getServers(void)
+// {
+// 	return (this->_servers.begin());
+// }
