@@ -1,41 +1,51 @@
 #include "Location.hpp"
 
-Location::Location()
+Location::Location() {}
+
+Location::~Location() {}
+
+Location::Location(Location const & loc) : _match (loc.getMatch()), \
+_modifier (loc.getModifier()), _root (loc.getRoot()), \
+_index (loc.getIndex()), _errorPages (loc.getErrorPages()) {}
+
+Location &	Location::operator=(Location const & loc)
 {
-
-}
-
-Location::~Location()
-{
-
-}
-
-Location::Location(Location const & loc)
-{
-	this->_locationMatch = loc.getLocationMatch();
-	this->_locationModifier = loc.getLocationModifier();
-	this->_locationDirectives = loc.getLocationDirectives();
+	this->_match = loc.getMatch();
+	this->_modifier = loc.getModifier();
+	this->_root = loc.getRoot();
+	this->_index = loc.getIndex();
 	this->_errorPages = loc.getErrorPages();
-}
-
-Location &	Location::operator=(Location const &)
-{
 	return (*this);
 }
 
-void	Location::setLocationMatch(std::string str)
+void	Location::setMatch(std::string match)
 {
-	this->_locationMatch = str;
+	this->_match = match;
 }
 
-void	Location::setLocationModifier(std::string str)
+void	Location::setModifier(std::string modifier)
 {
-	this->_locationModifier = str;
+	this->_modifier = modifier;
 }
 
-void	Location::addDirective(std::string key, std::string value)
+std::string const &	Location::getRoot(void) const
 {
-	this->_locationDirectives.push_back(std::pair<std::string,std::string>(key, value));
+	return (this->_root);
+}
+
+void	Location::setRoot(std::string root)
+{
+	this->_root = root;
+}
+
+std::string const &	Location::getIndex(void) const
+{
+	return (this->_index);
+}
+
+void	Location::setIndex(std::string index)
+{
+	this->_index = index;
 }
 
 void	Location::addErrorPage(int key, std::string value)
@@ -43,20 +53,16 @@ void	Location::addErrorPage(int key, std::string value)
 	this->_errorPages.push_back(std::pair<int,std::string>(key, value));
 }
 
-std::string const &	Location::getLocationMatch(void) const
+std::string const &	Location::getMatch(void) const
 {
-	return(this->_locationMatch);
+	return(this->_match);
 }
 
-std::string const &	Location::getLocationModifier(void) const
+std::string const &	Location::getModifier(void) const
 {
-	return(this->_locationModifier);
+	return(this->_modifier);
 }
 
-std::vector<std::pair<std::string,std::string>> const &	Location::getLocationDirectives(void) const
-{
-	return(this->_locationDirectives);
-}
 
 std::vector<std::pair<int,std::string>> const &	Location::getErrorPages(void) const
 {

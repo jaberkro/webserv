@@ -8,27 +8,28 @@ class Location
 {
 	private:
 
-		std::string										_locationMatch;
-		std::string										_locationModifier;
-		std::vector<std::pair<std::string,std::string>>	_locationDirectives;
+		std::string										_match;
+		std::string										_modifier;
+		std::string										_root;
+		std::string										_index;
 		std::vector<std::pair<int,std::string>>			_errorPages;
-		std::vector<std::string>						_tryFiles;
 	
 	public:
 
-		// functions
 		Location();
 		~Location();
 		Location(Location const &);
-		Location &		operator=(Location const &);
-		std::string const &	getLocationMatch(void) const;
-		std::string const &	getLocationModifier(void) const;
-		std::vector<std::pair<std::string,std::string>> const &	getLocationDirectives(void) const;
+		Location &			operator=(Location const &);
+		std::string const &	getMatch(void) const;
+		std::string const &	getModifier(void) const;
+		std::string const &	getRoot(void) const;
+		std::string const &	getIndex(void) const;
 		std::vector<std::pair<int,std::string>> const &	getErrorPages(void) const;
 		
-		void			setLocationMatch(std::string str);
-		void			setLocationModifier(std::string str);
-		void			addDirective(std::string key, std::string value);
+		void			setMatch(std::string match);
+		void			setModifier(std::string modifier);
+		void			setRoot(std::string root);
+		void			setIndex(std::string index);
 		void			addErrorPage(int key, std::string value);
 };
 

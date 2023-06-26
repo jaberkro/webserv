@@ -8,13 +8,15 @@
 #include <cstdio>
 
 #include <vector>
-#include <map>
 
-Response::Response(Request req) : _req (req), _errorCode (0) {}
+Response::Response(Request req) : _req (req), _statusCode (200), _msgLength (0), \
+_isReady (false) {}
 
 Response::~Response(void) {}
 
-Response::Response(Response &r) : _req (r.getRequest()), _errorCode (r.getErrorCode()) {}
+Response::Response(Response &r) : _req (r.getRequest()), \
+_statusCode (r.getStatusCode()), _msgLength (r.getMsgLength()), \
+_isReady (r.getIsReady()) {}
 
 Response &	Response::operator=(Response &)
 {
@@ -22,34 +24,30 @@ Response &	Response::operator=(Response &)
 }
 
 
-
 /**
  * @brief 
  * 
  * @return uint8_t* 
  */
-uint8_t *	Response::createResponseHtml(void)
+void	Response::retrieveFile(uint8_t *response)
 {
-	std::string		pathToFile;
 	std::ifstream	file;
 	std::string		contentType;
 	uint8_t			fileBuf[MAXLINE + 1];
-	uint8_t			*response = new uint8_t[MAXLINE + 1];
 
 	std::memset(fileBuf, 0, MAXLINE);
-	std::memset(response, 0, MAXLINE);
 
-	pathToFile = this->_req.getTarget() == "/" ? "data/www/index.html" : "data/www" + this->_req.getTarget();
 	contentType = "text/html";
-	file.open(pathToFile);
+	file.open(this->_filePath, std::ifstream::in);
+	if (!file.is_open())
+		throw std::ios_base::failure("Error when opening a file");
 	file.read((char *)fileBuf, MAXLINE);
-
 	snprintf((char *)response, MAXLINE, \
-	"%s 200 OK\r\nContent-Type: %s\r\nContent-Length: %zu\r\n\r\n%s", \
-	this->_req.getProtocolVersion().c_str(), contentType.c_str(), std::strlen((char *)fileBuf), (char *)fileBuf);
+	"%s %d %s\r\nContent-Type: %s\r\nContent-Length: %zu\r\n\r\n%s", \
+	this->_req.getProtocolVersion().c_str(), this->_statusCode, this->_reason.c_str(), \
+	contentType.c_str(), std::strlen((char *)fileBuf), (char *)fileBuf);
 	this->_msgLength = std::strlen((char *)response);
 	file.close();
-	return (response);
 }
 
 /**
@@ -57,65 +55,66 @@ uint8_t *	Response::createResponseHtml(void)
  * 
  * @return uint8_t* 
  */
-uint8_t *	Response::createResponseImg(void)
+void	Response::retrieveImg(uint8_t *response)
 {
-	std::string		pathToFile;
-	std::ifstream	file;
-	size_t			lengthFile;
-	std::string		contentType;
-	std::filebuf	*imgBuf = file.rdbuf();
-	uint8_t			*response = new uint8_t[MAXLINE + 1];
+	std::ifstream				file;
+	size_t 						i = 0;
+	std::vector<std::string>	images = {".jpg", ".jpeg", ".png"};
+	size_t						lengthFile;
+	std::string					contentType;
+	std::filebuf				*imgBuf = file.rdbuf();
 	
-	std::memset(response, 0, MAXLINE);
-	pathToFile = "data" + this->_req.getTarget();
-	contentType = "image/jpg";
+	while (i < images.size() && this->_filePath.find(images[i]) == std::string::npos)
+		std::cout << "Finding " << images[i++] << " in " << this->_filePath << std::endl;
+	if (i < images.size())
+	 	contentType = "image/" + images[i].substr(1,std::string::npos);
+	else
+		std::cout << "Bad request - unknown format" << std::endl;
 
+	lengthFile = this->getFileSize(this->_filePath);
+	file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
+	if (!file.is_open())
+		throw std::ios_base::failure("Error when opening a file");
 
-	try
-	{
-		lengthFile = this->getFileSize(pathToFile);
-		file.open(pathToFile, std::ifstream::in | std::ifstream::binary);
-	}
-	catch(const std::ios_base::failure& f)
-	{
-		std::cerr << "Caught an exception: " << f.what() << std::endl;
-		snprintf((char *)response, MAXLINE, "%s 404 Not Found", this->_req.getProtocolVersion().c_str());
-	}
 	snprintf((char *)response, MAXLINE, \
-	"%s 200 OK\r\nContent-Type: %s\r\nContent-Length: %zu\r\n\r\n", \
-	this->_req.getProtocolVersion().c_str(), contentType.c_str(), lengthFile);
+	"%s %d %s\r\nContent-Type: %s\r\nContent-Length: %zu\r\n\r\n", \
+	this->_req.getProtocolVersion().c_str(), this->_statusCode, this->_reason.c_str(), \
+	contentType.c_str(), lengthFile);
 	this->_msgLength = std::strlen((char *)response);
-	// std::cout << "end idx is " << this->_msgLength << std::endl;
 	imgBuf = file.rdbuf();
-	for ( size_t i = 0; i < lengthFile; i++ ) {
+	for ( size_t i = 0; i < lengthFile; i++ )
 		response[this->_msgLength + i] = imgBuf->sbumpc();
-		// std::cout << i << ":" << static_cast<int>(response[this->_msgLength + i]) << " ";
-	}
 	this->_msgLength += lengthFile;
 	file.close();
-	return (response);
-	
 }
 
-std::vector<Location>::iterator	Response::findClosestMatch(std::string target, std::vector<Location> & locations)
+std::vector<Location>::iterator	Response::findClosestMatch(std::string target, \
+	std::vector<Location> & locations)
 {
 	size_t	overlap = 0;
+	std::vector<std::string>	targetSplit;
 	std::vector<Location>::iterator longest;
 	std::vector<Location>::iterator it;
 	size_t	idx = 0;
+	size_t	len = 0;
 
-	std::cout << "Close Match function"	<< std::endl;
+	this->splitUri(target, targetSplit);
+	for (std::vector<std::string>::iterator i = targetSplit.begin(); i != targetSplit.end(); i++)
 	for (it = locations.begin(); it != locations.end(); it++)
 	{
-		std::string const & locPrefix = it->getLocationMatch();
-		// the loop is incorrect, it has to check parts, not just characters!
-		while (target[idx] && locPrefix[idx] && target[idx] == locPrefix[idx])
+		if (it->getModifier() == "=")
+			continue;
+		std::vector<std::string>	matchSplit;
+		this->splitUri(it->getMatch(), matchSplit);
+		len = std::min(targetSplit.size(), matchSplit.size());
+		while (idx < len && targetSplit[idx].compare(matchSplit[idx]) == 0)
 			idx++;
 		if (idx > overlap)
 		{
 			overlap = idx;
 			longest = it;
 		}
+		matchSplit.clear();
 	}
 	return (longest);
 }
@@ -124,13 +123,63 @@ std::vector<Location>::iterator	Response::findExactMatch(std::string target, std
 {
 	std::vector<Location>::iterator it;
 	
-	std::cout << "Exact Match function"	<< std::endl;
 	for (it = locations.begin(); it != locations.end(); it++)
 	{
-		if (it->getLocationModifier() == "=" && target.compare(it->getLocationMatch()) == 0)
+		if (it->getModifier() != "=")
+			continue;
+		if (target.compare(it->getMatch()) == 0)
 			return (it);
 	}
 	return (it);
+}
+
+std::vector<Location>::iterator Response::findMatch(std::string target, std::vector<Location> & locations)
+{
+	std::vector<Location>::iterator	itLoc;
+
+	itLoc = findExactMatch(target, locations);
+		if (itLoc == locations.end())
+	itLoc = findClosestMatch(target, locations);
+	return (itLoc);
+}
+
+void	Response::prepareGetResponse(uint8_t *response, std::vector<Location> & locations)
+{
+	std::vector<Location>::iterator	itLoc;
+	std::string						targetUri = \
+	this->_req.getTarget().substr(0, this->_req.getTarget().find_first_of('?'));
+
+	while (!this->_isReady)
+	{
+		itLoc = findMatch(targetUri, locations);
+		if (!itLoc->getIndex().empty())
+			this->_filePath = itLoc->getRoot() + targetUri + itLoc->getIndex();
+		else
+			this->_filePath = itLoc->getRoot() + targetUri;
+		try 
+		{
+			if (itLoc->getRoot() == "data/www")
+				this->retrieveFile(response);
+			else
+				this->retrieveImg(response);
+			this->_isReady = true;
+		}
+		catch(const std::ios_base::failure & f)
+		{
+			// create a function getErrorPage()
+			const std::vector<std::pair<int,std::string>>  &	errorPages = itLoc->getErrorPages(); 
+			for (auto it = errorPages.begin(); it != errorPages.end(); it++)
+			{
+				// to be edited - more error codes to be included
+				if (it->first == 404)
+				{
+					targetUri = it->second;
+					this->_statusCode = 404;
+					this->_filePath.clear();
+				}
+			}
+		}
+	}
 }
 
 /**
@@ -141,61 +190,33 @@ std::vector<Location>::iterator	Response::findExactMatch(std::string target, std
  */
 uint8_t *	Response::createResponse()
 {
+	uint8_t					*response = new uint8_t[MAXLINE + 1];
 	std::vector<Location>	locations;
 	Location				a;
 	Location				b;
 	Location				c;
 
-	std::string				targetUri = this->_req.getTarget(); // upgrade to make a substring
 
-	a.setLocationMatch("/");
-	a.setLocationModifier("=");
-	a.addDirective("index", "index.html");
-	b.setLocationMatch("/");
-	b.setLocationModifier("");
-	b.addDirective("root", "data/www");
+	a.setMatch("/");
+	a.setModifier("=");
+	a.setIndex("index.html");
+	a.setRoot("data/www");
+	b.setMatch("/");
+	b.setModifier("");
+	b.setRoot("data/www");
 	b.addErrorPage(404, "/404.html");
-	c.setLocationMatch("/images");
-	c.setLocationModifier("");
-	c.addDirective("root", "data/images");
+	c.setMatch("/images");
+	c.setModifier("");
+	c.setRoot("data");
 	c.addErrorPage(404, "/404.html");
 	locations.push_back(a);
 	locations.push_back(b);
 	locations.push_back(c);
 	
-	std::cout << "Method is " << this->_req.getMethod() << std::endl;
-
+	std::memset(response, 0, MAXLINE);
 	if (this->_req.getMethod() == "GET")
-	{
-		std::vector<Location>::iterator	itLoc;
-
-		itLoc = findExactMatch(targetUri, locations);
-		if (itLoc == locations.end())
-		{
-			itLoc = findClosestMatch(targetUri, locations);
-			std::cout << "Closest match: " << itLoc->getLocationMatch() << std::endl;
-		}
-		else
-			std::cout << "Exact match: " << itLoc->getLocationMatch() << std::endl;
-		// CONTINUE HERE 
-	
-		// compare target (only URI part, no arguments!) with all locations server->getLocations
-			// 1. check the ones with "=" sign for exact matches
-			// 2. if no exact matches found, evaluate non-exact prefixes 
-			// map? location: root? -> not enough, there may be more items; maybe nested map?
-			// locationsPrefixes 
-		// choose the one with biggest overlap
-
-		// add the target to the location's root
-
-
-		
-		// if (this->_req.getTarget().find(".jpg") < std::string::npos)
-		// 	return (this->createResponseImg());
-		// else
-		// 	return (this->createResponseHtml());
-	}
-	return (NULL);
+		prepareGetResponse(response, locations);
+	return (response);
 }
 
 /**
@@ -213,7 +234,6 @@ size_t	Response::getFileSize(std::string filePath)
 	if (file.is_open())
 	{
 		len = file.tellg();
-		// std::cout << "--> Len is " << len << std::endl;
 		file.clear();
 		file.close();
 		return (len);
@@ -231,12 +251,36 @@ size_t	Response::getMsgLength( void ) const
 	return (this->_msgLength);
 }
 
+std::string	& Response::getFilePath(void)
+{
+	return (this->_filePath);
+}
+
+bool	Response::getIsReady(void)
+{
+	return (this->_isReady);
+}
+
+
 Request &	Response::getRequest(void)
 {
 	return (this->_req);
 }
 
-int	Response::getErrorCode(void)
+int	Response::getStatusCode(void)
 {
-	return (this->_errorCode);
+	return (this->_statusCode);
+}
+
+void	Response::splitUri(std::string const & uri, std::vector<std::string> & chunks)
+{
+	size_t	begin = 0;
+	size_t	end;
+
+	while (begin < std::string::npos)
+	{
+		end = uri[begin] == '/' ? uri.find_first_of('/', begin) + 1 : uri.find_first_of('/', begin);
+		chunks.push_back(uri.substr(begin, end - begin));
+		begin = end;
+	}
 }

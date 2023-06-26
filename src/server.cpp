@@ -139,7 +139,7 @@ void	watch_loop(int kq, int listenfd)
 					
 					if (response)
 					{
-						// std::cout << "About to return " << newResp->getMsgLength() << "bytes: " << response << std::endl;
+						std::cout << "About to return " << newResp->getMsgLength() << "bytes: " << response << std::endl;
 						send(fd, (char*)response, newResp->getMsgLength(), 0);
 						delete response;
 					}

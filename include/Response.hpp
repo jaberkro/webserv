@@ -2,7 +2,6 @@
 # define RESPONSE_HPP
 
 #include <string>
-#include <map>
 # include "Request.hpp"
 # include "Location.hpp"
 
@@ -14,27 +13,35 @@ class Response {
 		~Response(void);
 		Response(Response &);
 		Response &	operator=(Response &);
+		
 		uint8_t	*createResponse();
-		uint8_t	*createResponseImg(void);
-		uint8_t	*createResponseHtml(void);
+		void	retrieveImg(uint8_t *response);
+		void	retrieveFile(uint8_t *response);
+		void	prepareGetResponse(uint8_t *response, std::vector<Location> & locations);
+
+		
 		size_t	getMsgLength(void) const;
-		Request &	getRequest(void);
-		int			getErrorCode(void);
+		void	splitUri(std::string const & uri, std::vector<std::string> & chunks);
+		
+		Request &		getRequest(void);
+		bool			getIsReady(void);
+		int				getStatusCode(void);
+		std::string	& getFilePath(void);
+		std::vector<Location>::iterator findMatch(std::string target, std::vector<Location> & locations);
 		std::vector<Location>::iterator	findExactMatch(std::string target, std::vector<Location> & locations);
 		std::vector<Location>::iterator	findClosestMatch(std::string target, std::vector<Location> & locations);
 
 	private:
 
 		Request								_req;
-		std::string							_statusCode;
+		int									_statusCode;
 		std::string							_reason;
 		std::map<std::string, std::string>	_headers;
 		std::string							_content;
 		size_t								_msgLength;
-		int									_errorCode;
-		// std::string							_protocolVersion;
+		std::string							_filePath;
+		bool								_isReady;
 		// std::map<std::string, std::string>	_trailers;
-		// int									_connFD;
 		size_t	getFileSize(std::string filePath);
 
 };
