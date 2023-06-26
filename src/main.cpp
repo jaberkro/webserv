@@ -19,7 +19,6 @@ void	printConfig(Config &config)
 		{
 			std::cout << " " << config.getServer(i).getServerName(j);
 		}
-		// std::cout << std::endl;
 		for (size_t j = 0; j < config.getServer(i).getLocations().size(); j++)
 		{
 			std::cout << "\n\t\tlocation:\n\t\t\tmodifier: ";
@@ -28,6 +27,10 @@ void	printConfig(Config &config)
 			std::cout << config.getServer(i).getLocation(j).getMatch();
 
 		}
+		if (config.getServer(i).getAutoindex() == true)
+			std::cout << "\n\t\t autoindex: on";
+		else
+			std::cout << "\n\t\t autoindex: off";
 		std::cout << std::endl;
 	}
 	std::cout << std::endl;

@@ -15,7 +15,8 @@ SRC = main.cpp \
 	parser/blocks/server.cpp \
 	parser/blocks/location.cpp \
 	parser/blocks/lines/listen.cpp \
-	parser/blocks/lines/serverName.cpp
+	parser/blocks/lines/serverName.cpp \
+	parser/blocks/lines/autoindex.cpp
 
 OBJ := $(addprefix $(BUILD_DIR)/, $(SRC:.cpp=.o))
 SRC := $(addprefix $(SRC_DIR)/, $(SRC))
