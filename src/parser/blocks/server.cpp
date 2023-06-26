@@ -15,7 +15,9 @@ Server  parseServer(std::fstream &file)
 
 	while (getValidLine(file, line))
 	{
-		if (line == "}")
+		if (line == "")
+			std::cout << "empty line in server block" << std::endl;
+		else if (line == "}")
 			break ;
 		else if (line.find("listen") == 0)
 		{
@@ -25,13 +27,17 @@ Server  parseServer(std::fstream &file)
 		{
 			parseServerNames(newServer, line);
 		}
+		else if (line.find("autoindex") == 0)
+		{
+			newServer.setAutoindex(parseAutoindex(line));
+		}
 		else if (line.find("location") == 0 && line.back() == '{')
 		{
 			newServer.addLocation(parseLocation(file, line));
 		}
 		else
 		{
-			std::cout << "Error: can't parse [" << line << "]" << std::endl;
+			std::cout << "Error: can't parse server block near [" << line << "]" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 	}

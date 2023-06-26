@@ -11,12 +11,12 @@
  */
 void parseServerNames(Server &server, std::string &line)
 {
-	line = line.substr(11);
+	line = protectedSubstr(line, 11);
 	line = ltrim(line);
 	while (findFirstWhitespace(line) != line.size() && line != "" && findFirstWhitespace(line) != 0)
 	{
-		server.addServerName(line.substr(0, findFirstWhitespace(line)));
-		line = line.substr(findFirstWhitespace(line) + 1);
+		server.addServerName(protectedSubstr(line, 0, findFirstWhitespace(line)));
+		line = protectedSubstr(line, findFirstWhitespace(line) + 1);
 		line = ltrim(line);
 	}
 	if (line != "")

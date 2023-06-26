@@ -16,7 +16,9 @@ void parseHTTP(Config &config, std::fstream &file)
 
 	while (getValidLine(file, line))
 	{
-		if (line == "}")
+		if (line == "")
+			std::cout << "empty line in http block" << std::endl;
+		else if (line == "}")
 			break ;
 		else if (line == "server {")
 		{
@@ -24,7 +26,7 @@ void parseHTTP(Config &config, std::fstream &file)
 		}
 		else
 		{
-			std::cout << "Error: can't parse [" << line << "]" << std::endl;
+			std::cout << "Error: can't parse http block near [" << line << "]" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 	}

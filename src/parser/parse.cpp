@@ -35,7 +35,9 @@ void parse(Config &config, char *configFile)
 	file = openFile(configFile);
 	while (getValidLine(file, line))
 	{
-		if (line == "http {")
+		if (line == "")
+			std::cout << "empty line in config file" << std::endl;
+		else if (line == "http {")
 		{
 			parseHTTP(config, file);
 		}

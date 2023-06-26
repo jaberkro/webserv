@@ -36,21 +36,21 @@ Location parseLocation(std::fstream &file, std::string line)
 {
 	Location location;
 
-	line = line.substr(8);
+	line = protectedSubstr(line, 8);
 	line = ltrim(line);
 	line.pop_back();
 	
 	location.setModifier(findModifier(line));
 	if (location.getModifier() != "(none)")
 	{
-		line = line.substr(findFirstWhitespace(line));
+		line = protectedSubstr(line, findFirstWhitespace(line));
 		line = ltrim(line);
 	}
 	
 	location.setMatch(findMatch(line));
 	if (findFirstWhitespace(line) != line.size())
 	{
-		line = line.substr(findFirstWhitespace(line));
+		line = protectedSubstr(line, findFirstWhitespace(line));
 		line = ltrim(line);
 		if (line != "")
 		{
@@ -61,7 +61,9 @@ Location parseLocation(std::fstream &file, std::string line)
 	// std::cout << "[" << location.getMatch() << "]" << std::endl;
 	while (getValidLine(file, line))
 	{
-		if (line == "}")
+		if (line == "")
+			std::cout << "empty line in location block" << std::endl;
+		else if (line == "}")
 			break ;
 		else if (line.find("location") == 0) // add more checks here
 		{
@@ -70,7 +72,7 @@ Location parseLocation(std::fstream &file, std::string line)
 		}
 		else
 		{
-			std::cout << "Error: can't parse [" << line << "]" << std::endl;
+			std::cout << "Error: can't parse location block near [" << line << "]" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 	}

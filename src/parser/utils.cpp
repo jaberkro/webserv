@@ -2,6 +2,42 @@
 #include <fstream>
 #include <iostream>
 
+std::string protectedSubstr(std::string s, size_t start)
+{
+	std::string newString;
+
+	if (s == "")
+		return ("");
+	try
+	{
+		newString = s.substr(start);
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+		return ("");
+	}
+	return (newString);
+}
+
+std::string protectedSubstr(std::string s, size_t start, size_t size)
+{
+	std::string newString;
+
+	if (s == "")
+		return ("");
+	try
+	{
+		newString = s.substr(start, size);
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+		return ("");
+	}
+	return (newString);
+}
+
 /**
  * @brief remove whitespace at beginning of an std::string
  * 
@@ -12,6 +48,8 @@ std::string	ltrim(std::string s)
 {
 	size_t i = 0;
 
+	if (s == "")
+		return ("");
 	while (i < s.size() && (s.at(i) == '\t' || s.at(i) == ' ' || s.at(i) == '\v' || s.at(i) == '\b' || s.at(i) == '\r'))
 	{
 		i++;
@@ -20,11 +58,34 @@ std::string	ltrim(std::string s)
 		return ("");
 	else if (i == 0)
 		return (s);
-	return (s.substr(i));
+	return (protectedSubstr(s, i));
 }
 
 /**
- * @brief getline that checks the line for valid input, trims whitespaces at the beginning and removes comments
+ * @brief remove whitespace at the end of an std::string
+ * 
+ * @param s the std::string to be trimmed
+ * @return the trimmed std::string
+ */
+std::string	rtrim(std::string s)
+{
+	size_t i = s.size() - 1;
+
+	if (s == "")
+		return ("");
+	while (i >= 0 && (s.at(i) == '\t' || s.at(i) == ' ' || s.at(i) == '\v' || s.at(i) == '\b' || s.at(i) == '\r'))
+	{
+		i--;
+	}
+	if (i < 0)
+		return ("");
+	else if (i == s.size() - 1)
+		return (s);
+	return (protectedSubstr(s, 0, i + 1));
+}
+
+/**
+ * @brief getline that checks the line for valid input, trims whitespaces at the beginning and end of the string and removes comments
  * 
  * @param file the file to read the next line from
  * @param line the std::string to store the next line in
@@ -32,22 +93,25 @@ std::string	ltrim(std::string s)
  */
 int	getValidLine(std::fstream &file, std::string &line)
 {
-	std::getline(file, line);
-	if (line == "")
+	if (!std::getline(file, line))
 		return (0);
+	if (line.find('#') != std::string::npos)
+		line = protectedSubstr(line, 0, line.find('#'));
 	line = ltrim(line);
+	line = rtrim(line);
 	if (line == "")
-		return (0);
-	if (line.find('#'))
-		line = line.substr(0, line.find('#'));
+		return (1);
+	std::cout << line << std::endl;
 	if (line.back() != ';' && line.back() != '{' && line.back() != '}')
 	{
 		std::cout << "Error: missing ';', '{' or '}' in configuration file" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	if (line.back() == ';')
+	{
 		line.pop_back();
-	line = ltrim(line);
+		line = rtrim(line);
+	}
 	return (1);
 }
 
@@ -68,4 +132,16 @@ size_t	findFirstWhitespace(std::string line)
 	else if (line.find("\t") == std::string::npos)
 		return (line.find(" "));
 	return (std::min(line.find(" "), line.find("\t")));
+}
+
+bool	allDigits(std::string s)
+{
+	for (size_t i = 0; i < s.size(); i++)
+	{
+		if (!isdigit(s.at(i)))
+		{
+			return (0);
+		}
+	}
+	return (1);
 }
