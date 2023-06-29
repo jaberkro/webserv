@@ -3,39 +3,54 @@
 #include <sys/socket.h>
 
 
-Request::Request(int connfd) : _connFD (connfd) {}
+Request::Request(int connfd) : \
+_method (""), \
+_target (""), \
+_protocolVersion (""), \
+_body (""), \
+_connFD (connfd) {}
 
 Request::~Request(void) {}
 
-// Request::Request(Request &)
-// {
+Request::Request(Request &r) : \
+_method (r.getMethod()), \
+_target (r.getTarget()), \
+_protocolVersion (r.getProtocolVersion()), \
+_headers (r.getHeaders()), \
+_body (r.getBody()), \
+_connFD (r.getConnFD())  {}
 
-// }
+Request &	Request::operator=(Request &r)
+{
+	this->_connFD = r.getConnFD();
+	this->_method = r.getMethod();
+	this->_target = r.getTarget();
+	this->_protocolVersion = r.getProtocolVersion();
+	this->_headers = r.getHeaders();
+	this->_body = r.getBody();
+	return (*this);
+}
 
-// Request &	Request::operator=(Request &)
-// {
-// 	return (*this);
-// }
-
-/* 
-	This function parses the start line of a request and saves the data in the 
-	corresponding member variables
- */
-
-std::string	Request::getMethod() const
+std::string const &	Request::getMethod() const
 {
 	return (this->_method);
 }
 
-std::string	Request::getTarget() const
+std::string const &	Request::getTarget() const
 {
 	return (this->_target);
 
 }
 
-std::string	Request::getProtocolVersion() const
+std::string const &	Request::getProtocolVersion() const
 {
 	return (this->_protocolVersion);
+
+}
+
+std::string	const & Request::getBody() const
+{
+	return (this->_body);
 
 }
 
@@ -50,11 +65,11 @@ std::map<std::string, std::string> &	Request::getHeaders()
 }
 
 /**
- * @brief 
+ * @brief parses the start line of a request and saves the data in the 
+	corresponding member variables
  * 
  * @param line 
- * @return true 
- * @return false 
+ * @return true, which means that the start line has been parsed
  */
 bool	Request::parseStartLine(std::string &line)
 {
@@ -75,13 +90,9 @@ bool	Request::parseStartLine(std::string &line)
 	return (true);
 }
 
-/* 
-	This function parses each line of a request's header and saves the data in the 
-	corresponding member variables
- */
-
 /**
- * @brief 
+ * @brief parses each line of a request's header and saves the data in the 
+	corresponding member variables
  * 
  * @param line 
  */
@@ -104,13 +115,9 @@ void	Request::parseFieldLine(std::string &line)
 	line.erase(0, std::string::npos);
 }
 
-/* 
-	This function reads a request from the socket, splits it into separate lines 
-	and sends each line to the parsing function for further processing
- */
-
 /**
- * @brief 
+ * @brief reads a request from the socket, splits it into separate lines 
+	and sends each line to the parsing function for further processing
  * 
  */
 void	Request::processReq(void) 
@@ -119,7 +126,6 @@ void	Request::processReq(void)
 	std::string	processingBuffer, line;
 	int			n = 0;
 	size_t		nlPos = 0;
-	// bodyRead = 0;
 	bool		firstLineComplete = false;
 	bool		headersComplete = false;
 
@@ -163,20 +169,27 @@ void	Request::processReq(void)
 	This function extracts a string up to the first \n character from a "buffer"
 	into the "line" and removes that part of the string from the buffer
  */
+
+/**
+ * @brief extracts a substring from beginning of a buffer until the following
+ * new line (at the index of nlPos), deletes it from the buffer and moves it 
+ * into the line. The new line character is discarded in the process.
+ * 
+ * @param buffer source of the to be extracted string; the string will be removed
+ * from the buffer
+ * @param line destination in which the extracted string is placed
+ * @param nlPos denotes the position of the closest new line character
+ */
 void	Request::extractStr(std::string &buffer, std::string &line, size_t nlPos)
 {
 	line = buffer.substr(0, nlPos - 1);
 	buffer.erase(0, nlPos + 1);
 }
 
-/* 
-	This function removes the trailing spaces from the beginning and end of a string
- */
-
 /**
- * @brief 
+ * @brief removes the trailing spaces from the beginning and end of a string
  * 
- * @param line 
+ * @param line string, from which trailing spaces should be removed
  */
 void	Request::removeTrailingSpaces(std::string &line)
 {
@@ -185,8 +198,8 @@ void	Request::removeTrailingSpaces(std::string &line)
 }
 
 /**
- * @brief 
- * 
+ * @brief prints the content of the request instance; useful for debugging, 
+ * can be deleted before submitting the project
  */
 void	Request::printRequest()
 {

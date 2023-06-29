@@ -1,7 +1,7 @@
 #ifndef RESPONSE_HPP
 # define RESPONSE_HPP
 
-#include <string>
+# include <string>
 # include "Request.hpp"
 # include "Location.hpp"
 
@@ -15,7 +15,6 @@ class Response {
 		Response &	operator=(Response &);
 		
 		uint8_t	*createResponse();
-		void	retrieveImg(uint8_t *response);
 		void	retrieveFile(uint8_t *response);
 		void	prepareGetResponse(uint8_t *response, std::vector<Location> & locations);
 
@@ -26,7 +25,7 @@ class Response {
 		Request &		getRequest(void);
 		bool			getIsReady(void);
 		int				getStatusCode(void);
-		std::string	& getFilePath(void);
+		std::string	&	getFilePath(void);
 		std::vector<Location>::iterator findMatch(std::string target, std::vector<Location> & locations);
 		std::vector<Location>::iterator	findExactMatch(std::string target, std::vector<Location> & locations);
 		std::vector<Location>::iterator	findClosestMatch(std::string target, std::vector<Location> & locations);

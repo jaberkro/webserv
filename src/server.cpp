@@ -137,12 +137,12 @@ void	watch_loop(int kq, int listenfd)
 					delete newReq;
 					response = newResp->createResponse(); // argument is ref to the Server
 					
-					if (response)
-					{
-						std::cout << "About to return " << newResp->getMsgLength() << "bytes: " << response << std::endl;
-						send(fd, (char*)response, newResp->getMsgLength(), 0);
-						delete response;
-					}
+					// if (response)
+					// {
+					// 	// std::cout << "About to return " << newResp->getMsgLength() << "bytes: " << response << std::endl;
+					// 	send(fd, (char*)response, newResp->getMsgLength(), 0);
+					// 	delete response;
+					// }
 					delete newResp;
 				}
 				else

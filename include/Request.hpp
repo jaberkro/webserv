@@ -25,15 +25,16 @@ class Request
 
 		Request(int connfd);
 		~Request(void);
-		// Request(Request &);
-		// Request &	operator=(Request &);
+		Request(Request &);
+		Request &	operator=(Request &);
 
 		void								processReq(void);
 		void								parseFieldLine(std::string &line);
 		bool								parseStartLine(std::string &line);
-		std::string							getMethod() const;
-		std::string							getTarget() const;
-		std::string							getProtocolVersion() const;
+		std::string	const &					getMethod() const;
+		std::string	const &					getTarget() const;
+		std::string	const &					getProtocolVersion() const;
+		std::string	const &					getBody() const;
 		int									getConnFD() const;
 		std::map<std::string, std::string>	&getHeaders();
 

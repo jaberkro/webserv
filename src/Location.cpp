@@ -1,12 +1,19 @@
 #include "Location.hpp"
 
-Location::Location() {}
+Location::Location() : \
+_match (""), \
+_modifier (""), \
+_root (""), \
+_index ("") {}
 
 Location::~Location() {}
 
-Location::Location(Location const & loc) : _match (loc.getMatch()), \
-_modifier (loc.getModifier()), _root (loc.getRoot()), \
-_index (loc.getIndex()), _errorPages (loc.getErrorPages()) {}
+Location::Location(Location const & loc) : \
+_match (loc.getMatch()), \
+_modifier (loc.getModifier()), \
+_root (loc.getRoot()), \
+_index (loc.getIndex()), \
+_errorPages (loc.getErrorPages()) {}
 
 Location &	Location::operator=(Location const & loc)
 {
