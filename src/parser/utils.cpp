@@ -2,6 +2,14 @@
 #include <fstream>
 #include <iostream>
 
+
+/**
+ * @brief substr that catches exception, prints it and sends back "" in case an excption occured
+ * 
+ * @param s the string to make a substring from
+ * @param start the index to start the substring from
+ * @return std::string 
+ */
 std::string protectedSubstr(std::string s, size_t start)
 {
 	std::string newString;
@@ -20,6 +28,14 @@ std::string protectedSubstr(std::string s, size_t start)
 	return (newString);
 }
 
+/**
+ * @brief substr that catches exception, prints it and sends back "" in case an excption occured
+ * 
+ * @param s the string to make a substring from
+ * @param start the index to start the substring from
+ * @param size the amount of characters to include in the new substring
+ * @return std::string 
+ */
 std::string protectedSubstr(std::string s, size_t start, size_t size)
 {
 	std::string newString;
