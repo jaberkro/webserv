@@ -15,7 +15,6 @@ class Socket;
 class Server
 {
 	private:
-		//Socket		sckt;
 		std::string	contentPath;
 	public:
 		bool		running;
