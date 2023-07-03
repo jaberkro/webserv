@@ -14,9 +14,12 @@ SRC = main.cpp \
 	parser/blocks/http.cpp \
 	parser/blocks/server.cpp \
 	parser/blocks/location.cpp \
-	parser/blocks/lines/listen.cpp \
-	parser/blocks/lines/serverName.cpp \
-	parser/blocks/lines/autoindex.cpp
+	parser/blocks/directive.cpp \
+	parser/blocks/directives/listen.cpp \
+	parser/blocks/directives/serverName.cpp \
+	parser/blocks/directives/root.cpp \
+	parser/blocks/directives/index.cpp \
+	parser/blocks/directives/autoindex.cpp
 
 OBJ := $(addprefix $(BUILD_DIR)/, $(SRC:.cpp=.o))
 SRC := $(addprefix $(SRC_DIR)/, $(SRC))
