@@ -32,21 +32,22 @@ static std::string findModifier(std::string &line)
 	return ("(none)");
 }
 
-Location parseLocation(std::fstream &file, std::string line)
+Location parseLocation(std::fstream &file, std::string line, t_values values)
 {
 	Location location;
+	int		directive;
 
 	line = protectedSubstr(line, 8);
 	line = ltrim(line);
 	line.pop_back();
-	
+
 	location.setModifier(findModifier(line));
 	if (location.getModifier() != "(none)")
 	{
 		line = protectedSubstr(line, findFirstWhitespace(line));
 		line = ltrim(line);
 	}
-	
+
 	location.setMatch(findMatch(line));
 	if (findFirstWhitespace(line) != line.size())
 	{
@@ -58,24 +59,31 @@ Location parseLocation(std::fstream &file, std::string line)
 			exit(EXIT_FAILURE);
 		}
 	}
-	// std::cout << "[" << location.getMatch() << "]" << std::endl;
 	while (getValidLine(file, line))
 	{
 		if (line == "")
 			std::cout << "empty line in location block" << std::endl;
 		else if (line == "}")
 			break ;
-		else if (line.find("location") == 0) // add more checks here
+		else if (line.find("location") == 0 && line.back() == '{')
 		{
 			std::cout << "Error: can't parse location block inside location block; not implemented" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 		else
 		{
-			std::cout << "Error: can't parse location block near [" << line << "]" << std::endl;
-			exit(EXIT_FAILURE);
+			directive = hasDirective(line);
+			if (directive == -1)
+			{
+				std::cout << "Error: can't parse location block near [" << line << "]" << std::endl;
+				exit(EXIT_FAILURE);
+			}
+			values = parseDirective(directive, line, values);
 		}
 	}
+	location.setRoot(values.root);
+	location.setIndexes(values.indexes);
+	location.setAutoindex(values.autoindex);
 	return (location);
 }
 

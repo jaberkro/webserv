@@ -10,9 +10,10 @@
  * @param config the variable to store the parsed information in
  * @param file the file to parse the information from
  */
-void parseHTTP(Config &config, std::fstream &file)
+void parseHTTP(Config &config, std::fstream &file, t_values values)
 {
 	std::string line;
+	int			directive;
 
 	while (getValidLine(file, line))
 	{
@@ -21,13 +22,16 @@ void parseHTTP(Config &config, std::fstream &file)
 		else if (line == "}")
 			break ;
 		else if (line == "server {")
-		{
-			config.addServer(parseServer(file));
-		}
+			config.addServer(parseServer(file, values));
 		else
 		{
-			std::cout << "Error: can't parse http block near [" << line << "]" << std::endl;
-			exit(EXIT_FAILURE);
+			directive = hasDirective(line);
+			if (directive == -1)
+			{
+				std::cout << "Error: can't parse http block near [" << line << "]" << std::endl;
+				exit(EXIT_FAILURE);
+			}
+			values = parseDirective(directive, line, values);
 		}
 	}
 	return ;
