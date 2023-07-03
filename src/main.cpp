@@ -25,17 +25,22 @@ void	printConfig(Config &config)
 			std::cout << config.getServer(i).getLocation(j).getModifier();
 			std::cout << "\n\t\t\tmatch: ";
 			std::cout << config.getServer(i).getLocation(j).getMatch();
-
+			std::cout << "\n\t\t\troot: ";
+			std::cout << config.getServer(i).getLocation(j).getRoot();
+			std::cout << "\n\t\t\tindex:";
+			for (size_t k = 0; k < config.getServer(i).getLocation(j).getIndexes().size(); k++)
+			{
+				std::cout << " " << config.getServer(i).getLocation(j).getIndex(k);
+			}
+			if (config.getServer(i).getLocation(j).getAutoindex() == true)
+				std::cout << "\n\t\t\tautoindex: on";
+			else
+				std::cout << "\n\t\t\tautoindex: off";
 		}
-		if (config.getServer(i).getAutoindex() == true)
-			std::cout << "\n\t\t autoindex: on";
-		else
-			std::cout << "\n\t\t autoindex: off";
 		std::cout << std::endl;
 	}
 	std::cout << std::endl;
 }
-
 
 int	main(int argc, char **argv)
 {
