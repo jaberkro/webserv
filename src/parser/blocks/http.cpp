@@ -25,13 +25,13 @@ void parseHTTP(Config &config, std::fstream &file, t_values values)
 			config.addServer(parseServer(file, values));
 		else
 		{
-			directive = hasDirective(line);
+			directive = hasInheritanceDirective(line);
 			if (directive == -1)
 			{
 				std::cout << "Error: can't parse http block near [" << line << "]" << std::endl;
 				exit(EXIT_FAILURE);
 			}
-			values = parseDirective(directive, line, values);
+			values = parseInheritanceDirective(directive, line, values);
 		}
 	}
 	return ;

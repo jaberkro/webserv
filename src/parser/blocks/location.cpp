@@ -72,13 +72,13 @@ Location parseLocation(std::fstream &file, std::string line, t_values values)
 		}
 		else
 		{
-			directive = hasDirective(line);
+			directive = hasInheritanceDirective(line);
 			if (directive == -1)
 			{
 				std::cout << "Error: can't parse location block near [" << line << "]" << std::endl;
 				exit(EXIT_FAILURE);
 			}
-			values = parseDirective(directive, line, values);
+			values = parseInheritanceDirective(directive, line, values);
 		}
 	}
 	location.setRoot(values.root);

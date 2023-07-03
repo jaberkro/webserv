@@ -28,13 +28,13 @@ Server  parseServer(std::fstream &file, t_values values)
 			parseServerNames(newServer, line);
 		else
 		{
-			directive = hasDirective(line);
+			directive = hasInheritanceDirective(line);
 			if (directive == -1)
 			{
 				std::cout << "Error: can't parse server block near [" << line << "]" << std::endl;
 				exit(EXIT_FAILURE);
 			}
-			values = parseDirective(directive, line, values);
+			values = parseInheritanceDirective(directive, line, values);
 		}
 	}
 	if (newServer.getListens().size() == 0)
