@@ -31,6 +31,7 @@ void parse(Config &config, char *configFile)
 {
 	std::fstream 	file;
 	std::string		line;
+	t_values		values;
 
 	file = openFile(configFile);
 	while (getValidLine(file, line))
@@ -39,7 +40,7 @@ void parse(Config &config, char *configFile)
 			std::cout << "empty line in config file" << std::endl;
 		else if (line == "http {")
 		{
-			parseHTTP(config, file);
+			parseHTTP(config, file, values);
 		}
 		else
 		{

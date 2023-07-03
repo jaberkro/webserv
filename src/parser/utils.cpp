@@ -2,7 +2,6 @@
 #include <fstream>
 #include <iostream>
 
-
 /**
  * @brief substr that catches exception, prints it and sends back "" in case an excption occured
  * 
