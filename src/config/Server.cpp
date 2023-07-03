@@ -1,7 +1,7 @@
 #include "Server.hpp"
 #include <iostream>
 
-Server::Server(): _autoindex(false)
+Server::Server()
 {
 	// std::cout << "Default constructor called on Server" << std::endl;
 }
@@ -17,7 +17,6 @@ Server& Server::operator=(const Server &src)
 	this->_listens = src._listens;
 	this->_serverNames = src._serverNames;
 	this->_locations = src._locations;
-	this->_autoindex = src._autoindex;
 	// std::cout << "Copy assignment operator called on Server" << std::endl;
 	return (*this);
 }
@@ -77,15 +76,7 @@ const Location Server::getLocation(int i) const
 	return (this->_locations.at(i));
 }
 
-void	Server::setAutoindex(bool status)
-{
-	this->_autoindex = status;
-}
 
-bool	Server::getAutoindex(void) const
-{
-	return (this->_autoindex);
-}
 
 
 
