@@ -14,12 +14,15 @@ class Response {
 		Response(Response &);
 		Response &	operator=(Response &);
 		
-		uint8_t	*createResponse();
-		void	retrieveFile(uint8_t *response);
+		uint8_t	*createResponse(); // maybe not a member function?
+		void	sendContentInChunks(uint8_t *response);
+		void	sendFirstLineAndHeaders(uint8_t *response, std::string const & root);
+
+		void	retrieveFile(uint8_t *response, std::string const & root);
 		void	prepareGetResponse(uint8_t *response, std::vector<Location> & locations);
 
 		
-		size_t	getMsgLength(void) const;
+		size_t	getFileLength(void) const;
 		void	splitUri(std::string const & uri, std::vector<std::string> & chunks);
 		
 		Request &		getRequest(void);
@@ -37,13 +40,15 @@ class Response {
 		std::string							_reason;
 		std::map<std::string, std::string>	_headers;
 		std::string							_content;
-		size_t								_msgLength;
+		size_t								_fileLength;
 		std::string							_filePath;
 		bool								_isReady;
 		// std::map<std::string, std::string>	_trailers;
 		size_t	getFileSize(std::string filePath);
 
 };
+
+# define CHUNK_SIZE 100
 
 /* 
 RE CONTENT

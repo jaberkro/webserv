@@ -6,13 +6,14 @@
 #include <unistd.h>
 #include "server.hpp"
 #include <cstdio>
+#include <unistd.h>
 
 #include <vector>
 
 Response::Response(Request req) : \
 _req (req), \
 _statusCode (200), \
-_msgLength (0), \
+_fileLength (0), \
 _isReady (false) {}
 
 Response::~Response(void) {}
@@ -20,14 +21,14 @@ Response::~Response(void) {}
 Response::Response(Response &r) : \
 _req (r.getRequest()), \
 _statusCode (r.getStatusCode()), \
-_msgLength (r.getMsgLength()), \
+_fileLength (r.getFileLength()), \
 _isReady (r.getIsReady()) {}
 
 Response &	Response::operator=(Response &r)
 {
 	this->_req = r.getRequest();
 	this->_statusCode = r.getStatusCode();
-	this->_msgLength = r.getMsgLength();
+	this->_fileLength = r.getFileLength();
 	this->_isReady = r.getIsReady();
 	return (*this);
 }
@@ -37,32 +38,72 @@ Response &	Response::operator=(Response &r)
  * 
  * @param response the buffer into which the response is written
  */
-void	Response::retrieveFile(uint8_t *response)
+void	Response::retrieveFile(uint8_t *response, std::string const & root)
 {
-	std::ifstream				file;
-	size_t						lengthFile;
-	std::string					contentType;
-	std::filebuf				*imgBuf = file.rdbuf();
 	
-	lengthFile = this->getFileSize(this->_filePath);
-	// here do access to find whether the file exists and whether we have permissions
+	this->_fileLength = this->getFileSize(this->_filePath);
+	if (access(this->_filePath.c_str(), F_OK | R_OK) < 0)
+	{
+		this->_statusCode = 440;
+		this->_reason = "Not Found";
+		throw std::ios_base::failure("File not found");
+	}
+	sendFirstLineAndHeaders(response, root);
+	sendContentInChunks(response);
+}
+
+/**
+ * @brief sends the content of the target file in chunks of CHUNK_SIZE characters
+ * 
+ * @param response the buffer into which the response is written
+ */
+void	Response::sendContentInChunks(uint8_t *response)
+{
+	std::ifstream	file;
+	std::filebuf	*fileBuf;
+	
 	file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
 	if (!file.is_open())
 		throw std::ios_base::failure("Error when opening a file");
+	fileBuf = file.rdbuf();
+	for ( size_t i = 0; i < this->_fileLength; i++ )
+	{
+		
+		// std::cout << "i is " << i << ", fileLen is " << this->_fileLength << std::endl;
+		response[i % CHUNK_SIZE] = fileBuf->sbumpc();
+		if (i % CHUNK_SIZE == CHUNK_SIZE - 1)
+		{
+			// std::cout << "i is " << i << ", sending \"" << response << "\"" << std::endl;
+			send(this->_req.getConnFD(), (char*)response, CHUNK_SIZE, 0);
+			std::memset(response, 0, CHUNK_SIZE);
+		}
+	}
+	send(this->_req.getConnFD(), (char*)response, this->_fileLength % CHUNK_SIZE, 0);
+	std::memset(response, 0, CHUNK_SIZE);
+	file.close();
+}
 
+/**
+ * @brief sends the first line of the response and the headers to the client
+ * 
+ * @param response the buffer into which the response is written
+ * @param root the root directory (from the location block; used to distinguish
+ * between the file types that are to be returned - to determine Content Type)
+ */
+void	Response::sendFirstLineAndHeaders(uint8_t *response, std::string const & root)
+{
+	std::string		contentType = root.compare("data") == 0 ? \
+	"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, std::string::npos) : "text/html";
+
+	std::cout << "Content Type is " << contentType << std::endl;
 	snprintf((char *)response, MAXLINE, \
 	"%s %d %s\r\nContent-Type: %s\r\nContent-Length: %zu\r\n\r\n", \
 	this->_req.getProtocolVersion().c_str(), this->_statusCode, this->_reason.c_str(), \
-	contentType.c_str(), lengthFile);
-	this->_msgLength = std::strlen((char *)response);
-	imgBuf = file.rdbuf();
-	for ( size_t i = 0; i < lengthFile && i < MAXLINE - this->_msgLength; i++ )
-		response[this->_msgLength + i] = imgBuf->sbumpc();
-	this->_msgLength += lengthFile;
-	file.close();
-	
-	send(this->_req.getConnFD(), (char*)response, this->getMsgLength(), 0);
+	contentType.c_str(), this->_fileLength);
+	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+	std::memset(response, 0, MAXLINE);
 }
+
 
 /**
  * @brief iterates over locations and identifies the location with the greatest
@@ -179,23 +220,26 @@ void	Response::prepareGetResponse(uint8_t *response, std::vector<Location> & loc
 		}
 		try 
 		{
-			this->retrieveFile(response);
+			this->retrieveFile(response, itLoc->getRoot());
 			this->_isReady = true;
 		}
 		catch(const std::ios_base::failure & f)
 		{
 			// create a function getErrorPage()
+			std::cout << "Exception caught: ";
+			std::cout << f.what() << std::endl;
 			const std::vector<std::pair<int,std::string>>  &	errorPages = itLoc->getErrorPages(); 
 			for (auto it = errorPages.begin(); it != errorPages.end(); it++)
 			{
 				// to be edited - more error codes to be included
-				if (it->first == 404)
+				if (it->first == this->_statusCode)
 				{
 					targetUri = it->second;
-					this->_statusCode = 404;
 					this->_filePath.clear();
+					continue;
 				}
 			}
+			targetUri = "/404.html";
 		}
 	}
 }
@@ -281,9 +325,9 @@ void	Response::splitUri(std::string const & uri, std::vector<std::string> & chun
 }
 
 /* GETTERS */
-size_t	Response::getMsgLength( void ) const
+size_t	Response::getFileLength( void ) const
 {
-	return (this->_msgLength);
+	return (this->_fileLength);
 }
 
 std::string	& Response::getFilePath(void)

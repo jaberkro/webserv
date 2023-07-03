@@ -10,7 +10,7 @@ class Socket;
 
 # define SA struct sockaddr
 # define SERVER_PORT 80
-# define MAXLINE 80000
+# define MAXLINE 4000
 
 class Server
 {
