@@ -22,6 +22,9 @@ t_values	parseInheritanceDirective(int directive, std::string line, t_values val
 		case 2:
 			values = parseAutoindex(line, values);
 			break;
+		case 3:
+			values = parseMaxBodySize(line, values);
+			break;
 	}
 	return (values);
 }
@@ -34,10 +37,10 @@ t_values	parseInheritanceDirective(int directive, std::string line, t_values val
  */
 int	hasInheritanceDirective(std::string line)
 {
-	std::string directives[] = {"root", "index", "autoindex"};
+	std::string directives[] = {"root", "index", "autoindex", "client_max_body_size"};
 
 	int i = 0;
-	while (i < 3)
+	while (i < 4)
 	{
 		if (line.find(directives[i]) == 0)
 			return (i);

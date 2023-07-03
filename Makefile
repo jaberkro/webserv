@@ -19,7 +19,8 @@ SRC = main.cpp \
 	parser/blocks/directives/serverName.cpp \
 	parser/blocks/directives/root.cpp \
 	parser/blocks/directives/index.cpp \
-	parser/blocks/directives/autoindex.cpp
+	parser/blocks/directives/autoindex.cpp \
+	parser/blocks/directives/maxBodySize.cpp
 
 OBJ := $(addprefix $(BUILD_DIR)/, $(SRC:.cpp=.o))
 SRC := $(addprefix $(SRC_DIR)/, $(SRC))

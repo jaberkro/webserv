@@ -36,6 +36,9 @@ void	printConfig(Config &config)
 				std::cout << "\n\t\t\tautoindex: on";
 			else
 				std::cout << "\n\t\t\tautoindex: off";
+			std::cout << "\n\t\t\tclient_max_body_size: ";
+			std::cout << config.getServer(i).getLocation(j).getMaxBodySize();
+			
 		}
 		std::cout << std::endl;
 	}

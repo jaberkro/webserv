@@ -54,3 +54,13 @@ bool	Location::getAutoindex(void) const
 {
 	return (this->_autoindex);
 }
+
+void	Location::setMaxBodySize(unsigned int maxBodySize)
+{
+	this->_maxBodySize = maxBodySize;
+}
+
+unsigned int	Location::getMaxBodySize(void) const
+{
+	return (this->_maxBodySize);
+}
