@@ -36,16 +36,10 @@ class Server
 		const std::vector<Location>			getLocations() const;
 		const Location						getLocation(int i) const;
 
-		void	setAutoindex(bool status);
-		bool	getAutoindex() const;
-
 	private:
 		std::vector<std::pair<std::string, unsigned short> >	_listens;
 		std::vector<std::string>								_serverNames;
 		std::vector<Location>									_locations;
-		bool													_autoindex;
 };
-
-Location parseLocation(std::fstream &file, std::string line);
 
 #endif

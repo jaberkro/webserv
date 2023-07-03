@@ -3,6 +3,13 @@
 # include "Config.hpp"
 # include "Location.hpp"
 
+typedef struct s_values
+{
+	std::string					root;
+	std::vector<std::string>	indexes;
+	bool						autoindex;
+}	t_values;
+
 //utils
 std::string protectedSubstr(std::string s, size_t start);
 std::string protectedSubstr(std::string s, size_t start, size_t size);
@@ -15,14 +22,18 @@ size_t		findFirstWhitespace(std::string line);
 bool		allDigits(std::string s);
 
 //http parsing
-void		parseHTTP(Config &config, std::fstream &file);
-Server 		parseServer(std::fstream &file);
+void		parseHTTP(Config &config, std::fstream &file, t_values values);
+Server 		parseServer(std::fstream &file, t_values values);
+Location 	parseLocation(std::fstream &file, std::string line, t_values values);
+
 std::pair<std::string, unsigned short> parseListen(std::string line);
-void 		parseServerNames(Server &server, std::string &line);
-Location 	parseLocation(std::fstream &file, std::string line);
-bool		parseAutoindex(std::string &line);
+void 				parseServerNames(Server &server, std::string &line);
 
+t_values			parseIndex(std::string &line, t_values values);
+t_values			parseAutoindex(std::string &line, t_values values);
+t_values			parseRoot(std::string line, t_values values);
 
-
+t_values	parseDirective(int directive, std::string line, t_values values);
+int			hasDirective(std::string line);
 
 #endif
