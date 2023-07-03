@@ -33,7 +33,7 @@ t_values			parseIndex(std::string &line, t_values values);
 t_values			parseAutoindex(std::string &line, t_values values);
 t_values			parseRoot(std::string line, t_values values);
 
-t_values	parseDirective(int directive, std::string line, t_values values);
-int			hasDirective(std::string line);
+t_values	parseInheritanceDirective(int directive, std::string line, t_values values);
+int			hasInheritanceDirective(std::string line);
 
 #endif

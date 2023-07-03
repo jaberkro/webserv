@@ -9,7 +9,7 @@
  * @param values the struct with values to be updated
  * @return t_values the updated struct with inheritance values
  */
-t_values	parseDirective(int directive, std::string line, t_values values)
+t_values	parseInheritanceDirective(int directive, std::string line, t_values values)
 {
 	switch(directive)
 	{
@@ -32,7 +32,7 @@ t_values	parseDirective(int directive, std::string line, t_values values)
  * @param line the std::string to check
  * @return int the index of the inheritance directives that is at the start of the std::string. If there is no match, -1 is returned
  */
-int	hasDirective(std::string line)
+int	hasInheritanceDirective(std::string line)
 {
 	std::string directives[] = {"root", "index", "autoindex"};
 
