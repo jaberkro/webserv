@@ -34,5 +34,10 @@ void parseHTTP(Config &config, std::fstream &file, t_values values)
 			values = parseInheritanceDirective(directive, line, values);
 		}
 	}
+	if (config.getServers().size() == 0)
+	{
+		std::cout << "Error: can't parse http block without server block" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	return ;
 }

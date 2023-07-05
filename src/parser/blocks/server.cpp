@@ -39,5 +39,10 @@ Server  parseServer(std::fstream &file, t_values values)
 	}
 	if (newServer.getListens().size() == 0)
 		newServer.addListen(std::make_pair("0.0.0.0", 80));
+	if (newServer.getLocations().size() == 0)
+	{
+		std::cout << "Error: can't parse server block without location block" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	return (newServer);
 }
