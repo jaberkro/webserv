@@ -116,7 +116,7 @@ int	getValidLine(std::fstream &file, std::string &line)
 	line = rtrim(line);
 	if (line == "")
 		return (1);
-	std::cout << line << std::endl;
+	// std::cout << line << std::endl;
 	if (line.back() != ';' && line.back() != '{' && line.back() != '}')
 	{
 		std::cout << "Error: missing ';', '{' or '}' in configuration file" << std::endl;
