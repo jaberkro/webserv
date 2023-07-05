@@ -5,7 +5,22 @@ INCLUDE = -I include
 SRC_DIR = src
 BUILD_DIR = obj
 
-SRC = main.cpp
+SRC = main.cpp \
+	config/Config.cpp \
+	config/Server.cpp \
+	config/Location.cpp \
+	parser/parse.cpp \
+	parser/utils.cpp \
+	parser/blocks/http.cpp \
+	parser/blocks/server.cpp \
+	parser/blocks/location.cpp \
+	parser/blocks/directive.cpp \
+	parser/blocks/directives/listen.cpp \
+	parser/blocks/directives/serverName.cpp \
+	parser/blocks/directives/root.cpp \
+	parser/blocks/directives/index.cpp \
+	parser/blocks/directives/autoindex.cpp \
+	parser/blocks/directives/maxBodySize.cpp
 
 OBJ := $(addprefix $(BUILD_DIR)/, $(SRC:.cpp=.o))
 SRC := $(addprefix $(SRC_DIR)/, $(SRC))
