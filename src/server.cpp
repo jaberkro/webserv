@@ -1,4 +1,5 @@
-#include "server.hpp"
+#include "../include/server.hpp"
+#include "../include/socket.hpp"
 #include <cstdio>
 #include <cstring>
 #include <arpa/inet.h>
@@ -27,7 +28,7 @@ bool	write_exit(std::string error)
 }
 
 /* find the index of a file descriptor or a new slot if fd=0 */
-int	conn_index(int fd) 
+int	Socket::connIndex(int fd) 
 {
     int uidx;
     for (uidx = 0; uidx < NUSERS; uidx++)
@@ -36,11 +37,11 @@ int	conn_index(int fd)
     return -1;
 }
 
-int conn_add(int fd) 
+int Socket::connAdd(int fd) 
 {
     int uidx;
     if (fd < 1) return -1;
-    if ((uidx = conn_index(0)) == -1)
+    if ((uidx = connIndex(0)) == -1)
         return -1;
     if (uidx == NUSERS) {
         close(fd);
@@ -51,12 +52,12 @@ int conn_add(int fd)
     return 0;
 }
 
-/* remove a connection and close it's fd */
-int conn_del(int fd) {
+/* remove a connection and close its fd */
+int Socket::connDelete(int fd) {
     int uidx;
     if (fd < 1) 
 		return -1;
-    if ((uidx = conn_index(fd)) == -1)
+    if ((uidx = connIndex(fd)) == -1)
         return -1;
 
     users[uidx].uc_fd = 0;
@@ -66,9 +67,8 @@ int conn_del(int fd) {
     return close(fd);
 }
 
-void	watch_loop(int kq, int listenfd)
+void	Socket::watchLoop()
 {
-	struct kevent evSet;
 	struct kevent evList[32];
 	int nev, i;
 	struct sockaddr_storage addr;
@@ -102,9 +102,7 @@ void	watch_loop(int kq, int listenfd)
 					write_exit("kevent error");
 					return ;
 				}
-				//users[]
-				conn_del(fd);
-				// close(fd);
+				connDelete(fd);
 			}
 			else if ((int)evList[i].ident == listenfd)
 			{
@@ -116,7 +114,7 @@ void	watch_loop(int kq, int listenfd)
 					write_exit("accept error");
 					return ;
 				}
-				if (conn_add(fd) == 0)
+				if (connAdd(fd) == 0)
 				{
 					EV_SET(&evSet, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 					if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
@@ -164,7 +162,7 @@ void	watch_loop(int kq, int listenfd)
 	}
 }
 
-bool	Server::start()
+bool	Socket::setUpConn()
 {
 	if (this->running)
 		return (false);
@@ -177,29 +175,24 @@ bool	Server::start()
 	std::memset(&servAddr, '\0', sizeof(servAddr));
 	servAddr.sin_family		= AF_INET;
 	servAddr.sin_addr.s_addr = htonl(INADDR_ANY); // will respond to anything
-	servAddr.sin_port		= htons(SERVER_PORT); //port you're listening on
-
+	servAddr.sin_port		= htons(/*SERVER_PORT*/port); //port you're listening on
 	if ((bind(listenfd, (SA *) &servAddr, sizeof(servAddr))) < 0)//bind listening socket to address
 		return (write_exit("bind error"));
 	if ((listen(listenfd, 10)) < 0)
 		return (write_exit("listen error"));
-
-	int kq;
-	struct kevent evSet;
 	kq = kqueue();
 	EV_SET(&evSet, listenfd, EVFILT_READ, EV_ADD, 0, 0, NULL);//EV_SET is a macro that fills the kevent struct
 	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 		return (write_exit("kqueue/kevent error"));
-	watch_loop(kq, listenfd);
+	watchLoop();
 	return (true);	
+
 }
 
-
-
-// void	Server::server()
-// {
-// 	Server	server = new Server();
-
-// 	server.start(ipAddress, port);
-// 	server.stop();
-// }
+bool	Server::start()
+{
+	if (this->running)
+		return (false);
+	Socket	sckt(90);
+	return(sckt.setUpConn());
+}
