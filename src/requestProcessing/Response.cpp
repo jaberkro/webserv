@@ -250,7 +250,7 @@ void	Response::prepareGetResponse(uint8_t *response, std::vector<Location> & loc
  * 
  * @return uint8_t* containing the response to be passed to the client
  */
-uint8_t *	Response::createResponse()
+void	Response::createResponse()
 {
 	uint8_t					*response = new uint8_t[MAXLINE + 1];
 	std::vector<Location>	locations;
@@ -278,7 +278,6 @@ uint8_t *	Response::createResponse()
 	std::memset(response, 0, MAXLINE);
 	if (this->_req.getMethod() == "GET")
 		prepareGetResponse(response, locations);
-	return (response);
 }
 
 /**

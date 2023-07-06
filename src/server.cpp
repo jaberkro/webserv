@@ -1,5 +1,5 @@
-#include "../include/server.hpp"
-#include "../include/socket.hpp"
+#include "server.hpp"
+#include "socket.hpp"
 #include <cstdio>
 #include <cstring>
 #include <arpa/inet.h>
@@ -76,7 +76,7 @@ void	Socket::watchLoop()
 	int fd;
 	Request		*newReq;
 	Response	*newResp;
-	uint8_t		*response; // needs to be malloced 
+	// uint8_t		*response; // needs to be malloced 
 
 	
 
@@ -122,7 +122,6 @@ void	Socket::watchLoop()
 						write_exit("accept error");
 						return ;
 					}
-			// READ AND WRITE ALWAYS USING KQ!
 					newReq = new Request(fd);
 					newReq->processReq();
 					newReq->printRequest();
@@ -133,7 +132,7 @@ void	Socket::watchLoop()
 			
 					newResp = new Response(*newReq);
 					delete newReq;
-					response = newResp->createResponse(); // argument is ref to the Server
+					newResp->createResponse(); // argument is ref to the Server
 					
 					// if (response)
 					// {
@@ -164,8 +163,8 @@ void	Socket::watchLoop()
 
 bool	Socket::setUpConn()
 {
-	if (this->running)
-		return (false);
+	// if (this->running)
+	// 	return (false);
 	int		listenfd;
 	struct	sockaddr_in	servAddr;
 

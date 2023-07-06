@@ -14,7 +14,7 @@ class Response {
 		Response(Response &);
 		Response &	operator=(Response &);
 		
-		uint8_t	*createResponse(); // maybe not a member function?
+		void	createResponse(); // maybe not a member function?
 		void	sendContentInChunks(uint8_t *response);
 		void	sendFirstLineAndHeaders(uint8_t *response, std::string const & root);
 

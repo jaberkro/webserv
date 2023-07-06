@@ -80,7 +80,7 @@ bool	Request::parseStartLine(std::string &line)
 	this->_method = line.substr(0, end);
 	line.erase(0, end + 1);
 	end = line.find_first_of(" ");
-	this->_target = line.substr(0, end);
+	this->_target = line.substr(0, end);	// WATCH OUT: TARGET CAN BE AN ABSOLUTE PATH
 	line.erase(0, end + 1);
 	this->_protocolVersion = line.substr(0, std::string::npos);
 	line.erase(0, std::string::npos);
