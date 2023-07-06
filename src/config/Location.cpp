@@ -14,7 +14,6 @@ Location::Location(Location const & loc) : \
 _match (loc.getMatch()), \
 _modifier (loc.getModifier()), \
 _root (loc.getRoot()), \
-_index (loc.getIndex()), \
 _errorPages (loc.getErrorPages()),
 _indexes (loc.getIndexes()),
 _autoindex (loc.getAutoindex()), \
@@ -25,7 +24,6 @@ Location &	Location::operator=(Location const & loc)
 	this->_match = loc.getMatch();
 	this->_modifier = loc.getModifier();
 	this->_root = loc.getRoot();
-	this->_index = loc.getIndex();
 	this->_errorPages = loc.getErrorPages();
 	this->_indexes = loc.getIndexes();
 	this->_autoindex = loc.getAutoindex();
@@ -63,14 +61,9 @@ std::string const &	Location::getRoot(void) const
 	return (this->_root);
 }
 
-void	Location::setIndex(std::string index)
+void	Location::addIndex(std::string index)
 {
-	this->_index = index;
-}
-
-std::string const &	Location::getIndex(void) const
-{
-	return (this->_index);
+	this->_indexes.push_back(index);
 }
 
 void	Location::setIndexes(std::vector<std::string> indexes)
@@ -110,10 +103,10 @@ unsigned int	Location::getMaxBodySize(void) const
 
 void	Location::addErrorPage(int key, std::string value)
 {
-	this->_errorPages.push_back(std::pair<int,std::string>(key, value));
+	this->_errorPages.insert(std::pair<int,std::string>(key, value));
 }
 
-std::vector<std::pair<int,std::string>> const &	Location::getErrorPages(void) const
+std::map<int,std::string> const &	Location::getErrorPages(void) const
 {
 	return(this->_errorPages);
 }

@@ -36,6 +36,7 @@ class Request
 		std::string	const &					getProtocolVersion() const;
 		std::string	const &					getBody() const;
 		int									getConnFD() const;
+		int									getStatusCode() const;
 		std::map<std::string, std::string>	&getHeaders();
 
 		void								printRequest();
@@ -51,7 +52,8 @@ class Request
 		// std::map<std::string, std::string>	_trailers;
 		std::string					_body;
 		int							_connFD;
-
+		int							_statusCode;
 };
+
 
 #endif

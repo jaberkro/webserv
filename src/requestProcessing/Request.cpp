@@ -8,7 +8,8 @@ _method (""), \
 _target (""), \
 _protocolVersion (""), \
 _body (""), \
-_connFD (connfd) {}
+_connFD (connfd), \
+_statusCode (200) {}
 
 Request::~Request(void) {}
 
@@ -54,6 +55,11 @@ std::string	const & Request::getBody() const
 
 }
 
+int	Request::getStatusCode() const
+{
+	return (this->_statusCode);
+}
+
 int	Request::getConnFD() const
 {
 	return (this->_connFD);
@@ -82,6 +88,8 @@ bool	Request::parseStartLine(std::string &line)
 	end = line.find_first_of(" ");
 	this->_target = line.substr(0, end);	// WATCH OUT: TARGET CAN BE AN ABSOLUTE PATH
 	line.erase(0, end + 1);
+	if (this->_target.find("/..") < std::string::npos)
+		this->_statusCode = 400;
 	this->_protocolVersion = line.substr(0, std::string::npos);
 	line.erase(0, std::string::npos);
 	// std::cout << "method is " << this->_method << std::endl;
@@ -138,6 +146,8 @@ void	Request::processReq(void)
 			this->extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
 			firstLineComplete = this->parseStartLine(line);
 		}
+		if (this->_statusCode != 200)
+			break;
 		while (!headersComplete && (nlPos = processingBuffer.find_first_of('\n')) < std::string::npos) 
 		{
 			if (nlPos > processingBuffer.find(HEADER_END))

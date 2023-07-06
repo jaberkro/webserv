@@ -14,30 +14,32 @@ class Response {
 		Response(Response &);
 		Response &	operator=(Response &);
 		
-		void	createResponse(); // maybe not a member function?
-		void	sendContentInChunks(uint8_t *response);
-		void	sendFirstLineAndHeaders(uint8_t *response, std::string const & root);
+		/* functions */
+		void							createResponse(); // maybe not a member function?
+		void							sendContentInChunks(uint8_t *response);
+		void							sendFirstLine(uint8_t *response);
+		void							sendHeaders(uint8_t *response, std::string const & root);
+		void							retrieveFile(uint8_t *response, std::string const & root);
+		void							prepareResponseGET(uint8_t *response, std::vector<Location> & locations);
+		std::vector<Location>::iterator findMatch(std::string target, std::vector<Location> & locations);
+		std::vector<Location>::iterator	findExactMatch(std::string target, std::vector<Location> & locations);
+		std::vector<Location>::iterator	findClosestMatch(std::string target, std::vector<Location> & locations);
+		std::string						findIndex(std::vector<Location>::iterator itLoc);
 
-		void	retrieveFile(uint8_t *response, std::string const & root);
-		void	prepareGetResponse(uint8_t *response, std::vector<Location> & locations);
-
-		
-		size_t	getFileLength(void) const;
+		/* utils */
 		void	splitUri(std::string const & uri, std::vector<std::string> & chunks);
-		
+
+		/* getters */
+		size_t			getFileLength(void) const;
 		Request &		getRequest(void);
 		bool			getIsReady(void);
 		int				getStatusCode(void);
 		std::string	&	getFilePath(void);
-		std::vector<Location>::iterator findMatch(std::string target, std::vector<Location> & locations);
-		std::vector<Location>::iterator	findExactMatch(std::string target, std::vector<Location> & locations);
-		std::vector<Location>::iterator	findClosestMatch(std::string target, std::vector<Location> & locations);
 
 	private:
 
 		Request								_req;
 		int									_statusCode;
-		std::string							_reason;
 		std::map<std::string, std::string>	_headers;
 		std::string							_content;
 		size_t								_fileLength;
@@ -45,6 +47,7 @@ class Response {
 		bool								_isReady;
 		// std::map<std::string, std::string>	_trailers;
 		size_t	getFileSize(std::string filePath);
+		static std::map<int, std::string> 	_responseCodes;
 
 };
 

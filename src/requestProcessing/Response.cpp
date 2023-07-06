@@ -10,9 +10,16 @@
 
 #include <vector>
 
+std::map<int, std::string> 	Response::_responseCodes = 
+{
+	{200, "OK"},
+	{400, "Bad Request"},
+	{404, "Not Found"}
+};
+
 Response::Response(Request req) : \
 _req (req), \
-_statusCode (200), \
+_statusCode (req.getStatusCode()), \
 _fileLength (0), \
 _isReady (false) {}
 
@@ -45,10 +52,10 @@ void	Response::retrieveFile(uint8_t *response, std::string const & root)
 	if (access(this->_filePath.c_str(), F_OK | R_OK) < 0)
 	{
 		this->_statusCode = 440;
-		this->_reason = "Not Found";
 		throw std::ios_base::failure("File not found");
 	}
-	sendFirstLineAndHeaders(response, root);
+	sendFirstLine(response);
+	sendHeaders(response, root);
 	sendContentInChunks(response);
 }
 
@@ -90,16 +97,22 @@ void	Response::sendContentInChunks(uint8_t *response)
  * @param root the root directory (from the location block; used to distinguish
  * between the file types that are to be returned - to determine Content Type)
  */
-void	Response::sendFirstLineAndHeaders(uint8_t *response, std::string const & root)
+void	Response::sendFirstLine(uint8_t *response)
+{
+	snprintf((char *)response, MAXLINE, \
+	"%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, this->_responseCodes.at(this->_statusCode).c_str());
+	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+	std::memset(response, 0, MAXLINE);
+}
+
+void	Response::sendHeaders(uint8_t *response, std::string const & root)
 {
 	std::string		contentType = root.compare("data") == 0 ? \
 	"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, std::string::npos) : "text/html";
 
 	std::cout << "Content Type is " << contentType << std::endl;
 	snprintf((char *)response, MAXLINE, \
-	"%s %d %s\r\nContent-Type: %s\r\nContent-Length: %zu\r\n\r\n", \
-	this->_req.getProtocolVersion().c_str(), this->_statusCode, this->_reason.c_str(), \
-	contentType.c_str(), this->_fileLength);
+	"Content-Type: %s\r\nContent-Length: %zu\r\n\r\n", contentType.c_str(), this->_fileLength);
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 	std::memset(response, 0, MAXLINE);
 }
@@ -187,6 +200,19 @@ std::vector<Location>::iterator Response::findMatch(std::string target, std::vec
 	return (itLoc);
 }
 
+std::string	Response::findIndex(std::vector<Location>::iterator itLoc)
+{
+	for (std::vector<std::string>::iterator itIdx = itLoc->getIndexes().begin(); \
+	itIdx != itLoc->getIndexes().end(); itIdx++)
+	{
+		// if you find the file, return its name
+		if (access((*itIdx).c_str(), F_OK) == 0)
+			return (*itIdx);
+	}
+	this->_statusCode = 440;
+	throw std::ios_base::failure("Index file not found");
+}
+
 /**
  * @brief contains a loop, in which (i) the relevant location is identified, (ii)
  * if necessary, internal redirect is performed, leading to another identification
@@ -197,51 +223,48 @@ std::vector<Location>::iterator Response::findMatch(std::string target, std::vec
  * @param locations the vector of Location instances containing the configuration
  * of the server's locations
  */
-void	Response::prepareGetResponse(uint8_t *response, std::vector<Location> & locations)
+void	Response::prepareResponseGET(uint8_t *response, std::vector<Location> & locations)
 {
 	std::vector<Location>::iterator	itLoc;
 	std::string						targetUri = \
 	this->_req.getTarget().substr(0, this->_req.getTarget().find_first_of('?'));
 
-	while (!this->_isReady)
-	{
-		itLoc = findMatch(targetUri, locations);
-		if (!itLoc->getIndex().empty())
+	if (this->_statusCode == 400)
+		sendFirstLine(response);
+	else
+		while (!this->_isReady)
 		{
-			// std::cout << "Root is " << itLoc->getRoot() << ", targetURI is " << targetUri << ", index is " << itLoc->getIndex() << std::endl;
-			targetUri = targetUri + itLoc->getIndex();
-			// std::cout << "Target is now " << targetUri << std::endl;
-			continue;
-		}
-		else
-		{
-			this->_filePath = itLoc->getRoot() + targetUri;
-			// std::cout << "File Path is " << this->_filePath << std::endl;
-		}
-		try 
-		{
-			this->retrieveFile(response, itLoc->getRoot());
-			this->_isReady = true;
-		}
-		catch(const std::ios_base::failure & f)
-		{
-			// create a function getErrorPage()
-			std::cout << "Exception caught: ";
-			std::cout << f.what() << std::endl;
-			const std::vector<std::pair<int,std::string>>  &	errorPages = itLoc->getErrorPages(); 
-			for (auto it = errorPages.begin(); it != errorPages.end(); it++)
+			itLoc = findMatch(targetUri, locations);
+
+			try 
 			{
-				// to be edited - more error codes to be included
-				if (it->first == this->_statusCode)
+				if (!itLoc->getIndexes().empty()) // only look for index if target ends by "/" ?
 				{
-					targetUri = it->second;
-					this->_filePath.clear();
+					targetUri = findIndex(itLoc);
 					continue;
 				}
+				else
+				{
+					this->_filePath = itLoc->getRoot() + targetUri;
+					this->retrieveFile(response, itLoc->getRoot());
+					this->_isReady = true;
+				}
 			}
-			targetUri = "/404.html";
+			catch(const std::ios_base::failure & f)
+			{
+				std::cout << "Exception caught: ";
+				std::cout << f.what() << std::endl;
+				try
+				{
+					targetUri = itLoc->getErrorPages().at(this->_statusCode);
+				}
+				catch(const std::out_of_range& oor)
+				{
+					std::cerr << "No error page specified: " << oor.what() << std::endl;
+					targetUri = "/defaultError.html";
+				}
+			}
 		}
-	}
 }
 
 /**
@@ -261,7 +284,7 @@ void	Response::createResponse()
 
 	a.setMatch("/");
 	a.setModifier("=");
-	a.setIndex("index.html");
+	a.addIndex("index.html");
 	a.setRoot("data/www");
 	b.setMatch("/");
 	b.setModifier("");
@@ -277,7 +300,7 @@ void	Response::createResponse()
 	
 	std::memset(response, 0, MAXLINE);
 	if (this->_req.getMethod() == "GET")
-		prepareGetResponse(response, locations);
+		prepareResponseGET(response, locations);
 }
 
 /**
