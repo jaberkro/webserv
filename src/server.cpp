@@ -1,4 +1,4 @@
-#include "../include/server.hpp"
+#include "../include/webserver.hpp"
 #include "../include/socket.hpp"
 #include <cstdio>
 #include <cstring>
@@ -62,16 +62,136 @@ int Socket::connDelete(int fd) {
     return close(fd);
 }
 
-void	Socket::watchLoop()
+// void	Socket::watchLoop()
+// {
+	// struct kevent evList[32];
+	// int nev, i;
+	// struct sockaddr_storage addr;
+	// socklen_t socklen = sizeof(addr);
+	// int fd;
+	// while (1)
+	// {
+	// 	nev = kevent(kq, NULL, 0, evList, 32, NULL);
+	// 	if (nev < 1)
+	// 	{
+	// 		write_exit("kevent error");
+	// 		return ;
+	// 	}
+	// 	for (i = 0; i<nev; i++)
+	// 	{
+	// 		if (evList[i].flags & EV_EOF)
+	// 		{
+	// 			printf("Disconnect\n");
+	// 			fd = evList[i].ident;
+	// 			EV_SET(&evSet, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+	// 			if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+	// 			{
+	// 				write_exit("kevent error");
+	// 				return ;
+	// 			}
+	// 			connDelete(fd);
+	// 		}
+	// 		else if ((int)evList[i].ident == listenfd)
+	// 		{
+	// 			printf("Here1\n");
+
+	// 			fd = accept(evList[i].ident, (struct sockaddr *)&addr, &socklen);
+	// 			if (fd == -1)
+	// 			{
+	// 				write_exit("accept error");
+	// 				return ;
+	// 			}
+	// 			if (connAdd(fd) == 0)
+	// 			{
+	// 				EV_SET(&evSet, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+	// 				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+	// 				{
+	// 					write_exit("accept error");
+	// 					return ;
+	// 				}
+	// 				uint8_t buff[MAXLINE + 1];
+	// 				//snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK \r\nContent-Type: text/html\r\nContent-Length: 20\r\n\r\nWe socket thisssssss"); //can write formatted output to sized buf
+	// 				std::string   fileBuf;
+	// 				std::string line;
+	// 				std::ifstream   htmlFile;
+	// 				htmlFile.open("data/index.html");
+	// 				while (std::getline (htmlFile, line))
+	// 					fileBuf += line;
+	// 				snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK \r\nContent-Type: text/html\r\nContent-Length: %lu\r\n\r\n%s", fileBuf.length(), fileBuf.c_str());
+	// 				write(fd, (char*)buff, std::strlen((char*)buff));
+	// 				htmlFile.close();
+	// 			}
+	// 			else
+	// 			{
+	// 				printf("Connection refused\n");
+	// 				close(fd);
+	// 			}
+	// 		}
+	// 		else if (evList[i].filter == EVFILT_READ)
+	// 		{
+	// 			char buf[256];
+	// 			size_t bytes_read;
+
+	// 			bytes_read = recv(evList[i].ident, buf, sizeof(buf), 0);
+	// 			if ((int)bytes_read < 0)
+	// 				printf("%d bytes read\n", (int)bytes_read);
+	// 		}
+	// 	}
+	// }
+// }
+
+bool	Socket::setUpConn(int kq, struct kevent evSet)
 {
-	struct kevent evList[32];
+	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) //AF_INET = internet socket, SOCK_STREAM = tcp stream
+		return (write_exit("socket error"));
+	int reuse; //this and setsockopt avoids the bind error and allows to reuse the address
+	if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1)
+ 		return(write_exit("reuse port error"));
+	//setting up address you're listening on
+	std::memset(&servAddr, '\0', sizeof(servAddr));
+	servAddr.sin_family		= AF_INET;
+	servAddr.sin_addr.s_addr = htonl(INADDR_ANY); // will respond to anything
+	printf("port: %d\n", this->port);
+	servAddr.sin_port		= htons(/*SERVER_PORT*/port); //port you're listening on
+	if ((bind(listenfd, (SA *) &servAddr, sizeof(servAddr))) < 0)//bind listening socket to address
+		return (write_exit("bind error"));
+	if ((listen(listenfd, 10)) < 0)
+		return (write_exit("listen error"));
+	// kq = kqueue();
+	EV_SET(&evSet, listenfd, EVFILT_READ, EV_ADD, 0, 0, NULL);//EV_SET is a macro that fills the kevent struct
+	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+		return (write_exit("kqueue/kevent error"));
+	// watchLoop();
+	return (true);	
+
+}
+
+void	Webserver::start()//std::vector<Server> servers)
+{
+	std::vector<Socket> sckts;
+	if (this->running)
+		return ;//(false);
+	// for (size_t i = 0; i < servers.size(); i++)
+	// {
+	// 	Socket sock(servers.at(i).getPort(i));
+	// 	sckts.push_back(sock);
+	// }
+	Socket	sckt1(8080);
+	Socket	sckt2(4242);
+	int kq = kqueue();
+	struct kevent evSet;
+	sckt1.setUpConn(kq, evSet);
+	sckt2.setUpConn(kq, evSet);
+
+	//watchLoop();
+	struct kevent evList;
 	int nev, i;
 	struct sockaddr_storage addr;
 	socklen_t socklen = sizeof(addr);
 	int fd;
 	while (1)
 	{
-		nev = kevent(kq, NULL, 0, evList, 32, NULL);
+		nev = kevent(kq, NULL, 0, &evList, 32, NULL);
 		if (nev < 1)
 		{
 			write_exit("kevent error");
@@ -79,30 +199,31 @@ void	Socket::watchLoop()
 		}
 		for (i = 0; i<nev; i++)
 		{
-			if (evList[i].flags & EV_EOF)
+			if (evList.flags & EV_EOF)
 			{
 				printf("Disconnect\n");
-				fd = evList[i].ident;
+				fd = evList.ident;
 				EV_SET(&evSet, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
 				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 				{
 					write_exit("kevent error");
 					return ;
 				}
-				connDelete(fd);
+				//connDelete(fd);
+				close(fd);
 			}
-			else if ((int)evList[i].ident == listenfd)
+			else if ((int)evList.ident == (sckt1.listenfd || sckt2.listenfd))
 			{
 				printf("Here1\n");
 
-				fd = accept(evList[i].ident, (struct sockaddr *)&addr, &socklen);
+				fd = accept(evList.ident, (struct sockaddr *)&addr, &socklen);
 				if (fd == -1)
 				{
 					write_exit("accept error");
 					return ;
 				}
-				if (connAdd(fd) == 0)
-				{
+				// if (connAdd(fd) == 0)
+				// {
 					EV_SET(&evSet, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 					if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 					{
@@ -120,55 +241,25 @@ void	Socket::watchLoop()
 					snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK \r\nContent-Type: text/html\r\nContent-Length: %lu\r\n\r\n%s", fileBuf.length(), fileBuf.c_str());
 					write(fd, (char*)buff, std::strlen((char*)buff));
 					htmlFile.close();
-				}
-				else
-				{
-					printf("Connection refused\n");
-					close(fd);
-				}
+				// }
+				// else
+				// {
+				// 	printf("Connection refused\n");
+				// 	close(fd);
+				// }
 			}
-			else if (evList[i].filter == EVFILT_READ)
+			else if (evList.filter == EVFILT_READ)
 			{
 				char buf[256];
 				size_t bytes_read;
 
-				bytes_read = recv(evList[i].ident, buf, sizeof(buf), 0);
+				bytes_read = recv(evList.ident, buf, sizeof(buf), 0);
 				if ((int)bytes_read < 0)
 					printf("%d bytes read\n", (int)bytes_read);
 			}
 		}
 	}
-}
 
-bool	Socket::setUpConn()
-{
-	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) //AF_INET = internet socket, SOCK_STREAM = tcp stream
-		return (write_exit("socket error"));
-	int reuse; //this and setsockopt avoids the bind error and allows to reuse the address
-	if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1)
- 		return(write_exit("reuse port error"));
-	//setting up address you're listening on
-	std::memset(&servAddr, '\0', sizeof(servAddr));
-	servAddr.sin_family		= AF_INET;
-	servAddr.sin_addr.s_addr = htonl(INADDR_ANY); // will respond to anything
-	servAddr.sin_port		= htons(/*SERVER_PORT*/port); //port you're listening on
-	if ((bind(listenfd, (SA *) &servAddr, sizeof(servAddr))) < 0)//bind listening socket to address
-		return (write_exit("bind error"));
-	if ((listen(listenfd, 10)) < 0)
-		return (write_exit("listen error"));
-	kq = kqueue();
-	EV_SET(&evSet, listenfd, EVFILT_READ, EV_ADD, 0, 0, NULL);//EV_SET is a macro that fills the kevent struct
-	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
-		return (write_exit("kqueue/kevent error"));
-	watchLoop();
-	return (true);	
 
-}
-
-bool	Server::start()
-{
-	if (this->running)
-		return (false);
-	Socket	sckt(90);
-	return(sckt.setUpConn());
+	// return(sckt.setUpConn());
 }
