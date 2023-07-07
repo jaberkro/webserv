@@ -25,7 +25,7 @@ void parseHTTP(std::vector<Server> &servers, std::fstream &file, t_values values
 			servers.push_back((parseServer(file, values)));
 		else if (line.find("location") == 0)
 		{
-			std::cout << "Error: [" << line << "] should be inside a server block:\nserver {\n\tlocation <modifier> <match> {\n\n\t}\n}" << std::endl;
+			std::cout << "Error: [" << line << "] should be inside a server block:\nserver {\n\tlocation <optional modifier> <match> {\n\n\t}\n}" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 		else
