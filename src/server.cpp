@@ -184,14 +184,14 @@ void	Webserver::start()//std::vector<Server> servers)
 	sckt2.setUpConn(kq, evSet);
 
 	//watchLoop();
-	struct kevent evList;
+	struct kevent evList[2];
 	int nev, i;
 	struct sockaddr_storage addr;
 	socklen_t socklen = sizeof(addr);
 	int fd;
 	while (1)
 	{
-		nev = kevent(kq, NULL, 0, &evList, 32, NULL);
+		nev = kevent(kq, NULL, 0, evList, 2, NULL);
 		if (nev < 1)
 		{
 			write_exit("kevent error");
@@ -199,10 +199,10 @@ void	Webserver::start()//std::vector<Server> servers)
 		}
 		for (i = 0; i<nev; i++)
 		{
-			if (evList.flags & EV_EOF)
+			if (evList[i].flags & EV_EOF)
 			{
 				printf("Disconnect\n");
-				fd = evList.ident;
+				fd = evList[i].ident;
 				EV_SET(&evSet, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
 				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 				{
@@ -212,11 +212,11 @@ void	Webserver::start()//std::vector<Server> servers)
 				//connDelete(fd);
 				close(fd);
 			}
-			else if ((int)evList.ident == (sckt1.listenfd || sckt2.listenfd))
+			else if ((int)evList[i].ident == sckt1.listenfd || (int)evList[i].ident == sckt2.listenfd)//((int)evList[i].ident == (sckt1.listenfd || sckt2.listenfd))
 			{
 				printf("Here1\n");
 
-				fd = accept(evList.ident, (struct sockaddr *)&addr, &socklen);
+				fd = accept(evList[i].ident, (struct sockaddr *)&addr, &socklen);
 				if (fd == -1)
 				{
 					write_exit("accept error");
@@ -248,12 +248,12 @@ void	Webserver::start()//std::vector<Server> servers)
 				// 	close(fd);
 				// }
 			}
-			else if (evList.filter == EVFILT_READ)
+			else if (evList[i].filter == EVFILT_READ)
 			{
 				char buf[256];
 				size_t bytes_read;
 
-				bytes_read = recv(evList.ident, buf, sizeof(buf), 0);
+				bytes_read = recv(evList[i].ident, buf, sizeof(buf), 0);
 				if ((int)bytes_read < 0)
 					printf("%d bytes read\n", (int)bytes_read);
 			}
