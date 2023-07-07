@@ -34,8 +34,8 @@ static std::string findModifier(std::string &line)
 
 Location parseLocation(std::fstream &file, std::string line, t_values values)
 {
-	Location location;
-	int		directive;
+	Location	location;
+	int			directive;
 
 	line = protectedSubstr(line, 8);
 	line = ltrim(line);

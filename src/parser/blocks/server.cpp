@@ -10,9 +10,9 @@
  */
 Server  parseServer(std::fstream &file, t_values values)
 {
-	std::string					line;
-	Server newServer;
-	int	directive;
+	std::string	line;
+	Server		newServer;
+	int			directive;
 
 	while (getValidLine(file, line))
 	{

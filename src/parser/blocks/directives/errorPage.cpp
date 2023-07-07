@@ -12,6 +12,7 @@ t_values	parseErrorPage(std::string line, t_values values)
 {
 	std::string	value;
 	std::string	key;
+
 	line = protectedSubstr(line, 10);
 	line = ltrim(line);
 	// values.errorPages.clear(); //outcomment this if error_page should overwrite itself

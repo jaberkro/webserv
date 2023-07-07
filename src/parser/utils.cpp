@@ -11,7 +11,7 @@
  */
 std::string protectedSubstr(std::string s, size_t start)
 {
-	std::string newString;
+	std::string	newString;
 
 	if (s == "")
 		return ("");
@@ -37,7 +37,7 @@ std::string protectedSubstr(std::string s, size_t start)
  */
 std::string protectedSubstr(std::string s, size_t start, size_t size)
 {
-	std::string newString;
+	std::string	newString;
 
 	if (s == "")
 		return ("");

@@ -43,6 +43,7 @@ int	hasInheritanceDirective(std::string line)
 	std::string directives[] = {"root", "index", "autoindex", "client_max_body_size", "error_page"};
 
 	int i = 0;
+
 	while (i < 5)
 	{
 		if (line.find(directives[i]) == 0)

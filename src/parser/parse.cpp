@@ -29,7 +29,7 @@ std::fstream openFile(char *configFile)
  */
 void parse(std::vector<Server> &servers, char *configFile)
 {
-	std::fstream 	file;
+	std::fstream	file;
 	std::string		line;
 	t_values		values;
 
