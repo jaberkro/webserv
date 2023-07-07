@@ -6,28 +6,28 @@
 
 static std::string findMatch(std::string &line)
 {
-	if (line.size() < 2 || findFirstWhitespace(line) == line.size())
+	if (line.size() == 0)
 	{
-		std::cout << "Error: invalid location block near match [" << line << "]" << std::endl;
+		std::cout << "Error: invalid location block: not enough arguments" << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	return (line.substr(0, findFirstWhitespace(line)));
+	return (protectedSubstr(line, 0, findFirstWhitespace(line)));
 }
 
 static std::string findModifier(std::string &line)
 {
-	if (line.size() < 2)
+	if (line.size() == 0)
 	{
-		std::cout << "Error: invalid location block near [location " << line << "]" << std::endl;
+		std::cout << "Error: invalid location block: not enough arguments" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	if (line.find("= ") == 0)
 		return ("=");
-	else if (line.find("~ ") == 0)
+	else if (line.find("~ ") == 0) //remove regex as options?
 		return ("~");
-	else if (line.find("~* ") == 0)
+	else if (line.find("~* ") == 0) //remove regex as options?
 		return ("~*");
-	else if (line.find("^~ ") == 0)
+	else if (line.find("^~ ") == 0) //remove regex as options?
 		return ("^~");
 	return ("(none)");
 }
@@ -40,6 +40,7 @@ Location parseLocation(std::fstream &file, std::string line, t_values values)
 	line = protectedSubstr(line, 8);
 	line = ltrim(line);
 	line.pop_back();
+	line = rtrim(line);
 
 	location.setModifier(findModifier(line));
 	if (location.getModifier() != "(none)")
@@ -51,18 +52,13 @@ Location parseLocation(std::fstream &file, std::string line, t_values values)
 	location.setMatch(findMatch(line));
 	if (findFirstWhitespace(line) != line.size())
 	{
-		line = protectedSubstr(line, findFirstWhitespace(line));
-		line = ltrim(line);
-		if (line != "")
-		{
-			std::cout << "Error: invalid location block near match: too much arguments: [" << line << "]" << std::endl;
-			exit(EXIT_FAILURE);
-		}
+		std::cout << "Error: invalid location block: too many matches: [" << line << "]" << std::endl; //remove regex as options?
+		exit(EXIT_FAILURE);
 	}
 	while (getValidLine(file, line))
 	{
 		if (line == "")
-			std::cout << "empty line in location block" << std::endl;
+			continue ;
 		else if (line == "}")
 			break ;
 		else if (line.find("location") == 0 && line.back() == '{')

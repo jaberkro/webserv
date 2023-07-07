@@ -18,11 +18,16 @@ void parseHTTP(std::vector<Server> &servers, std::fstream &file, t_values values
 	while (getValidLine(file, line))
 	{
 		if (line == "")
-			std::cout << "empty line in http block" << std::endl;
+			continue ;
 		else if (line == "}")
 			break ;
 		else if (line == "server {")
 			servers.push_back((parseServer(file, values)));
+		else if (line.find("location") == 0)
+		{
+			std::cout << "Error: [" << line << "] should be inside a server block:\nserver {\n\tlocation <modifier> <match> {\n\n\t}\n}" << std::endl;
+			exit(EXIT_FAILURE);
+		}
 		else
 		{
 			directive = hasInheritanceDirective(line);
@@ -36,7 +41,7 @@ void parseHTTP(std::vector<Server> &servers, std::fstream &file, t_values values
 	}
 	if (servers.size() == 0)
 	{
-		std::cout << "Error: can't parse http block without server block" << std::endl;
+		std::cout << "Error: can't parse http block without server block inside of it: \nhttp {\n\tserver {\n\n\t}\n}" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	return ;
