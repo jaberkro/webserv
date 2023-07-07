@@ -6,9 +6,8 @@ SRC_DIR = src
 BUILD_DIR = obj
 
 SRC = main.cpp \
-	config/Config.cpp \
-	config/Server.cpp \
-	config/Location.cpp \
+	classes/Server.cpp \
+	classes/Location.cpp \
 	parser/parse.cpp \
 	parser/utils.cpp \
 	parser/blocks/http.cpp \
@@ -20,7 +19,8 @@ SRC = main.cpp \
 	parser/blocks/directives/root.cpp \
 	parser/blocks/directives/index.cpp \
 	parser/blocks/directives/autoindex.cpp \
-	parser/blocks/directives/maxBodySize.cpp
+	parser/blocks/directives/maxBodySize.cpp \
+	parser/blocks/directives/errorPage.cpp
 
 OBJ := $(addprefix $(BUILD_DIR)/, $(SRC:.cpp=.o))
 SRC := $(addprefix $(SRC_DIR)/, $(SRC))

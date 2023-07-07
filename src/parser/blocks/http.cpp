@@ -1,4 +1,4 @@
-#include "Config.hpp"
+#include "Server.hpp"
 #include "parse.hpp"
 #include <fstream>
 #include <iostream>
@@ -7,10 +7,10 @@
 /**
  * @brief parse HTTP block
  * 
- * @param config the variable to store the parsed information in
+ * @param servers the variable to store the parsed information in
  * @param file the file to parse the information from
  */
-void parseHTTP(Config &config, std::fstream &file, t_values values)
+void parseHTTP(std::vector<Server> &servers, std::fstream &file, t_values values)
 {
 	std::string line;
 	int			directive;
@@ -22,7 +22,7 @@ void parseHTTP(Config &config, std::fstream &file, t_values values)
 		else if (line == "}")
 			break ;
 		else if (line == "server {")
-			config.addServer(parseServer(file, values));
+			servers.push_back((parseServer(file, values)));
 		else
 		{
 			directive = hasInheritanceDirective(line);
@@ -34,7 +34,7 @@ void parseHTTP(Config &config, std::fstream &file, t_values values)
 			values = parseInheritanceDirective(directive, line, values);
 		}
 	}
-	if (config.getServers().size() == 0)
+	if (servers.size() == 0)
 	{
 		std::cout << "Error: can't parse http block without server block" << std::endl;
 		exit(EXIT_FAILURE);

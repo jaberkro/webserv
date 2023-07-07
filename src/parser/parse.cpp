@@ -1,5 +1,5 @@
-#include "Config.hpp"
 #include "parse.hpp"
+#include "Server.hpp"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -24,10 +24,10 @@ std::fstream openFile(char *configFile)
 /**
  * @brief parse configuration file
  * 
- * @param config variable to store the parsed information in
+ * @param servers variable to store the parsed information in
  * @param configFile title of the file to parse
  */
-void parse(Config &config, char *configFile)
+void parse(std::vector<Server> &servers, char *configFile)
 {
 	std::fstream 	file;
 	std::string		line;
@@ -40,7 +40,7 @@ void parse(Config &config, char *configFile)
 			std::cout << "empty line in config file" << std::endl;
 		else if (line == "http {")
 		{
-			parseHTTP(config, file, values);
+			parseHTTP(servers, file, values);
 		}
 		else
 		{

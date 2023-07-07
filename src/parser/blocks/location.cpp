@@ -85,6 +85,7 @@ Location parseLocation(std::fstream &file, std::string line, t_values values)
 	location.setIndexes(values.indexes);
 	location.setAutoindex(values.autoindex);
 	location.setMaxBodySize(values.maxBodySize);
+	location.setErrorPages(values.errorPages);
 	return (location);
 }
 
