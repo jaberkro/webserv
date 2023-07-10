@@ -1,26 +1,28 @@
 NAME = webserv
 CXXFLAGS = -Wall -Wextra -Werror -std=c++11 -pedantic
-INCLUDE = -I include
+INCLUDE = -I ./include 
 
 SRC_DIR = src
 BUILD_DIR = obj
 
-SRC = main.cpp \
-	classes/Server.cpp \
-	classes/Location.cpp \
-	parser/parse.cpp \
-	parser/utils.cpp \
-	parser/blocks/http.cpp \
-	parser/blocks/server.cpp \
-	parser/blocks/location.cpp \
-	parser/blocks/directive.cpp \
-	parser/blocks/directives/listen.cpp \
-	parser/blocks/directives/serverName.cpp \
-	parser/blocks/directives/root.cpp \
-	parser/blocks/directives/index.cpp \
-	parser/blocks/directives/autoindex.cpp \
-	parser/blocks/directives/maxBodySize.cpp \
-	parser/blocks/directives/errorPage.cpp
+SRC = 	main.cpp \
+		server.cpp \
+		socket.cpp \
+		classes/Server.cpp \
+		classes/Location.cpp \
+		parser/parse.cpp \
+		parser/utils.cpp \
+		parser/blocks/http.cpp \
+		parser/blocks/server.cpp \
+		parser/blocks/location.cpp \
+		parser/blocks/directive.cpp \
+		parser/blocks/directives/listen.cpp \
+		parser/blocks/directives/serverName.cpp \
+		parser/blocks/directives/root.cpp \
+		parser/blocks/directives/index.cpp \
+		parser/blocks/directives/autoindex.cpp \
+		parser/blocks/directives/maxBodySize.cpp \
+		parser/blocks/directives/errorPage.cpp
 
 OBJ := $(addprefix $(BUILD_DIR)/, $(SRC:.cpp=.o))
 SRC := $(addprefix $(SRC_DIR)/, $(SRC))

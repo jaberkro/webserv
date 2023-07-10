@@ -1,4 +1,5 @@
 #include "webserv.hpp"
+#include "webserver.hpp"
 #include <iostream>
 #include <map>
 
@@ -64,5 +65,9 @@ int	main(int argc, char **argv)
 
 	parse(servers, argv[1]);
 	printServers(servers);
+
+	std::cout << "Hello World!" << std::endl;
+	Webserver	webserv;
+	webserv.start(servers);
 	return (0);
 }
