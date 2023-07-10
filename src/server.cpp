@@ -171,6 +171,31 @@ bool	Socket::setUpConn(int kq, struct kevent evSet)
 
 }
 
+void	createLocation(std::vector<Location> &locations)
+{
+	Location				a;
+	Location				b;
+	Location				c;
+
+
+	a.setMatch("/");
+	a.setModifier("=");
+	a.addIndex("/index.html");
+	a.addIndex("/index2.html");
+	a.setRoot("data/www");
+	b.setMatch("/");
+	b.setModifier("");
+	b.setRoot("data/www");
+	b.addErrorPage(404, "/404.html");
+	c.setMatch("/images");
+	c.setModifier("");
+	c.setRoot("data");
+	c.addErrorPage(404, "/404.html");
+	locations.push_back(a);
+	locations.push_back(b);
+	locations.push_back(c);
+}
+
 void	Webserver::start()//std::vector<Server> servers)
 {
 	std::vector<Socket> sckts;
@@ -181,7 +206,7 @@ void	Webserver::start()//std::vector<Server> servers)
 	// 	Socket sock(servers.at(i).getPort(i));
 	// 	sckts.push_back(sock);
 	// }
-	Socket	sckt1(8080);
+	Socket	sckt1(80);
 	Socket	sckt2(4242);
 	int kq = kqueue();
 	struct kevent evSet;
@@ -196,11 +221,12 @@ void	Webserver::start()//std::vector<Server> servers)
 	int fd;
 	Request		*newReq;
 	Response	*newResp;
+	std::vector<Location>	locations;
 	// uint8_t		*response; // needs to be malloced 
 
 	
 
-	
+	createLocation(locations);
 
 	while (1)
 	{
@@ -253,7 +279,7 @@ void	Webserver::start()//std::vector<Server> servers)
 			
 					newResp = new Response(*newReq);
 					delete newReq;
-					newResp->createResponse(); // argument is ref to the Server
+					newResp->prepareResponseGET(locations); // argument is ref to the Server
 					
 					// if (response)
 					// {

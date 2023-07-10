@@ -4,7 +4,7 @@
 #include <istream>
 #include <fstream>
 #include <unistd.h>
-#include "server.hpp"
+#include "webserver.hpp"
 #include <cstdio>
 #include <unistd.h>
 
@@ -48,10 +48,11 @@ Response &	Response::operator=(Response &r)
 void	Response::retrieveFile(uint8_t *response, std::string const & root)
 {
 	
+	std::cout << "[retrieveFile]" << std::endl;
 	this->_fileLength = this->getFileSize(this->_filePath);
 	if (access(this->_filePath.c_str(), F_OK | R_OK) < 0)
 	{
-		this->_statusCode = 440;
+		this->_statusCode = 404;
 		throw std::ios_base::failure("File not found");
 	}
 	sendFirstLine(response);
@@ -69,6 +70,7 @@ void	Response::sendContentInChunks(uint8_t *response)
 	std::ifstream	file;
 	std::filebuf	*fileBuf;
 	
+	std::cout << "[sendContentInChunks]" << std::endl;
 	file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
 	if (!file.is_open())
 		throw std::ios_base::failure("Error when opening a file");
@@ -99,6 +101,8 @@ void	Response::sendContentInChunks(uint8_t *response)
  */
 void	Response::sendFirstLine(uint8_t *response)
 {
+	std::cout << "[sendFirstLine]" << std::endl;
+	this->printResponse();
 	snprintf((char *)response, MAXLINE, \
 	"%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, this->_responseCodes.at(this->_statusCode).c_str());
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
@@ -110,6 +114,7 @@ void	Response::sendHeaders(uint8_t *response, std::string const & root)
 	std::string		contentType = root.compare("data") == 0 ? \
 	"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, std::string::npos) : "text/html";
 
+	std::cout << "[sendHeaders]" << std::endl;
 	std::cout << "Content Type is " << contentType << std::endl;
 	snprintf((char *)response, MAXLINE, \
 	"Content-Type: %s\r\nContent-Length: %zu\r\n\r\n", contentType.c_str(), this->_fileLength);
@@ -202,14 +207,36 @@ std::vector<Location>::iterator Response::findMatch(std::string target, std::vec
 
 std::string	Response::findIndex(std::vector<Location>::iterator itLoc)
 {
-	for (std::vector<std::string>::iterator itIdx = itLoc->getIndexes().begin(); \
-	itIdx != itLoc->getIndexes().end(); itIdx++)
+	std::string							filePath;
+	std::vector<std::string>			indexes = itLoc->getIndexes();
+	// size_t							i = 1;
+	// std::vector<std::string>::iterator	itIdx;
+
+	// for (auto	idx = indexes.begin(); idx != indexes.end(); idx++)
+	// {
+	// 	std::cout << i++ << std::endl;
+	// 	// std::cout << *idx << std::endl;
+	// }
+	std::cout << "[find index] first index is " << *itLoc->getIndexes().begin() << std::endl;
+	std::cout << "[second index] first index is " << *(itLoc->getIndexes().begin() + 1) << std::endl;
+	std::cout << "Root is " << itLoc->getRoot() << std::endl;
+	std::cout << "Index + Root is " << itLoc->getRoot() + *itLoc->getIndexes().begin() << std::endl;
+	for (auto itIdx = indexes.begin(); itIdx != indexes.end(); itIdx++)
 	{
+		std::cout << "ROUND 1" << std::endl;
+		std::cout << *itIdx << std::endl;
+		std::cout << "Index is " << *itIdx << std::endl;
+		std::cout << "Putting together " << itLoc->getRoot() << " and " << *itIdx << std::endl;
+		filePath = itLoc->getRoot() + *itIdx;
+		std::cout << "[find index] testing file " << filePath << "; access returns " << access(filePath.c_str(), F_OK) << std::endl;
 		// if you find the file, return its name
-		if (access((*itIdx).c_str(), F_OK) == 0)
+		if (access(filePath.c_str(), F_OK) == 0)
+		{
+			std::cout << "[find index] returning " << *itIdx << std::endl;
 			return (*itIdx);
+		}
 	}
-	this->_statusCode = 440;
+	this->_statusCode = 404;
 	throw std::ios_base::failure("Index file not found");
 }
 
@@ -223,12 +250,16 @@ std::string	Response::findIndex(std::vector<Location>::iterator itLoc)
  * @param locations the vector of Location instances containing the configuration
  * of the server's locations
  */
-void	Response::prepareResponseGET(uint8_t *response, std::vector<Location> & locations)
+void	Response::prepareResponseGET(std::vector<Location> & locations)
 {
+	uint8_t					*response = new uint8_t[MAXLINE + 1];
 	std::vector<Location>::iterator	itLoc;
 	std::string						targetUri = \
 	this->_req.getTarget().substr(0, this->_req.getTarget().find_first_of('?'));
 
+	std::memset(response, 0, MAXLINE);
+	if (this->_req.getMethod() != "GET")
+		this->_statusCode = 400;
 	if (this->_statusCode == 400)
 		sendFirstLine(response);
 	else
@@ -238,14 +269,18 @@ void	Response::prepareResponseGET(uint8_t *response, std::vector<Location> & loc
 
 			try 
 			{
-				if (!itLoc->getIndexes().empty()) // only look for index if target ends by "/" ?
+				std::cout << "Target is " << targetUri << ". Last character is " << targetUri[targetUri.length() - 1] << std::endl;
+				if (targetUri[targetUri.length() - 1] == '/' && !itLoc->getIndexes().empty())
 				{
+					std::cout << "indexes is not empty" << std::endl;
 					targetUri = findIndex(itLoc);
 					continue;
 				}
 				else
 				{
+					std::cout << "indexes is empty" << std::endl;
 					this->_filePath = itLoc->getRoot() + targetUri;
+					std::cout << "File path is " << this->_filePath << std::endl;
 					this->retrieveFile(response, itLoc->getRoot());
 					this->_isReady = true;
 				}
@@ -263,6 +298,7 @@ void	Response::prepareResponseGET(uint8_t *response, std::vector<Location> & loc
 					std::cerr << "No error page specified: " << oor.what() << std::endl;
 					targetUri = "/defaultError.html";
 				}
+				std::cout << "target is now " << targetUri << std::endl;
 			}
 		}
 }
@@ -273,35 +309,35 @@ void	Response::prepareResponseGET(uint8_t *response, std::vector<Location> & loc
  * 
  * @return uint8_t* containing the response to be passed to the client
  */
-void	Response::createResponse()
-{
-	uint8_t					*response = new uint8_t[MAXLINE + 1];
-	std::vector<Location>	locations;
-	Location				a;
-	Location				b;
-	Location				c;
+// void	Response::createResponse()
+// {
+// 	uint8_t					*response = new uint8_t[MAXLINE + 1];
+// 	std::vector<Location>	locations;
+// 	Location				a;
+// 	Location				b;
+// 	Location				c;
 
 
-	a.setMatch("/");
-	a.setModifier("=");
-	a.addIndex("index.html");
-	a.setRoot("data/www");
-	b.setMatch("/");
-	b.setModifier("");
-	b.setRoot("data/www");
-	b.addErrorPage(404, "/404.html");
-	c.setMatch("/images");
-	c.setModifier("");
-	c.setRoot("data");
-	c.addErrorPage(404, "/404.html");
-	locations.push_back(a);
-	locations.push_back(b);
-	locations.push_back(c);
+// 	a.setMatch("/");
+// 	a.setModifier("=");
+// 	a.addIndex("/index.html");
+// 	a.setRoot("data/www");
+// 	b.setMatch("/");
+// 	b.setModifier("");
+// 	b.setRoot("data/www");
+// 	b.addErrorPage(404, "/404.html");
+// 	c.setMatch("/images");
+// 	c.setModifier("");
+// 	c.setRoot("data");
+// 	c.addErrorPage(404, "/404.html");
+// 	locations.push_back(a);
+// 	locations.push_back(b);
+// 	locations.push_back(c);
 	
-	std::memset(response, 0, MAXLINE);
-	if (this->_req.getMethod() == "GET")
-		prepareResponseGET(response, locations);
-}
+// 	std::memset(response, 0, MAXLINE);
+// 	if (this->_req.getMethod() == "GET")
+// 		prepareResponseGET(response, locations);
+// }
 
 /**
  * @brief finds out the size of a file
@@ -373,3 +409,12 @@ int	Response::getStatusCode(void)
 	return (this->_statusCode);
 }
 
+void	Response::printResponse(void) const
+{
+	std::cout << "***RESPONSE***" << std::endl;
+	std::cout << "Status code: " << this->_statusCode << std::endl;
+	std::cout << "Reason: " << this->_responseCodes[this->_statusCode] << std::endl;
+	std::cout << "Protocol Version: " << this->_req.getProtocolVersion() << std::endl;
+	std::cout << "Connection FD: " << this->_req.getConnFD() << std::endl;
+	std::cout << "******" << std::endl;
+}

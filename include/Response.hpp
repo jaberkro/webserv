@@ -15,12 +15,12 @@ class Response {
 		Response &	operator=(Response &);
 		
 		/* functions */
-		void							createResponse(); // maybe not a member function?
+		// void							createResponse(); // maybe not a member function?
 		void							sendContentInChunks(uint8_t *response);
 		void							sendFirstLine(uint8_t *response);
 		void							sendHeaders(uint8_t *response, std::string const & root);
 		void							retrieveFile(uint8_t *response, std::string const & root);
-		void							prepareResponseGET(uint8_t *response, std::vector<Location> & locations);
+		void							prepareResponseGET(std::vector<Location> & locations);
 		std::vector<Location>::iterator findMatch(std::string target, std::vector<Location> & locations);
 		std::vector<Location>::iterator	findExactMatch(std::string target, std::vector<Location> & locations);
 		std::vector<Location>::iterator	findClosestMatch(std::string target, std::vector<Location> & locations);
@@ -28,6 +28,7 @@ class Response {
 
 		/* utils */
 		void	splitUri(std::string const & uri, std::vector<std::string> & chunks);
+		void	printResponse(void) const;
 
 		/* getters */
 		size_t			getFileLength(void) const;
@@ -40,8 +41,8 @@ class Response {
 
 		Request								_req;
 		int									_statusCode;
-		std::map<std::string, std::string>	_headers;
-		std::string							_content;
+		std::map<std::string, std::string>	_headers; // currently unused
+		std::string							_content; // currently unused
 		size_t								_fileLength;
 		std::string							_filePath;
 		bool								_isReady;
