@@ -12,7 +12,7 @@ class Socket;
 # define SERVER_PORT 80
 # define MAXLINE 4000
 
-class Server
+class Webserver
 {
 	private:
 		std::string	contentPath;
@@ -20,7 +20,7 @@ class Server
 
 	public:
 		bool		running;
-		bool		start();
+		void		start();
 
 };
 

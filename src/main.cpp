@@ -1,10 +1,10 @@
 #include <iostream>
-#include "server.hpp"
+#include "webserver.hpp"
 
 int	main(void)
 {
 	std::cout << "Hello World!" << std::endl;
-	Server	server;
-	server.start();
+	Webserver	webserv;
+	webserv.start();//servers);
 	return (0);
 }
