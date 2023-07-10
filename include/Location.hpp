@@ -40,7 +40,7 @@ class Location
 		unsigned int		getMaxBodySize() const;
 		
 		void				setErrorPages(std::map<int, std::string> errorPages);
-		std::map<int, std::string>	getErrorPages() const;
+		std::map<int, std::string> const &	getErrorPages() const;
 };
 
 #endif

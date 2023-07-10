@@ -1,5 +1,5 @@
-#include "../include/webserver.hpp"
-#include "../include/socket.hpp"
+#include "webserver.hpp"
+#include "socket.hpp"
 #include <cstdio>
 #include <cstring>
 #include <arpa/inet.h>
@@ -15,6 +15,11 @@ struct uc { //this should go in the class!!
     char *uc_addr;
 } users[NUSERS];
 
+
+#include <fstream>
+#include "Request.hpp"
+#include "Response.hpp"
+#include <vector>
 
 bool	write_exit(std::string error)
 {
@@ -198,6 +203,15 @@ void	Webserver::start(std::vector<Server> servers)
 	struct sockaddr_storage addr;
 	socklen_t socklen = sizeof(addr);
 	int fd;
+	Request		*newReq;
+	Response	*newResp;
+	// std::vector<Location>	locations;
+	// uint8_t		*response; // needs to be malloced 
+
+	
+
+	// createLocation(locations);
+
 	while (1)
 	{
 		nev = kevent(kq, NULL, 0, evList, 2, NULL);
@@ -223,7 +237,7 @@ void	Webserver::start(std::vector<Server> servers)
 			}
 			else if (comparefd(sckts, (int)evList[i].ident) == 1)//(int)evList[i].ident == sckt1.listenfd || (int)evList[i].ident == sckt2.listenfd)
 			{
-				printf("Here1\n");
+				// printf("Here1\n");
 
 				fd = accept(evList[i].ident, (struct sockaddr *)&addr, &socklen);
 				if (fd == -1)
@@ -239,23 +253,31 @@ void	Webserver::start(std::vector<Server> servers)
 						write_exit("accept error");
 						return ;
 					}
-					uint8_t buff[MAXLINE + 1];
-					//snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK \r\nContent-Type: text/html\r\nContent-Length: 20\r\n\r\nWe socket thisssssss"); //can write formatted output to sized buf
-					std::string   fileBuf;
-					std::string line;
-					std::ifstream   htmlFile;
-					htmlFile.open("data/www/index.html");
-					while (std::getline (htmlFile, line))
-						fileBuf += line;
-					snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK \r\nContent-Type: text/html\r\nContent-Length: %lu\r\n\r\n%s", fileBuf.length(), fileBuf.c_str());
-					write(fd, (char*)buff, std::strlen((char*)buff));
-					htmlFile.close();
-				// }
-				// else
-				// {
-				// 	printf("Connection refused\n");
-				// 	close(fd);
-				// }
+					newReq = new Request(fd);
+					newReq->processReq();
+					newReq->printRequest();
+			// determine which server should handle this request (Request::identifyServer)
+			// 1. parse "listen" directives, if multiple matches with equal specificity:
+			// 2. parse "server name" directives find the server that corresponds to the request field's Host
+			// otherwise give it to the default one
+			
+					newResp = new Response(*newReq);
+					delete newReq;
+					newResp->prepareResponseGET(servers.at(0).getLocations()); // argument is ref to the Server
+					
+					// if (response)
+					// {
+					// 	// std::cout << "About to return " << newResp->getMsgLength() << "bytes: " << response << std::endl;
+					// 	send(fd, (char*)response, newResp->getMsgLength(), 0);
+					// 	delete response;
+					// }
+					delete newResp;
+			// }
+			// else
+			// {
+			// 	printf("Connection refused\n");
+			// }
+			// close(fd);
 			}
 			else if (evList[i].filter == EVFILT_READ)
 			{
@@ -268,7 +290,8 @@ void	Webserver::start(std::vector<Server> servers)
 			}
 		}
 	}
+}
 
 
 	// return(sckt.setUpConn());
-}
+
