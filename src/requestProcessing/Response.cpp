@@ -48,7 +48,7 @@ Response &	Response::operator=(Response &r)
 void	Response::retrieveFile(uint8_t *response, std::string const & root)
 {
 	
-	std::cout << "[retrieveFile]" << std::endl;
+	std::cout << "[retrieveFile]" << this->_filePath << std::endl;
 	this->_fileLength = this->getFileSize(this->_filePath);
 	if (access(this->_filePath.c_str(), F_OK | R_OK) < 0)
 	{
@@ -70,7 +70,7 @@ void	Response::sendContentInChunks(uint8_t *response)
 	std::ifstream	file;
 	std::filebuf	*fileBuf;
 	
-	std::cout << "[sendContentInChunks]" << std::endl;
+	// std::cout << "[sendContentInChunks]" << std::endl;
 	file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
 	if (!file.is_open())
 		throw std::ios_base::failure("Error when opening a file");
@@ -101,7 +101,7 @@ void	Response::sendContentInChunks(uint8_t *response)
  */
 void	Response::sendFirstLine(uint8_t *response)
 {
-	std::cout << "[sendFirstLine]" << std::endl;
+	// std::cout << "[sendFirstLine]" << std::endl;
 	this->printResponse();
 	snprintf((char *)response, MAXLINE, \
 	"%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, this->_responseCodes.at(this->_statusCode).c_str());
@@ -114,8 +114,8 @@ void	Response::sendHeaders(uint8_t *response, std::string const & root)
 	std::string		contentType = root.compare("data") == 0 ? \
 	"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, std::string::npos) : "text/html";
 
-	std::cout << "[sendHeaders]" << std::endl;
-	std::cout << "Content Type is " << contentType << std::endl;
+	// std::cout << "[sendHeaders]" << std::endl;
+	// std::cout << "Content Type is " << contentType << std::endl;
 	snprintf((char *)response, MAXLINE, \
 	"Content-Type: %s\r\nContent-Length: %zu\r\n\r\n", contentType.c_str(), this->_fileLength);
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
@@ -132,19 +132,18 @@ void	Response::sendHeaders(uint8_t *response, std::string const & root)
  * @return std::vector<Location>::iterator pointing to a Location instance that 
  * is the closest match for the target. 
  */
-std::vector<Location>::iterator	Response::findClosestMatch(std::string target, \
-std::vector<Location> & locations)
+std::vector<Location>::const_iterator	Response::findClosestMatch(std::string target, \
+std::vector<Location> const & locations)
 {
 	size_t	overlap = 0;
 	std::vector<std::string>	targetSplit;
-	std::vector<Location>::iterator longest;
-	std::vector<Location>::iterator it;
+	std::vector<Location>::const_iterator longest;
 	size_t	idx = 0;
 	size_t	len = 0;
 
 	this->splitUri(target, targetSplit);
 	for (std::vector<std::string>::iterator i = targetSplit.begin(); i != targetSplit.end(); i++)
-	for (it = locations.begin(); it != locations.end(); it++)
+	for (auto it = locations.begin(); it != locations.end(); it++)
 	{
 		if (it->getModifier() == "=")
 			continue;
@@ -173,9 +172,9 @@ std::vector<Location> & locations)
  * is the exact match for the target. If no exact match was found, an iterator
  * pointing to the end of the vector is returned.
  */
-std::vector<Location>::iterator	Response::findExactMatch(std::string target, std::vector<Location> & locations)
+std::vector<Location>::const_iterator	Response::findExactMatch(std::string target, std::vector<Location> const & locations)
 {
-	std::vector<Location>::iterator it;
+	std::vector<Location>::const_iterator it;
 	
 	for (it = locations.begin(); it != locations.end(); it++)
 	{
@@ -195,9 +194,9 @@ std::vector<Location>::iterator	Response::findExactMatch(std::string target, std
  * @return std::vector<Location>::iterator pointing to a Location instance that 
  * is either the exact match for the target, if available, or the closest one.
  */
-std::vector<Location>::iterator Response::findMatch(std::string target, std::vector<Location> & locations)
+std::vector<Location>::const_iterator Response::findMatch(std::string target, std::vector<Location> const & locations)
 {
-	std::vector<Location>::iterator	itLoc;
+	std::vector<Location>::const_iterator	itLoc;
 
 	itLoc = findExactMatch(target, locations);
 	if (itLoc == locations.end())
@@ -205,7 +204,7 @@ std::vector<Location>::iterator Response::findMatch(std::string target, std::vec
 	return (itLoc);
 }
 
-std::string	Response::findIndex(std::vector<Location>::iterator itLoc)
+std::string	Response::findIndex(std::vector<Location>::const_iterator itLoc)
 {
 	std::string							filePath;
 	std::vector<std::string>			indexes = itLoc->getIndexes();
@@ -217,23 +216,20 @@ std::string	Response::findIndex(std::vector<Location>::iterator itLoc)
 	// 	std::cout << i++ << std::endl;
 	// 	// std::cout << *idx << std::endl;
 	// }
-	std::cout << "[find index] first index is " << *itLoc->getIndexes().begin() << std::endl;
-	std::cout << "[second index] first index is " << *(itLoc->getIndexes().begin() + 1) << std::endl;
-	std::cout << "Root is " << itLoc->getRoot() << std::endl;
-	std::cout << "Index + Root is " << itLoc->getRoot() + *itLoc->getIndexes().begin() << std::endl;
+	// std::cout << "[find index] first index is " << *itLoc->getIndexes().begin() << std::endl;
+	// std::cout << "Root is " << itLoc->getRoot() << std::endl;
+	// std::cout << "Index + Root is " << itLoc->getRoot() + *itLoc->getIndexes().begin() << std::endl;
 	for (auto itIdx = indexes.begin(); itIdx != indexes.end(); itIdx++)
 	{
-		std::cout << "ROUND 1" << std::endl;
-		std::cout << *itIdx << std::endl;
-		std::cout << "Index is " << *itIdx << std::endl;
-		std::cout << "Putting together " << itLoc->getRoot() << " and " << *itIdx << std::endl;
-		filePath = itLoc->getRoot() + *itIdx;
-		std::cout << "[find index] testing file " << filePath << "; access returns " << access(filePath.c_str(), F_OK) << std::endl;
+		// std::cout << "Index is " << *itIdx << std::endl;
+		// std::cout << "Putting together " << itLoc->getRoot() << " and " << *itIdx << std::endl;
+		filePath = itLoc->getRoot() + itLoc->getMatch() + *itIdx;
+		// std::cout << "[find index] testing file " << filePath << "; access returns " << access(filePath.c_str(), F_OK) << std::endl;
 		// if you find the file, return its name
 		if (access(filePath.c_str(), F_OK) == 0)
 		{
-			std::cout << "[find index] returning " << *itIdx << std::endl;
-			return (*itIdx);
+			// std::cout << "[find index] returning " << *itIdx << std::endl;
+			return (itLoc->getMatch() + *itIdx);
 		}
 	}
 	this->_statusCode = 404;
@@ -250,12 +246,13 @@ std::string	Response::findIndex(std::vector<Location>::iterator itLoc)
  * @param locations the vector of Location instances containing the configuration
  * of the server's locations
  */
-void	Response::prepareResponseGET(std::vector<Location> & locations)
+void	Response::prepareResponseGET(std::vector<Location> const & locations)
 {
 	uint8_t					*response = new uint8_t[MAXLINE + 1];
-	std::vector<Location>::iterator	itLoc;
+	std::vector<Location>::const_iterator	itLoc;
 	std::string						targetUri = \
 	this->_req.getTarget().substr(0, this->_req.getTarget().find_first_of('?'));
+	size_t			round = 1;
 
 	std::memset(response, 0, MAXLINE);
 	if (this->_req.getMethod() != "GET")
@@ -263,22 +260,20 @@ void	Response::prepareResponseGET(std::vector<Location> & locations)
 	if (this->_statusCode == 400)
 		sendFirstLine(response);
 	else
-		while (!this->_isReady)
+		while (!this->_isReady && round++ < 6)
 		{
+			std::cout << "Target Uri is " << targetUri << std::endl;
 			itLoc = findMatch(targetUri, locations);
 
 			try 
 			{
-				std::cout << "Target is " << targetUri << ". Last character is " << targetUri[targetUri.length() - 1] << std::endl;
 				if (targetUri[targetUri.length() - 1] == '/' && !itLoc->getIndexes().empty())
 				{
-					std::cout << "indexes is not empty" << std::endl;
 					targetUri = findIndex(itLoc);
 					continue;
 				}
 				else
 				{
-					std::cout << "indexes is empty" << std::endl;
 					this->_filePath = itLoc->getRoot() + targetUri;
 					std::cout << "File path is " << this->_filePath << std::endl;
 					this->retrieveFile(response, itLoc->getRoot());
@@ -289,16 +284,28 @@ void	Response::prepareResponseGET(std::vector<Location> & locations)
 			{
 				std::cout << "Exception caught: ";
 				std::cout << f.what() << std::endl;
+				// std::map<int, std::string> errorPages = itLoc->getErrorPages();
+
+				// std::cout << "Available error pages: " << std::endl;
+				// for (const auto &pair : errorPages)
+				// {
+				// 	std::cout << pair.first << ": " << pair.second << std::endl;
+				// }
 				try
 				{
-					targetUri = itLoc->getErrorPages().at(this->_statusCode);
+					std::cout << "[error pages part] " << std::endl;
+					printResponse();
+					if (!itLoc->getErrorPages().empty())
+						targetUri = itLoc->getErrorPages().at(this->_statusCode);
+					else
+						targetUri = "/defaultError.html";
+					std::cout << "target is now " << targetUri << std::endl;
 				}
 				catch(const std::out_of_range& oor)
 				{
-					std::cerr << "No error page specified: " << oor.what() << std::endl;
+					// std::cerr << "No error page specified: " << oor.what() << std::endl;
 					targetUri = "/defaultError.html";
 				}
-				std::cout << "target is now " << targetUri << std::endl;
 			}
 		}
 }

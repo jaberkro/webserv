@@ -26,7 +26,6 @@ SRC = 	main.cpp \
 		parser/blocks/directives/autoindex.cpp \
 		parser/blocks/directives/maxBodySize.cpp \
 		parser/blocks/directives/errorPage.cpp \
-		config/Location.cpp
 
 OBJ := $(addprefix $(BUILD_DIR)/, $(SRC:.cpp=.o))
 SRC := $(addprefix $(SRC_DIR)/, $(SRC))

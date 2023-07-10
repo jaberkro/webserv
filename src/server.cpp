@@ -205,12 +205,12 @@ void	Webserver::start(std::vector<Server> servers)
 	int fd;
 	Request		*newReq;
 	Response	*newResp;
-	std::vector<Location>	locations;
+	// std::vector<Location>	locations;
 	// uint8_t		*response; // needs to be malloced 
 
 	
 
-	createLocation(locations);
+	// createLocation(locations);
 
 	while (1)
 	{
@@ -263,7 +263,7 @@ void	Webserver::start(std::vector<Server> servers)
 			
 					newResp = new Response(*newReq);
 					delete newReq;
-					newResp->prepareResponseGET(locations); // argument is ref to the Server
+					newResp->prepareResponseGET(servers.at(0).getLocations()); // argument is ref to the Server
 					
 					// if (response)
 					// {

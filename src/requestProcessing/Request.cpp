@@ -9,7 +9,9 @@ _target (""), \
 _protocolVersion (""), \
 _body (""), \
 _connFD (connfd), \
-_statusCode (200) {}
+_statusCode (200) {
+	std::cout << "***REQUEST CONSTRUCTOR CALLED***" << std::endl;
+}
 
 Request::~Request(void) {}
 

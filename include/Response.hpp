@@ -20,11 +20,11 @@ class Response {
 		void							sendFirstLine(uint8_t *response);
 		void							sendHeaders(uint8_t *response, std::string const & root);
 		void							retrieveFile(uint8_t *response, std::string const & root);
-		void							prepareResponseGET(std::vector<Location> & locations);
-		std::vector<Location>::iterator findMatch(std::string target, std::vector<Location> & locations);
-		std::vector<Location>::iterator	findExactMatch(std::string target, std::vector<Location> & locations);
-		std::vector<Location>::iterator	findClosestMatch(std::string target, std::vector<Location> & locations);
-		std::string						findIndex(std::vector<Location>::iterator itLoc);
+		void							prepareResponseGET(std::vector<Location> const & locations);
+		std::vector<Location>::const_iterator findMatch(std::string target, std::vector<Location> const & locations);
+		std::vector<Location>::const_iterator	findExactMatch(std::string target, std::vector<Location> const & locations);
+		std::vector<Location>::const_iterator	findClosestMatch(std::string target, std::vector<Location> const & locations);
+		std::string						findIndex(std::vector<Location>::const_iterator itLoc);
 
 		/* utils */
 		void	splitUri(std::string const & uri, std::vector<std::string> & chunks);
