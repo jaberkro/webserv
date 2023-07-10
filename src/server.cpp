@@ -171,48 +171,32 @@ bool	Socket::setUpConn(int kq, struct kevent evSet)
 
 }
 
-void	createLocation(std::vector<Location> &locations)
+int		Webserver::comparefd(std::vector<Socket> sckts, int eventfd)
 {
-	Location				a;
-	Location				b;
-	Location				c;
-
-
-	a.setMatch("/");
-	a.setModifier("=");
-	a.addIndex("/index.html");
-	a.addIndex("/index2.html");
-	a.setRoot("data/www");
-	b.setMatch("/");
-	b.setModifier("");
-	b.setRoot("data/www");
-	b.addErrorPage(404, "/404.html");
-	c.setMatch("/images");
-	c.setModifier("");
-	c.setRoot("data");
-	c.addErrorPage(404, "/404.html");
-	locations.push_back(a);
-	locations.push_back(b);
-	locations.push_back(c);
+	for (size_t i = 0; i < sckts.size(); i++)
+	{
+		if (sckts.at(i).listenfd == eventfd)
+			return (1);
+	}
+	return (0);
 }
 
-void	Webserver::start()//std::vector<Server> servers)
+void	Webserver::start(std::vector<Server> servers)
 {
 	std::vector<Socket> sckts;
 	if (this->running)
 		return ;//(false);
-	// for (size_t i = 0; i < servers.size(); i++)
-	// {
-	// 	Socket sock(servers.at(i).getPort(i));
-	// 	sckts.push_back(sock);
-	// }
-	Socket	sckt1(80);
-	Socket	sckt2(4242);
+	for (size_t i = 0; i < servers.size(); i++)
+	{
+		Socket sock(servers.at(i).getPort(0));
+		sckts.push_back(sock);
+	}
 	int kq = kqueue();
 	struct kevent evSet;
-	sckt1.setUpConn(kq, evSet);
-	sckt2.setUpConn(kq, evSet);
-
+	for (size_t i = 0; i < sckts.size(); i++)
+	{
+		sckts.at(i).setUpConn(kq, evSet);
+	}
 	//watchLoop();
 	struct kevent evList[2];
 	int nev, i;
@@ -251,7 +235,7 @@ void	Webserver::start()//std::vector<Server> servers)
 				//connDelete(fd);
 				close(fd);
 			}
-			else if ((int)evList[i].ident == sckt1.listenfd || (int)evList[i].ident == sckt2.listenfd)//((int)evList[i].ident == (sckt1.listenfd || sckt2.listenfd))
+			else if (comparefd(sckts, (int)evList[i].ident) == 1)//(int)evList[i].ident == sckt1.listenfd || (int)evList[i].ident == sckt2.listenfd)
 			{
 				// printf("Here1\n");
 

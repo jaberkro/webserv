@@ -1,10 +1,11 @@
-#ifndef SERVER_HPP
-# define SERVER_HPP
+#ifndef WEBSERVER_HPP
+# define WEBSERVER_HPP
 
-# include <iostream>
-# include <algorithm>
-# include <vector>
-# include "socket.hpp"
+#include <iostream>
+#include <algorithm>
+#include <vector>
+#include "socket.hpp"
+#include "Server.hpp"
 
 class Socket;
 
@@ -20,7 +21,8 @@ class Webserver
 
 	public:
 		bool		running;
-		void		start();
+		void		start(std::vector<Server> servers);
+		int			comparefd(std::vector<Socket> sckts, int fd);
 
 };
 
