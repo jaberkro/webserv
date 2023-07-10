@@ -75,17 +75,3 @@ const Location Server::getLocation(int i) const
 {
 	return (this->_locations.at(i));
 }
-
-
-
-
-
-// Server::pairIterator Server::getListens(void)
-// {
-// 	return (this->_listens.begin());
-// }
-
-// Server::stringIterator Server::getServerNames(void)
-// {
-// 	return (this->_serverNames.begin());
-// }

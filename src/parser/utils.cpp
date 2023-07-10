@@ -11,7 +11,7 @@
  */
 std::string protectedSubstr(std::string s, size_t start)
 {
-	std::string newString;
+	std::string	newString;
 
 	if (s == "")
 		return ("");
@@ -37,7 +37,7 @@ std::string protectedSubstr(std::string s, size_t start)
  */
 std::string protectedSubstr(std::string s, size_t start, size_t size)
 {
-	std::string newString;
+	std::string	newString;
 
 	if (s == "")
 		return ("");
@@ -147,6 +147,25 @@ size_t	findFirstWhitespace(std::string line)
 	else if (line.find("\t") == std::string::npos)
 		return (line.find(" "));
 	return (std::min(line.find(" "), line.find("\t")));
+}
+
+/**
+ * @brief find the last space or horizontal tab
+ * 
+ * @return size_t the index of the last space or horizontal tab found, 
+ * size of string if no tab or space was found, 0 if line is empty
+ */
+size_t	findLastWhitespace(std::string line)
+{
+	if (line == "")
+		return (0);
+	if (line.find_last_of(" ") == std::string::npos && line.find_last_of("\t") == std::string::npos)
+		return (line.size());
+	else if (line.find_last_of(" ") == std::string::npos)
+		return (line.find_last_of("\t"));
+	else if (line.find_last_of("\t") == std::string::npos)
+		return (line.find_last_of(" "));
+	return (std::max(line.find_last_of(" "), line.find_last_of("\t")));
 }
 
 bool	allDigits(std::string s)

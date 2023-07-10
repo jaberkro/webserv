@@ -1,7 +1,8 @@
 #ifndef WEBSERV_HPP
 # define WEBSERV_HPP
-# include "Config.hpp"
+# include "Server.hpp"
+# include <vector>
 
-void		parse(Config &config, char *configFile);
+void	parse(std::vector<Server> &servers, char *configFile);
 
 #endif

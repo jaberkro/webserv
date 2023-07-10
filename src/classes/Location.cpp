@@ -64,3 +64,13 @@ unsigned int	Location::getMaxBodySize(void) const
 {
 	return (this->_maxBodySize);
 }
+
+void	Location::setErrorPages(std::map<int, std::string> errorPages)
+{
+	this->_errorPages = errorPages;
+}
+
+std::map<int, std::string>	Location::getErrorPages(void) const
+{
+	return (this->_errorPages);
+}

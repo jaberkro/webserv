@@ -10,17 +10,9 @@ class Server
 {
 	public:
 		Server();
-		// Server(std::vector<std::pair<std::string, unsigned short> > listens, std::vector<std::string> serverNames);
 		Server(const Server &src);
 		Server& operator=(const Server &src);
 		~Server();
-
-		// std::vector<std::pair<std::string, unsigned short> >::iterator pairIterator;
-		// std::vector<std::string>::iterator 							stringIterator;
-
-		// pairIterator			getListens(void);
-		// stringIterator			getServerNames(void);
-
 
 		void								addListen(std::pair<std::string, unsigned short> listen);
 		void								addServerName(std::string name);

@@ -2,20 +2,21 @@
 # define LOCATION_HPP
 # include <string>
 # include <vector>
+# include <map>
 
 class Location
 {
 	private:
 
-		std::string                                     _locationMatch;
-		std::string                                     _locationModifier;
-		std::vector<std::pair<std::string,std::string> > _locationDirectives;
-		std::vector<std::pair<int,std::string> >         _errorPages;
+		std::string					_locationMatch;
+		std::string					_locationModifier;
+		std::vector<std::pair<std::string, std::string> >	_locationDirectives;
+		std::map<int, std::string>	_errorPages;
 
-		std::string                                     _root;
-		std::vector<std::string>                        _indexes;
-		bool											_autoindex;
-		unsigned int                                    _maxBodySize;
+		std::string					_root;
+		std::vector<std::string>	_indexes;
+		bool						_autoindex;
+		unsigned int				_maxBodySize;
 	
 	public:
 		// functions
@@ -37,6 +38,9 @@ class Location
 		
 		void				setMaxBodySize(unsigned int maxBodySize);
 		unsigned int		getMaxBodySize() const;
+		
+		void				setErrorPages(std::map<int, std::string> errorPages);
+		std::map<int, std::string>	getErrorPages() const;
 };
 
 #endif

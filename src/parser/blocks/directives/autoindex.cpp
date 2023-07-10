@@ -8,7 +8,7 @@
  * @param values this struct contains the autoindex value to be overwritten
  * @return t_values the updated struct containing the parsed autoindex
  */
-t_values	parseAutoindex(std::string &line, t_values values)
+t_values	parseAutoindex(std::string line, t_values values)
 {
 	line = protectedSubstr(line, 9);
 	line = ltrim(line);
