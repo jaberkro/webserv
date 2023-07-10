@@ -166,23 +166,32 @@ bool	Socket::setUpConn(int kq, struct kevent evSet)
 
 }
 
-void	Webserver::start()//std::vector<Server> servers)
+int		Webserver::comparefd(std::vector<Socket> sckts, int eventfd)
+{
+	for (size_t i = 0; i < sckts.size(); i++)
+	{
+		if (sckts.at(i).listenfd == eventfd)
+			return (1);
+	}
+	return (0);
+}
+
+void	Webserver::start(std::vector<Server> servers)
 {
 	std::vector<Socket> sckts;
 	if (this->running)
 		return ;//(false);
-	// for (size_t i = 0; i < servers.size(); i++)
-	// {
-	// 	Socket sock(servers.at(i).getPort(i));
-	// 	sckts.push_back(sock);
-	// }
-	Socket	sckt1(8080);
-	Socket	sckt2(4242);
+	for (size_t i = 0; i < servers.size(); i++)
+	{
+		Socket sock(servers.at(i).getPort(0));
+		sckts.push_back(sock);
+	}
 	int kq = kqueue();
 	struct kevent evSet;
-	sckt1.setUpConn(kq, evSet);
-	sckt2.setUpConn(kq, evSet);
-
+	for (size_t i = 0; i < sckts.size(); i++)
+	{
+		sckts.at(i).setUpConn(kq, evSet);
+	}
 	//watchLoop();
 	struct kevent evList[2];
 	int nev, i;
@@ -212,7 +221,7 @@ void	Webserver::start()//std::vector<Server> servers)
 				//connDelete(fd);
 				close(fd);
 			}
-			else if ((int)evList[i].ident == sckt1.listenfd || (int)evList[i].ident == sckt2.listenfd)//((int)evList[i].ident == (sckt1.listenfd || sckt2.listenfd))
+			else if (comparefd(sckts, (int)evList[i].ident) == 1)//(int)evList[i].ident == sckt1.listenfd || (int)evList[i].ident == sckt2.listenfd)
 			{
 				printf("Here1\n");
 
@@ -235,7 +244,7 @@ void	Webserver::start()//std::vector<Server> servers)
 					std::string   fileBuf;
 					std::string line;
 					std::ifstream   htmlFile;
-					htmlFile.open("data/index.html");
+					htmlFile.open("data/www/index.html");
 					while (std::getline (htmlFile, line))
 						fileBuf += line;
 					snprintf((char*)buff, sizeof(buff), "HTTP/1.0 200 OK \r\nContent-Type: text/html\r\nContent-Length: %lu\r\n\r\n%s", fileBuf.length(), fileBuf.c_str());
