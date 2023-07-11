@@ -16,7 +16,7 @@ t_values	parseErrorPage(std::string line, t_values values)
 	line = protectedSubstr(line, 10);
 	line = ltrim(line);
 	// values.errorPages.clear(); //outcomment this if error_page should overwrite itself
-	value = protectedSubstr(line, line.find_last_of(" \t") + 1, line.size() - line.find_last_of(" \t" + 1));
+	value = protectedSubstr(line, line.find_last_of(" \t") + 1, line.size() - line.find_last_of(" \t") + 1);
 	line = protectedSubstr(line, 0, line.find_last_of(" \t") + 1);
 	line = rtrim(line);
 	while (findFirstWhitespace(line) != line.size() && line != "" && findFirstWhitespace(line) != 0)
