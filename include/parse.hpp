@@ -11,6 +11,8 @@ typedef struct s_values
 	bool						autoindex;
 	unsigned int				maxBodySize = 1000000;
 	std::map<int, std::string>	errorPages;
+	std::vector<std::string>	allowed;
+	std::vector<std::string>	denied;
 }	t_values;
 
 //utils
@@ -34,11 +36,15 @@ void 		parseServerNames(Server &server, std::string &line);
 
 t_values	parseInheritanceDirective(int directive, std::string line, t_values values);
 int			hasInheritanceDirective(std::string line);
+t_values	parseLocationDirective(int directive, std::string line, t_values values);
+int			hasLocationDirective(std::string line);
 
 t_values	parseRoot(std::string line, t_values values);
 t_values	parseIndex(std::string line, t_values values);
 t_values	parseAutoindex(std::string line, t_values values);
 t_values	parseMaxBodySize(std::string line, t_values values);
 t_values	parseErrorPage(std::string line, t_values values);
+t_values	parseAllow(std::string line, t_values values);
+t_values	parseDeny(std::string line, t_values values);
 
 #endif

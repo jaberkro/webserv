@@ -71,10 +71,16 @@ Location parseLocation(std::fstream &file, std::string line, t_values values)
 			directive = hasInheritanceDirective(line);
 			if (directive == -1)
 			{
-				std::cout << "Error: can't parse location block near [" << line << "]" << std::endl;
-				exit(EXIT_FAILURE);
+				directive = hasLocationDirective(line);
+				if (directive == -1)
+				{
+					std::cout << "Error: can't parse location block near [" << line << "]" << std::endl;
+					exit(EXIT_FAILURE);
+				}
+				values = parseLocationDirective(directive, line, values);
 			}
-			values = parseInheritanceDirective(directive, line, values);
+			else
+				values = parseInheritanceDirective(directive, line, values);
 		}
 	}
 	location.setRoot(values.root);
@@ -82,6 +88,8 @@ Location parseLocation(std::fstream &file, std::string line, t_values values)
 	location.setAutoindex(values.autoindex);
 	location.setMaxBodySize(values.maxBodySize);
 	location.setErrorPages(values.errorPages);
+	location.setAllowed(values.allowed); // check if head should be added if GET is allowed. what is the default allowed methods?
+	location.setDenied(values.denied);
 	return (location);
 }
 
