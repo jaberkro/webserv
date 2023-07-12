@@ -19,14 +19,15 @@ class Socket
 		// ^^ ?? if I use this instead of global, it fails!? ^^
 		// struct kevent evSet;
 		// int kq;
+		int	listenfd;
 		struct	sockaddr_in	servAddr;
 		int		connIndex(int fd);
 		int		connAdd(int fd);
 		int		connDelete(int fd);
 	public:
 		Socket(unsigned short newport);
-		int	listenfd;
-		void	watchLoop();
+		int		getListenfd();
+		void	watchLoop(); //deze weer implementeren en private maken!
 		bool	setUpConn(int kq, struct kevent evSet);
 };
 
