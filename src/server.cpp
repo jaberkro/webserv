@@ -20,7 +20,7 @@
 #include "Response.hpp"
 #include <vector>
 
-bool	write_exit(std::string error)
+bool	Webserver::write_exit(std::string error)
 {
 	std::cout << "ERROR: " << error << std::endl;
 	return (false);
@@ -109,13 +109,13 @@ void	Webserver::start(std::vector<Server> servers)
 		return ;//(false);
 	for (size_t i = 0; i < servers.size(); i++)
 	{
-		for (size_t j = 0; j < servers.at(i).getListens().size(); j++)
-		{
+		// for (size_t j = 0; j < servers.at(i).getListens().size(); j++)
+		// {
 			// servers.at(i).getListens.at(j).second;
-			// Socket sock(servers.at(i).getPort(0));
-			Socket sock(servers.at(i).getListens().at(j).second);
+			Socket sock(servers.at(i).getPort(0));
+			// Socket sock(servers.at(i).getListens().at(j).second);
 			sckts.push_back(sock);
-		}
+		// }
 	}
 	int kq = kqueue();
 	struct kevent evSet;
