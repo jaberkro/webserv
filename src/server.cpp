@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <sys/event.h>
 #include <fstream>
+#include <fcntl.h>
 
 #define NUSERS 10
 
@@ -247,6 +248,11 @@ void	Webserver::start(std::vector<Server> servers)
 				}
 				// if (connAdd(fd) == 0)
 				// {
+				// if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
+				// {
+				// 	write_exit("fcntl error");
+				// 	return ;
+				// }
 					EV_SET(&evSet, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 					if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 					{
