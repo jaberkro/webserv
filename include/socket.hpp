@@ -29,6 +29,8 @@ class Socket
 		int		getListenfd();
 		void	watchLoop(); //deze weer implementeren en private maken!
 		bool	setUpConn(int kq, struct kevent evSet);
+		bool		write_exit(std::string error);
+
 };
 
 #endif

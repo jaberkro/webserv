@@ -23,6 +23,8 @@ class Webserver
 		bool		running;
 		void		start(std::vector<Server> servers);
 		int			comparefd(std::vector<Socket> sckts, int fd);
+		bool		write_exit(std::string error);
+
 
 };
 

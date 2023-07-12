@@ -1,4 +1,5 @@
 #include "../include/socket.hpp"
+#include "../include/webserver.hpp"
 
 #define NUSERS 10
 
@@ -15,6 +16,12 @@ Socket::Socket(unsigned short newport) : port(newport)
 int Socket::getListenfd()
 {
     return(this->listenfd);
+}
+
+bool	Socket::write_exit(std::string error)
+{
+	std::cout << "ERROR: " << error << std::endl;
+	return (false);
 }
 
 /* find the index of a file descriptor or a new slot if fd=0 */
