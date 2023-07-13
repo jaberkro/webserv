@@ -25,17 +25,17 @@ static std::string findModifier(std::string &line)
 		return ("=");
 	else if (line.find("~ ") == 0)
 	{
-		std::cout << "Error: invalid location block modifier: regex not implemented" << std::endl;
+		std::cout << "Error: invalid location block modifier: ~: regex not implemented" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	else if (line.find("~* ") == 0)
 	{
-		std::cout << "Error: invalid location block modifier: regex not implemented" << std::endl;
+		std::cout << "Error: invalid location block modifier: ~*: regex not implemented" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	else if (line.find("^~ ") == 0)
 	{
-		std::cout << "Error: invalid location block modifier: regex not implemented" << std::endl;
+		std::cout << "Error: invalid location block modifier: ^~: regex not implemented" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	return ("(none)");
