@@ -3,32 +3,33 @@
 
 # include <string>
 # include "Request.hpp"
+# include "responseCodes.hpp"
 # include "Location.hpp"
 
 class Response {
 
 	public:
 
-		Response(Request req);
+		Response(Request & req);
 		~Response(void);
 		Response(Response &);
 		Response &	operator=(Response &);
 		
 		/* functions */
-		// void							createResponse(); // maybe not a member function?
-		void							sendContentInChunks(uint8_t *response);
-		void							sendFirstLine(uint8_t *response);
-		void							sendHeaders(uint8_t *response, std::string const & root);
-		void							retrieveFile(uint8_t *response, std::string const & root);
-		void							prepareResponseGET(std::vector<Location> const & locations);
-		std::vector<Location>::const_iterator findMatch(std::string target, std::vector<Location> const & locations);
+		void									prepareResponseGET(std::vector<Location> const & locations);
+		std::string								identifyErrorPage(std::vector<Location>::const_iterator itLoc);
+		std::vector<Location>::const_iterator 	findMatch(std::string target, std::vector<Location> const & locations);
 		std::vector<Location>::const_iterator	findExactMatch(std::string target, std::vector<Location> const & locations);
 		std::vector<Location>::const_iterator	findClosestMatch(std::string target, std::vector<Location> const & locations);
-		std::string						findIndex(std::vector<Location>::const_iterator itLoc);
+		std::string								findIndexPage(std::vector<Location>::const_iterator itLoc);
+		void									retrieveFile(uint8_t *response, std::string const & root);
+		void									sendFirstLine(uint8_t *response);
+		void									sendHeaders(uint8_t *response, std::string const & root);
+		void									sendContentInChunks(uint8_t *response);
 
 		/* utils */
 		void	splitUri(std::string const & uri, std::vector<std::string> & chunks);
-		void	printResponse(void) const;
+		void	printResponse(void) const;	// for debugging purposes
 
 		/* getters */
 		size_t			getFileLength(void) const;
