@@ -23,12 +23,21 @@ static std::string findModifier(std::string &line)
 	}
 	if (line.find("= ") == 0)
 		return ("=");
-	else if (line.find("~ ") == 0) //remove regex as options?
-		return ("~");
-	else if (line.find("~* ") == 0) //remove regex as options?
-		return ("~*");
-	else if (line.find("^~ ") == 0) //remove regex as options?
-		return ("^~");
+	else if (line.find("~ ") == 0)
+	{
+		std::cout << "Error: invalid location block modifier: ~: regex not implemented" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	else if (line.find("~* ") == 0)
+	{
+		std::cout << "Error: invalid location block modifier: ~*: regex not implemented" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	else if (line.find("^~ ") == 0)
+	{
+		std::cout << "Error: invalid location block modifier: ^~: regex not implemented" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	return ("(none)");
 }
 
@@ -88,7 +97,7 @@ Location parseLocation(std::fstream &file, std::string line, t_values values)
 	location.setAutoindex(values.autoindex);
 	location.setMaxBodySize(values.maxBodySize);
 	location.setErrorPages(values.errorPages);
-	location.setAllowed(values.allowed); // check if head should be added if GET is allowed. what is the default allowed methods?
+	location.setAllowed(values.allowed);
 	location.setDenied(values.denied);
 	return (location);
 }
