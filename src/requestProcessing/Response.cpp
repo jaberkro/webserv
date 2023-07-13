@@ -88,6 +88,7 @@ void	Response::prepareResponseGET(std::vector<Location> const & locations)
 	size_t			round = 1;
 
 	std::memset(response, 0, MAXLINE);
+	std::cout << "--> METHOD IS [" << this->_req.getMethod() << "]" << std::endl;
 	if (this->_req.getMethod() != "GET")
 		this->_statusCode = BAD_REQUEST;
 	if (this->_statusCode == BAD_REQUEST)
@@ -96,10 +97,10 @@ void	Response::prepareResponseGET(std::vector<Location> const & locations)
 		while (!this->_isReady && round++ < 6)
 		{
 			std::cout << "Target Uri is " << targetUri << std::endl;
-
 			try 
 			{
 				itLoc = findMatch(targetUri, locations);
+				std::cout << "Matching location found: " << itLoc->getMatch() << std::endl;
 				if (targetUri[targetUri.length() - 1] == '/' && !itLoc->getIndexes().empty())
 				{
 					targetUri = findIndexPage(itLoc);
@@ -113,34 +114,19 @@ void	Response::prepareResponseGET(std::vector<Location> const & locations)
 					this->_isReady = true;
 				}
 			}
-			catch(const std::runtime_error &re)
-			{
-				std::cout << "Exception caught: ";
-				std::cout << re.what() << std::endl;
-				
-				// try to find a corresponding error page in the SERVER block;
-				targetUri = "/defaultError.html";
-			}
 			catch(const std::ios_base::failure & f)
 			{
-				std::cout << "Exception caught: ";
+				std::cout << "IOS exception caught: ";
 				std::cout << f.what() << std::endl;
 				targetUri = identifyErrorPage(itLoc);
-				// try
-				// {
-				// 	std::cout << "[error pages part] " << std::endl;
-				// 	printResponse();
-				// 	if (!itLoc->getErrorPages().empty())
-				// 		targetUri = itLoc->getErrorPages().at(this->_statusCode);
-				// 	else
-				// 		targetUri = "/defaultError.html";
-				// 	std::cout << "target is now " << targetUri << std::endl;
-				// }
-				// catch(const std::out_of_range& oor)
-				// {
-				// 	// std::cerr << "No error page specified: " << oor.what() << std::endl;
-				// 	targetUri = "/defaultError.html";
-				// }
+			}
+			catch(const std::range_error &re)
+			{
+				std::cout << "Range exception caught: ";
+				std::cout << re.what() << std::endl;
+				
+				// TO BE ADDED: try to find a corresponding error page in the SERVER block;
+				targetUri = "data/www/defaultError.html";
 			}
 		}
 }
@@ -231,7 +217,7 @@ std::vector<Location> const & locations)
 	size_t									overlap = 0;
 	std::vector<std::string>				targetSplit;
 	std::vector<Location>::const_iterator	longest = locations.end();
-	size_t									idx = 0;
+	size_t									idx;
 	size_t									len = 0;
 
 	this->splitUri(target, targetSplit);
@@ -242,9 +228,15 @@ std::vector<Location> const & locations)
 			continue;
 		std::vector<std::string>	matchSplit;
 		this->splitUri(it->getMatch(), matchSplit);
-		len = std::min(targetSplit.size(), matchSplit.size());
-		while (idx < len && targetSplit[idx].compare(matchSplit[idx]) == 0)
-			idx++;
+		len = matchSplit.size();
+		for (idx = 0; idx < len; idx++)
+		{
+			if (idx == targetSplit.size() || targetSplit[idx].compare(matchSplit[idx]) != 0)
+			{
+				idx = 0;
+				break;
+			}
+		}
 		if (idx > overlap)
 		{
 			overlap = idx;
@@ -363,7 +355,6 @@ void	Response::sendContentInChunks(uint8_t *response)
 		response[i % CHUNK_SIZE] = fileBuf->sbumpc();
 		if (i % CHUNK_SIZE == CHUNK_SIZE - 1)
 		{
-			// std::cout << "i is " << i << ", sending \"" << response << "\"" << std::endl;
 			send(this->_req.getConnFD(), (char*)response, CHUNK_SIZE, 0);
 			std::memset(response, 0, CHUNK_SIZE);
 		}
@@ -411,7 +402,7 @@ void	Response::splitUri(std::string const & uri, std::vector<std::string> & chun
 	size_t	begin = 0;
 	size_t	end;
 
-	while (begin < std::string::npos && begin < uri.find_first_of('?'))
+	while (begin < uri.length() && begin < uri.find_first_of('?'))
 	{
 		end = uri[begin] == '/' ? uri.find_first_of('/', begin) + 1 : uri.find_first_of('/', begin);
 		chunks.push_back(uri.substr(begin, end - begin));

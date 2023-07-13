@@ -283,7 +283,7 @@ void	Webserver::start(std::vector<Server> servers)
 			// {
 			// 	printf("Connection refused\n");
 			// }
-			// close(fd);
+				close(fd);
 			}
 			else if (evList[i].filter == EVFILT_READ)
 			{
