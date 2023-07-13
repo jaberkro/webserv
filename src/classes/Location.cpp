@@ -45,6 +45,7 @@ std::string	Location::getIndex(size_t i) const
 	return (this->_indexes.at(i));
 }
 
+
 void	Location::setAutoindex(bool autoindex)
 {
 	this->_autoindex = autoindex;
@@ -71,12 +72,42 @@ void	Location::setErrorPages(std::map<int, std::string> errorPages)
 }
 
 
-#include <iostream>	//delete
+// #include <iostream>	//delete
 std::map<int, std::string> const &	Location::getErrorPages(void) const
 {
-	if (this->_errorPages.empty())
-		std::cout << "Error pages empty." << std::endl;
-	else
-		std::cout << "Error pages not empty." << std::endl;
+	// if (this->_errorPages.empty())
+	// 	std::cout << "Error pages empty." << std::endl;
+	// else
+	// 	std::cout << "Error pages not empty." << std::endl;
 	return (this->_errorPages);
+}
+
+void	Location::setAllowed(std::vector<std::string> allowed)
+{
+	this->_allowed = allowed;
+}
+
+std::vector<std::string> Location::getAllowed(void) const
+{
+	return (this->_allowed);
+}
+
+std::string	Location::getAllow(size_t i) const
+{
+	return (this->_allowed.at(i));
+}
+
+void	Location::setDenied(std::vector<std::string> denied)
+{
+	this->_denied = denied;
+}
+
+std::vector<std::string> Location::getDenied(void) const
+{
+	return (this->_denied);
+}
+
+std::string	Location::getDeny(size_t i) const
+{
+	return (this->_denied.at(i));
 }

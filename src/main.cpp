@@ -41,12 +41,28 @@ void	printServers(std::vector<Server> &servers)
 				std::cout << "\n\t\t\tautoindex: off";
 			std::cout << "\n\t\t\tclient_max_body_size: ";
 			std::cout << servers.at(i).getLocation(j).getMaxBodySize();
-			std::map<int, std::string> map = servers.at(i).getLocation(j).getErrorPages();
-			if (!map.empty())
+			std::map<int, std::string> errorPages = servers.at(i).getLocation(j).getErrorPages();
+			if (!errorPages.empty())
 			{
 				std::cout << "\n\t\t\terror_page: ";
-				for (std::map<int, std::string>::iterator it= map.begin(); it!=map.end(); ++it)
+				for (std::map<int, std::string>::iterator it= errorPages.begin(); it!=errorPages.end(); ++it)
 					std::cout << "\n\t\t\t\t" << it->first << " => " << it->second;
+			}
+			if (servers.at(i).getLocation(j).getAllowed().size() != 0)
+			{
+				std::cout << "\n\t\t\tallowed:";
+				for (size_t k = 0; k < servers.at(i).getLocation(j).getAllowed().size(); k++)
+				{
+					std::cout << " [" << servers.at(i).getLocation(j).getAllow(k) << "]";
+				}
+			}
+			if (servers.at(i).getLocation(j).getDenied().size() != 0)
+			{
+				std::cout << "\n\t\t\tdenied:";
+				for (size_t k = 0; k < servers.at(i).getLocation(j).getDenied().size(); k++)
+				{
+					std::cout << " [" << servers.at(i).getLocation(j).getDeny(k) << "]";
+				}
 			}
 		}
 		std::cout << std::endl;
