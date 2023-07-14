@@ -13,6 +13,8 @@ typedef struct s_values
 	std::map<int, std::string>	errorPages;
 	std::vector<std::string>	allowed;
 	std::vector<std::string>	denied;
+	int							returnCode;
+	std::string					returnText;
 }	t_values;
 
 //utils
@@ -46,5 +48,6 @@ t_values	parseMaxBodySize(std::string line, t_values values);
 t_values	parseErrorPage(std::string line, t_values values);
 t_values	parseAllow(std::string line, t_values values);
 t_values	parseDeny(std::string line, t_values values);
+t_values	parseReturn(std::string line, t_values values);
 
 #endif

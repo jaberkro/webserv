@@ -3,6 +3,7 @@
 # include <string>
 # include <vector>
 # include <map>
+# include <utility>
 
 class Location
 {
@@ -19,6 +20,7 @@ class Location
 		unsigned int				_maxBodySize;
 		std::vector<std::string>	_allowed;
 		std::vector<std::string>	_denied;
+		std::pair<int, std::string>	_return;
 	
 	public:
 		// functions
@@ -51,6 +53,9 @@ class Location
 		void	                    setDenied(std::vector<std::string> denied);
 		std::vector<std::string>	getDenied() const;
 		std::string                 getDeny(size_t i) const;
+
+		void                				setReturn(int code, std::string text);
+		const std::pair<int, std::string>   getReturn(void) const;
 };
 
 #endif

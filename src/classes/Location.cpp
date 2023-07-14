@@ -111,3 +111,13 @@ std::string	Location::getDeny(size_t i) const
 {
 	return (this->_denied.at(i));
 }
+
+void    Location::setReturn(int code, std::string text)
+{
+	this->_return = make_pair(code, text);
+}
+
+const std::pair<int, std::string>    Location::getReturn(void) const
+{
+	return (this->_return);
+}
