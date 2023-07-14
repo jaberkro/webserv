@@ -2,9 +2,10 @@
 #include <iostream>
 #include <string>
 
-static void	portError(void)
+static void	portError(std::string notPort)
 {
-	std::cout << "ERROR: incorrect port in configuration file: port must be in range [0,65535]" << std::endl;
+	std::cout << "Error: incorrect port in configuration file: [" << notPort;
+	std::cout << "]: port must be a number in range [0, 65535]" << std::endl;
 	exit(EXIT_FAILURE);
 }
 
@@ -18,13 +19,8 @@ static unsigned short	parsePort(std::string line)
 {
 	int	port;
 
-	if (line.size() > 5)
-		portError();
-	if (!allDigits(line))
-	{
-		std::cout << "ERROR: incorrect port in configuration file: [" << line << "]" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	if (line.size() > 5 || !allDigits(line))
+		portError(line);
 	try
 	{
 		port = stoi(line);
@@ -32,10 +28,10 @@ static unsigned short	parsePort(std::string line)
 	catch(const std::exception& e)
 	{
 		std::cerr << e.what() << '\n';
-		portError();
+		portError(line);
 	}
 	if (port < 0 || port > 65535)
-		portError();
+		portError(line);
 	return (port);
 }
 
@@ -51,19 +47,20 @@ static std::string parseHost(std::string &line)
 {
 	std::string	newHost;
 
-	if (line.find(':') != std::string::npos)
+	line = protectedSubstr(line, 6);
+	line = ltrim(line);
+	if (line == "")
 	{
-		line = protectedSubstr(line, 6);
-		line = ltrim(line);
+		std::cout << "Error: can't parse listen directive without arguments" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	else if (line.find(':') != std::string::npos)
+	{
 		newHost = protectedSubstr(line, 0, line.find(':'));
 		line = protectedSubstr(line, line.find(':') + 1);
 	}
 	else
-	{
 		newHost = "0.0.0.0";
-		line = protectedSubstr(line, 6);
-		line = ltrim(line);
-	}
 	return (newHost);
 }
 
