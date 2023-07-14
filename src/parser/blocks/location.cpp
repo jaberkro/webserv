@@ -92,6 +92,11 @@ Location parseLocation(std::fstream &file, std::string line, t_values values)
 				values = parseInheritanceDirective(directive, line, values);
 		}
 	}
+	if (line != "}")
+	{
+		std::cout << "Error: location block not closed before end of file" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	location.setRoot(values.root);
 	location.setIndexes(values.indexes);
 	location.setAutoindex(values.autoindex);
@@ -99,6 +104,7 @@ Location parseLocation(std::fstream &file, std::string line, t_values values)
 	location.setErrorPages(values.errorPages);
 	location.setAllowed(values.allowed);
 	location.setDenied(values.denied);
+	location.setReturn(values.returnCode, values.returnText);
 	return (location);
 }
 

@@ -64,6 +64,12 @@ void	printServers(std::vector<Server> &servers)
 					std::cout << " [" << servers.at(i).getLocation(j).getDeny(k) << "]";
 				}
 			}
+			if (servers.at(i).getLocation(j).getReturn().first)
+			{
+				std::cout << "\n\t\t\treturn: [" << servers.at(i).getLocation(j).getReturn().first << "]";
+				if (servers.at(i).getLocation(j).getReturn().second != "")
+					std::cout << " [" << servers.at(i).getLocation(j).getReturn().second << "]";
+			}
 		}
 		std::cout << std::endl;
 	}

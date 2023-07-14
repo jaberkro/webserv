@@ -4,20 +4,35 @@
 #include <fstream>
 #include <string>
 
+static bool validExtension(std::string configFile, std::string extension)
+{
+	for(size_t i = 0; i < extension.size(); i++)
+	{
+		if (configFile.at(configFile.size() - 1 - i) != extension.at(extension.size() - 1 - i))
+			return (0);
+	}
+	return (1);
+}
+
 /**
  * @brief open configuration file and test if open failed or not
  * 
  * @param configFile the name of the file to open
  * @return std::fstream the file that is opened
  */
-std::fstream openFile(char *configFile)
+static std::fstream openFile(char *configFile)
 {
 	std::fstream file;
 
+	if (!validExtension(configFile, ".conf"))
+	{
+		std::cout << "Error: file extension should be '.conf'" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	file.open(configFile, std::fstream::in);
 	if (file.is_open())
 		return (file);
-	std::cout << "Error opening configuration file" << std::endl;
+	std::cout << "Error: not possible to open configuration file" << std::endl;
 	exit(EXIT_FAILURE);
 }
 

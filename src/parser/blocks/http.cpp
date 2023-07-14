@@ -36,8 +36,18 @@ void parseHTTP(std::vector<Server> &servers, std::fstream &file, t_values values
 				std::cout << "Error: can't parse http block near [" << line << "]" << std::endl;
 				exit(EXIT_FAILURE);
 			}
+			else if (directive == 5)
+			{
+				std::cout << "Error: can't parse return directive in http block: [" << line << "]" << std::endl;
+				exit(EXIT_FAILURE);
+			}
 			values = parseInheritanceDirective(directive, line, values);
 		}
+	}
+	if (line != "}")
+	{
+		std::cout << "Error: http block not closed before end of file" << std::endl;
+		exit(EXIT_FAILURE);
 	}
 	if (servers.size() == 0)
 	{
