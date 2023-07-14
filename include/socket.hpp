@@ -7,30 +7,54 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-
 class Socket
 {
 	private:
 		unsigned short port;
-		// struct uc {
-		// 	int uc_fd;
-		// 	char *uc_addr;
-		// } users[10]; //10 is hardcoded!!
-		// ^^ ?? if I use this instead of global, it fails!? ^^
-		// struct kevent evSet;
-		// int kq;
 		int	listenfd;
 		struct	sockaddr_in	servAddr;
-		int		connIndex(int fd);
-		int		connAdd(int fd);
-		int		connDelete(int fd);
 	public:
-		Socket(unsigned short newport);
+		Socket(unsigned short newport, int kq, struct kevent evSet);
 		int		getListenfd();
 		void	watchLoop(); //deze weer implementeren en private maken!
-		bool	setUpConn(int kq, struct kevent evSet);
-		bool		write_exit(std::string error);
-
+		
+	class SocketError : public std::exception {
+		public:
+			const char*	what() const throw()
+			{
+				return ("Creation of socket failed");
+			}
+		};
+	class SetsockoptError : public std::exception {
+		public:
+			const char*	what() const throw()
+			{
+				return ("Setsockopt failed");
+			}
+		};
+	class BindError : public std::exception {
+		public:
+			const char*	what() const throw()
+			{
+				return ("Binding socket failed");
+			}
+		};
+	class ListenError : public std::exception {
+		public:
+			const char*	what() const throw()
+			{
+				return ("Listen for socket failed");
+			}
+		};
+	class KeventError : public std::exception {
+		public:
+			const char*	what() const throw()
+			{
+				return ("Kevent failed");
+			}
+		};
 };
+
+
 
 #endif
