@@ -28,6 +28,9 @@ t_values	parseInheritanceDirective(int directive, std::string line, t_values val
 		case 4:
 			values = parseErrorPage(line, values);
 			break;
+		case 5:
+			values = parseReturn(line, values);
+			break;
 	}
 	return (values);
 }
@@ -40,11 +43,11 @@ t_values	parseInheritanceDirective(int directive, std::string line, t_values val
  */
 int	hasInheritanceDirective(std::string line)
 {
-	std::string directives[] = {"root", "index", "autoindex", "client_max_body_size", "error_page"};
+	std::string directives[] = {"root", "index", "autoindex", "client_max_body_size", "error_page", "return"};
 
 	int i = 0;
 
-	while (i < 5)
+	while (i < 6)
 	{
 		if (line.find(directives[i]) == 0)
 			return (i);
