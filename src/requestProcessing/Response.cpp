@@ -101,7 +101,7 @@ void	Response::sendContentInChunks(uint8_t *response)
  */
 void	Response::sendFirstLine(uint8_t *response)
 {
-	// std::cout << "[sendFirstLine]" << std::endl;
+	std::cout << "[sendFirstLine]" << std::endl;
 	this->printResponse();
 	snprintf((char *)response, MAXLINE, \
 	"%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, this->_responseCodes.at(this->_statusCode).c_str());
@@ -255,6 +255,7 @@ void	Response::prepareResponseGET(std::vector<Location> const & locations)
 	size_t			round = 1;
 
 	std::memset(response, 0, MAXLINE);
+	std::cout << "Method is [" << this->_req.getMethod() << "]" << std::endl;
 	if (this->_req.getMethod() != "GET")
 		this->_statusCode = 400;
 	if (this->_statusCode == 400)

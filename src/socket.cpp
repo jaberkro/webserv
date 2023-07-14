@@ -35,9 +35,8 @@ bool	Socket::setUpConn(int kq, struct kevent evSet)
 		return (write_exit("bind error"));
 	if ((listen(listenfd, 10)) < 0)
 		return (write_exit("listen error"));
-    if (fcntl(listenfd, F_SETFL, O_NONBLOCK) < 0)
-   		return (write_exit("fcntl error"));
-	EV_SET(&evSet, listenfd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);//EV_SET is a macro that fills the kevent struct
+    // if (fcntl(listenfd, F_SETFL, O_NONBLOCK) < 0)
+   	// 	return (write_exit("fcntl error"));
 	EV_SET(&evSet, listenfd, EVFILT_READ, EV_ADD, 0, 0, NULL);//EV_SET is a macro that fills the kevent struct
 	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 		return (write_exit("kqueue/kevent error"));

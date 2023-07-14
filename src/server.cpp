@@ -99,11 +99,11 @@ void	Webserver::start(std::vector<Server> servers)
 				}
 				// if (connAdd(fd) == 0)
 				// {
-					if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
-					{
-						write_exit("fcntl error");
-						return ;
-					}
+					// if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
+					// {
+					// 	write_exit("fcntl error");
+					// 	return ;
+					// }
 					EV_SET(&evSet, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 					if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 					{
@@ -145,7 +145,7 @@ void	Webserver::start(std::vector<Server> servers)
 			// {
 			// 	printf("Connection refused\n");
 			// }
-			// close(fd);
+				close(fd);
 			}
 			else if (evList[i].filter == EVFILT_READ)
 			{
@@ -153,6 +153,7 @@ void	Webserver::start(std::vector<Server> servers)
 				size_t bytes_read;
 
 				bytes_read = recv(evList[i].ident, buf, sizeof(buf), 0);
+				printf("=================%d BYTESSSSSSSS===============\n", (int)bytes_read);
 				if ((int)bytes_read < 0)
 					printf("%d bytes read\n", (int)bytes_read);
 			}
