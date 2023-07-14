@@ -27,7 +27,8 @@ SRC = 	main.cpp \
 		parser/blocks/directives/maxBodySize.cpp \
 		parser/blocks/directives/errorPage.cpp \
 		parser/blocks/directives/allow.cpp \
-		parser/blocks/directives/deny.cpp
+		parser/blocks/directives/deny.cpp \
+		parser/blocks/directives/return.cpp
 
 OBJ := $(addprefix $(BUILD_DIR)/, $(SRC:.cpp=.o))
 SRC := $(addprefix $(SRC_DIR)/, $(SRC))
@@ -68,7 +69,10 @@ fclean: clean
 
 re: fclean all
 
+test: all 
+	@bash ./error_tests/test.sh
+
 debug: CXXFLAGS += -g -fsanitize=address 
 debug: re
 
-.PHONY: all, clean, fclean, re, debug
+.PHONY: all, clean, fclean, re, debug, test
