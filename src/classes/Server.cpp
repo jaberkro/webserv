@@ -41,6 +41,11 @@ void Server::addLocation(Location location)
 	this->_locations.push_back(location);
 }
 
+// void Server::addErrorPages(std::map<int, std::string> errorPages)
+// {
+// 	this->_errorPages.push_back(errorPages);
+// }
+
 const std::vector<std::pair<std::string, unsigned short> >	Server::getListens(void) const
 {
 	return (this->_listens);
@@ -74,4 +79,14 @@ const std::vector<Location> Server::getLocations(void) const
 const Location Server::getLocation(int i) const
 {
 	return (this->_locations.at(i));
+}
+
+void	Server::setErrorPages(std::map<int, std::string> errorPages)
+{
+	this->_errorPages = errorPages;
+}
+
+std::map<int, std::string> const &	Server::getErrorPages(void) const
+{
+	return (this->_errorPages);
 }

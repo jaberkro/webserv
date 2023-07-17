@@ -72,13 +72,8 @@ void	Location::setErrorPages(std::map<int, std::string> errorPages)
 }
 
 
-// #include <iostream>	//delete
 std::map<int, std::string> const &	Location::getErrorPages(void) const
 {
-	// if (this->_errorPages.empty())
-	// 	std::cout << "Error pages empty." << std::endl;
-	// else
-	// 	std::cout << "Error pages not empty." << std::endl;
 	return (this->_errorPages);
 }
 

@@ -21,6 +21,16 @@ void	printServers(std::vector<Server> &servers)
 		{
 			std::cout << " " << servers.at(i).getServerName(j);
 		}
+		// std::map<int, std::string> serverErrorPages = servers.at(i).getErrorPages();
+		// 	std::cout << "\n\t\terror_page: ";
+		// if (!serverErrorPages.empty())
+		// {
+		// 	for (std::map<int, std::string>::iterator sit= serverErrorPages.begin(); sit!=serverErrorPages.end(); ++sit)
+		// 		std::cout << "\n\t\t\t" << sit->first << " => " << sit->second;
+
+		// 	// std::cout << "\n\t\t\t\t" << errorPages[404];
+		// 	//not working yet
+		// }
 		for (size_t j = 0; j < servers.at(i).getLocations().size(); j++)
 		{
 			std::cout << "\n\t\tlocation:\n\t\t\tmodifier: ";
@@ -46,6 +56,8 @@ void	printServers(std::vector<Server> &servers)
 				std::cout << "\n\t\t\terror_page: ";
 				for (std::map<int, std::string>::iterator it= errorPages.begin(); it!=errorPages.end(); ++it)
 					std::cout << "\n\t\t\t\t" << it->first << " => " << it->second;
+
+				// std::cout << "\n\t\t\t\t" << errorPages[404];
 			}
 			if (servers.at(i).getLocation(j).getAllowed().size() != 0)
 			{
@@ -86,9 +98,10 @@ int	main(int argc, char **argv)
 	}
 
 	parse(servers, argv[1]);
-	printServers(servers);
+	printServers(servers); // turn on to see parsed configuration settings
 
 	std::cout << "Hello World!" << std::endl;
+	//turn the try block of webserv off to test the parsing with make test
 	try {
 		Webserver	webserv(servers);
 	}
