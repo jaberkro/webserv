@@ -23,12 +23,21 @@ static std::string findModifier(std::string &line)
 	}
 	if (line.find("= ") == 0)
 		return ("=");
-	else if (line.find("~ ") == 0) //remove regex as options?
-		return ("~");
-	else if (line.find("~* ") == 0) //remove regex as options?
-		return ("~*");
-	else if (line.find("^~ ") == 0) //remove regex as options?
-		return ("^~");
+	else if (line.find("~ ") == 0)
+	{
+		std::cout << "Error: invalid location block modifier: ~: regex not implemented" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	else if (line.find("~* ") == 0)
+	{
+		std::cout << "Error: invalid location block modifier: ~*: regex not implemented" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	else if (line.find("^~ ") == 0)
+	{
+		std::cout << "Error: invalid location block modifier: ^~: regex not implemented" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	return ("(none)");
 }
 
@@ -71,17 +80,31 @@ Location parseLocation(std::fstream &file, std::string line, t_values values)
 			directive = hasInheritanceDirective(line);
 			if (directive == -1)
 			{
-				std::cout << "Error: can't parse location block near [" << line << "]" << std::endl;
-				exit(EXIT_FAILURE);
+				directive = hasLocationDirective(line);
+				if (directive == -1)
+				{
+					std::cout << "Error: can't parse location block near [" << line << "]" << std::endl;
+					exit(EXIT_FAILURE);
+				}
+				values = parseLocationDirective(directive, line, values);
 			}
-			values = parseInheritanceDirective(directive, line, values);
+			else
+				values = parseInheritanceDirective(directive, line, values);
 		}
+	}
+	if (line != "}")
+	{
+		std::cout << "Error: location block not closed before end of file" << std::endl;
+		exit(EXIT_FAILURE);
 	}
 	location.setRoot(values.root);
 	location.setIndexes(values.indexes);
 	location.setAutoindex(values.autoindex);
 	location.setMaxBodySize(values.maxBodySize);
 	location.setErrorPages(values.errorPages);
+	location.setAllowed(values.allowed);
+	location.setDenied(values.denied);
+	location.setReturn(values.returnCode, values.returnText);
 	return (location);
 }
 

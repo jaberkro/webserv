@@ -1,5 +1,6 @@
 #include "Request.hpp"
-#include "Webserver.hpp"
+# include "responseCodes.hpp"
+#include "webserver.hpp"
 #include <sys/socket.h>
 
 
@@ -9,7 +10,7 @@ _target (""), \
 _protocolVersion (""), \
 _body (""), \
 _connFD (connfd), \
-_statusCode (200) {
+_statusCode (OK) {
 	std::cout << "***REQUEST CONSTRUCTOR CALLED***" << std::endl;
 }
 
@@ -91,7 +92,7 @@ bool	Request::parseStartLine(std::string &line)
 	this->_target = line.substr(0, end);	// WATCH OUT: TARGET CAN BE AN ABSOLUTE PATH
 	line.erase(0, end + 1);
 	if (this->_target.find("/..") < std::string::npos)
-		this->_statusCode = 400;
+		this->_statusCode = BAD_REQUEST;
 	this->_protocolVersion = line.substr(0, std::string::npos);
 	line.erase(0, std::string::npos);
 	// std::cout << "method is " << this->_method << std::endl;
@@ -140,6 +141,7 @@ void	Request::processReq(void)
 	bool		headersComplete = false;
 
 	std::memset(socketBuffer, 0, MAXLINE);
+	// std::cout << "About to read from socket" << std::endl;
 	while ((n = recv(this->_connFD, &socketBuffer, MAXLINE - 1, 0)) > 0) 
 	{
 		processingBuffer += socketBuffer;
@@ -148,7 +150,8 @@ void	Request::processReq(void)
 			this->extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
 			firstLineComplete = this->parseStartLine(line);
 		}
-		if (this->_statusCode != 200)
+		// std::cout << "After processing fist line, status code is " << this->_statusCode << std::endl;
+		if (this->_statusCode != OK)
 			break;
 		while (!headersComplete && (nlPos = processingBuffer.find_first_of('\n')) < std::string::npos) 
 		{
@@ -176,11 +179,6 @@ void	Request::processReq(void)
 		// }
 	}
 }
-
-/* 
-	This function extracts a string up to the first \n character from a "buffer"
-	into the "line" and removes that part of the string from the buffer
- */
 
 /**
  * @brief extracts a substring from beginning of a buffer until the following

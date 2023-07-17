@@ -37,6 +37,11 @@ Server  parseServer(std::fstream &file, t_values values)
 			values = parseInheritanceDirective(directive, line, values);
 		}
 	}
+	if (line != "}")
+	{
+		std::cout << "Error: server block not closed before end of file" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	if (newServer.getListens().size() == 0)
 		newServer.addListen(std::make_pair("0.0.0.0", 80));
 	if (newServer.getLocations().size() == 0)

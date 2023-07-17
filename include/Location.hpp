@@ -3,6 +3,7 @@
 # include <string>
 # include <vector>
 # include <map>
+# include <utility>
 
 class Location
 {
@@ -17,6 +18,9 @@ class Location
 		std::vector<std::string>	_indexes;
 		bool						_autoindex;
 		unsigned int				_maxBodySize;
+		std::vector<std::string>	_allowed;
+		std::vector<std::string>	_denied;
+		std::pair<int, std::string>	_return;
 	
 	public:
 		// functions
@@ -41,6 +45,17 @@ class Location
 		
 		void				setErrorPages(std::map<int, std::string> errorPages);
 		std::map<int, std::string> const &	getErrorPages() const;
+
+		void	                    setAllowed(std::vector<std::string> allowed);
+		std::vector<std::string>	getAllowed() const;
+		std::string                 getAllow(size_t i) const;
+
+		void	                    setDenied(std::vector<std::string> denied);
+		std::vector<std::string>	getDenied() const;
+		std::string                 getDeny(size_t i) const;
+
+		void                				setReturn(int code, std::string text);
+		const std::pair<int, std::string>   getReturn(void) const;
 };
 
 #endif
