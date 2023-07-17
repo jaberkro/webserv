@@ -17,6 +17,7 @@ class Server
 		void								addListen(std::pair<std::string, unsigned short> listen);
 		void								addServerName(std::string name);
 		void								addLocation(Location location);
+		// void								addErrorPages(std::map<int, std::string> errorPages);
 
 		const std::vector<std::pair<std::string, unsigned short> >	getListens() const;
 		const std::string					getHost(int i) const;
@@ -28,10 +29,15 @@ class Server
 		const std::vector<Location>			getLocations() const;
 		const Location						getLocation(int i) const;
 
+		void								setErrorPages(std::map<int, std::string> errorPages);
+		std::map<int, std::string> const &	getErrorPages() const;
+
+
 	private:
 		std::vector<std::pair<std::string, unsigned short> >	_listens;
 		std::vector<std::string>								_serverNames;
 		std::vector<Location>									_locations;
+		std::map<int, std::string>								_errorPages;
 };
 
 #endif
