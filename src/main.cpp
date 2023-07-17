@@ -69,7 +69,6 @@ int	main(int argc, char **argv)
 	std::cout << "Hello World!" << std::endl;
 	try {
 		Webserver	webserv(servers);
-		// webserv.start(servers);
 	}
 	catch (const std::exception& e)
 	{
