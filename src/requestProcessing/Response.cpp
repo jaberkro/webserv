@@ -67,12 +67,6 @@ Response &	Response::operator=(Response & r)
 	return (*this);
 }
 
-void	Response::prepareResponseGET(Server const & )
-{
-	std::cout << "Server-related Response prep triggered" << std::endl;
-}
-
-
 /**
  * @brief Prepares the response to a GET method request. It contains a loop, in which 
  * (i) the relevant location is identified, 
@@ -81,32 +75,25 @@ void	Response::prepareResponseGET(Server const & )
  * (iv) the path to the definitive target is constructed, and
  * (v) the function that retrieves the file is called.
  * 
- * @param response the buffer in which the response is composed
- * @param locations the vector of Location instances containing the configuration
- * of the server's locations
+ * @param server a reference to the server that was identified to respond to this
+ * request
  */
-void	Response::prepareResponseGET(std::vector<Location> const & locations)
+void	Response::prepareResponseGET(Server const & server)
 {
-	uint8_t					*response = new uint8_t[MAXLINE + 1];
 	std::vector<Location>::const_iterator	itLoc;
-	std::string						targetUri = \
+	std::string								targetUri = \
 	this->_req.getTarget().substr(0, this->_req.getTarget().find_first_of('?'));
-	size_t			round = 1;
-
-	std::memset(response, 0, MAXLINE);
-	std::cout << "--> METHOD IS [" << this->_req.getMethod() << "]" << std::endl;
+	int	rounds = 0;
+	
 	if (this->_req.getMethod() != "GET")
 		std::cout << "I cannot handle this method just yet, sorry!" << std::endl;
-		// this->_statusCode = BAD_REQUEST;
-	// if (this->_statusCode == BAD_REQUEST)
-	// 	sendFirstLine(response);
 	else
-		while (!this->_isReady && round++ < 6)
+		while (!this->_isReady && rounds++ < 6)
 		{
 			std::cout << "Target Uri is " << targetUri << std::endl;
 			try 
 			{
-				itLoc = findMatch(targetUri, locations);
+				itLoc = findMatch(targetUri, server.getLocations());
 				std::cout << "Matching location found: " << itLoc->getMatch() << std::endl;
 				if (targetUri[targetUri.length() - 1] == '/' && !itLoc->getIndexes().empty())
 				{
@@ -117,7 +104,7 @@ void	Response::prepareResponseGET(std::vector<Location> const & locations)
 				{
 					this->_filePath = itLoc->getRoot() + targetUri;
 					std::cout << "File path is " << this->_filePath << std::endl;
-					this->retrieveFile(response, itLoc->getRoot());
+					this->retrieveFile(itLoc->getRoot());
 					this->_isReady = true;
 				}
 			}
@@ -135,6 +122,8 @@ void	Response::prepareResponseGET(std::vector<Location> const & locations)
 				// TO BE ADDED: try to find a corresponding error page in the SERVER block;
 				targetUri = "data/www/defaultError.html";
 			}
+			if (rounds == 6)
+				std::cout << "--> ended after 6 rounds <--" << std::endl;
 		}
 }
 
@@ -272,9 +261,9 @@ std::string	Response::findIndexPage(std::vector<Location>::const_iterator itLoc)
 
 	for (auto itIdx = indexes.begin(); itIdx != indexes.end(); itIdx++)
 	{
-		filePath = itLoc->getRoot() + itLoc->getMatch() + *itIdx;
+		filePath = itLoc->getRoot() + *itIdx;
 		if (access(filePath.c_str(), F_OK) == 0)
-			return (itLoc->getMatch() + *itIdx);
+			return (*itIdx);
 	}
 	this->_statusCode = NOT_FOUND;
 	throw std::ios_base::failure("Index file not found");
@@ -285,7 +274,7 @@ std::string	Response::findIndexPage(std::vector<Location>::const_iterator itLoc)
  * 
  * @param response the buffer into which the response is written
  */
-void	Response::retrieveFile(uint8_t *response, std::string const & root)
+void	Response::retrieveFile(std::string const & root)
 {
 	
 	this->_fileLength = this->getFileSize(this->_filePath);
@@ -294,9 +283,9 @@ void	Response::retrieveFile(uint8_t *response, std::string const & root)
 		this->_statusCode = NOT_FOUND;
 		throw std::ios_base::failure("File not found");
 	}
-	sendFirstLine(response);
-	sendHeaders(response, root);
-	sendContentInChunks(response);
+	sendFirstLine();
+	sendHeaders(root);
+	sendContentInChunks();
 }
 
 
@@ -306,14 +295,15 @@ void	Response::retrieveFile(uint8_t *response, std::string const & root)
  * 
  * @param response the buffer into which the response is written
  */
-void	Response::sendFirstLine(uint8_t *response)
+void	Response::sendFirstLine(void)
 {
-	// this->printResponse();
+	uint8_t	response[MAXLINE + 1];
+	
+	std::memset(response, 0, MAXLINE);
 	snprintf((char *)response, MAXLINE, \
 	"%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, \
 	this->_responseCodes.at(this->_statusCode).c_str());
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
-	std::memset(response, 0, MAXLINE);
 }
 
 /**
@@ -324,16 +314,17 @@ void	Response::sendFirstLine(uint8_t *response)
  * @param root the root directory (from the location block; used to distinguish
  * between the file types that are to be returned - to determine Content Type)
  */
-void	Response::sendHeaders(uint8_t *response, std::string const & root)
+void	Response::sendHeaders(std::string const & root)
 {
+	uint8_t	response[MAXLINE + 1];
 	std::string		contentType = root == "data" ? \
 	"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
 	std::string::npos) : "text/html";
 
+	std::memset(response, 0, MAXLINE);
 	snprintf((char *)response, MAXLINE, \
 	"Content-Type: %s\r\nContent-Length: %zu\r\n\r\n", contentType.c_str(), this->_fileLength);
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
-	std::memset(response, 0, MAXLINE);
 }
 
 
@@ -345,11 +336,13 @@ void	Response::sendHeaders(uint8_t *response, std::string const & root)
  * 
  * @param response the buffer into which the response is written
  */
-void	Response::sendContentInChunks(uint8_t *response)
+void	Response::sendContentInChunks(void)
 {
+	uint8_t			response[CHUNK_SIZE + 1];
 	std::ifstream	file;
 	std::filebuf	*fileBuf;
 	
+	std::memset(response, 0, CHUNK_SIZE);
 	file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
 	if (!file.is_open())
 	{

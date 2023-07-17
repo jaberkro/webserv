@@ -17,16 +17,15 @@ class Response {
 		
 		/* functions */
 		void									prepareResponseGET(Server const & );
-		void									prepareResponseGET(std::vector<Location> const & locations);
 		std::string								identifyErrorPage(std::vector<Location>::const_iterator itLoc);
 		std::vector<Location>::const_iterator 	findMatch(std::string target, std::vector<Location> const & locations);
 		std::vector<Location>::const_iterator	findExactMatch(std::string target, std::vector<Location> const & locations);
 		std::vector<Location>::const_iterator	findClosestMatch(std::string target, std::vector<Location> const & locations);
 		std::string								findIndexPage(std::vector<Location>::const_iterator itLoc);
-		void									retrieveFile(uint8_t *response, std::string const & root);
-		void									sendFirstLine(uint8_t *response);
-		void									sendHeaders(uint8_t *response, std::string const & root);
-		void									sendContentInChunks(uint8_t *response);
+		void									retrieveFile(std::string const & root);
+		void									sendFirstLine(void);
+		void									sendHeaders(std::string const & root);
+		void									sendContentInChunks(void);
 
 		/* utils */
 		void	splitUri(std::string const & uri, std::vector<std::string> & chunks);
