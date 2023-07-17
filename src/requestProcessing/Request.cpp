@@ -76,11 +76,7 @@ void	Request::parseFieldLine(std::string &line)
 	key = extractKey(line);
 	value = extractValue(line);
 	if (key == "Host")
-	// {
 		setHost(value);
-		// line.erase(0, std::string::npos);
-		// return;
-	// }
 	try
 	{
 		this->_headers.at(key) += ", " + value;
@@ -92,6 +88,14 @@ void	Request::parseFieldLine(std::string &line)
 	line.erase(0, std::string::npos);
 }
 
+/**
+ * @brief extracts and returns the string preceding the first ':' character in 
+ * the string given as an argument
+ * 
+ * @param line the string from which the string preceding the first ':' is to be
+ * extracted
+ * @return std::string - the extracted string
+ */
 std::string	Request::extractKey(std::string line)
 {
 	size_t	colon = line.find_first_of(":");
@@ -99,6 +103,15 @@ std::string	Request::extractKey(std::string line)
 	return (line.substr(0, colon));
 }
 
+/**
+ * @brief extracts and returns the string immediately following the first ':' 
+ * character in the string given as an argument. The function removes trailing
+ * spaces.
+ * 
+ * @param line the string from which the string following the first ':' is to be
+ * extracted
+ * @return std::string - the extracted string
+ */
 std::string	Request::extractValue(std::string line)
 {
 	size_t		colon = line.find_first_of(":");
@@ -107,11 +120,12 @@ std::string	Request::extractValue(std::string line)
 	value = colon == std::string::npos ? "80" : line.substr(colon + 1, std::string::npos);
 	this->removeTrailingSpaces(value);
 	return (value);
+	// RETURNS 80 IF EMPTY -> COULD BE MOVED TO A SEPARATE FUNCTION
 }
 
 /**
  * @brief reads a request from the socket, splits it into separate lines 
-	and sends each line to the parsing function for further processing
+	and sends each line to the corresponding parsing function for further processing
  * 
  */
 void	Request::processReq(void) 
@@ -124,7 +138,6 @@ void	Request::processReq(void)
 	bool		headersComplete = false;
 
 	std::memset(socketBuffer, 0, MAXLINE);
-	// std::cout << "About to read from socket" << std::endl;
 	while ((n = recv(this->_connFD, &socketBuffer, MAXLINE - 1, 0)) > 0) 
 	{
 		processingBuffer += socketBuffer;
@@ -133,7 +146,6 @@ void	Request::processReq(void)
 			this->extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
 			firstLineComplete = this->parseStartLine(line);
 		}
-		// std::cout << "After processing fist line, status code is " << this->_statusCode << std::endl;
 		if (this->_statusCode != OK)
 			break;
 		while (!headersComplete && (nlPos = processingBuffer.find_first_of('\n')) < std::string::npos) 
@@ -145,9 +157,6 @@ void	Request::processReq(void)
 		}
 		// CODE TO BE ADDED FOR READING THE BODY
 
-		// std::cout << "Parsed headers: " << std::endl;
-		// for (std::map<std::string,std::string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
-		// 	std::cout << it->first << " -> " << it->second << std::endl;
 		if (processingBuffer == "\r\n")
 			break;
 
@@ -163,34 +172,41 @@ void	Request::processReq(void)
 	}
 }
 
+/**
+ * @brief identifies the server that should handle the request and returns a 
+ * reference to it
+ * 
+ * @param servers the vector of existing Server instances
+ * @return Server const& reference to the server that shall handle the request
+ */
 Server const &	Request::identifyServer(std::vector<Server> const & servers)
 {
 	std::vector<int>	matches;
 	int					bestMatch = -1;
 	int					zero = -1;
 	
-	for (auto printIt = servers.begin(); printIt != servers.end(); printIt++)
-	{
-		printServer(*printIt);
-	}
+	// for (auto printIt = servers.begin(); printIt != servers.end(); printIt++)
+	// {
+	// 	printServer(*printIt);
+	// }
 	findHostMatch(servers, matches, &zero);
 	/* begin debug code */
-	std::cout << "Found " << matches.size() << " matching servers" << std::endl; 
-	for (auto printIt = matches.begin(); printIt != matches.end(); printIt++)
-	{
-		// printServer(*(*printIt));
-		std::cout << servers[*printIt].getServerName(0) << "; ";
-	}
-	std::cout << std::endl;
-	if (zero >= 0)
-		std::cout << "Zero is " << servers[zero].getServerName(0) << std::endl;
-	else
-		std::cout << "Zero is NOT there" << std::endl;
+	// std::cout << "Found " << matches.size() << " matching servers" << std::endl; 
+	// for (auto printIt = matches.begin(); printIt != matches.end(); printIt++)
+	// {
+	// 	// printServer(*(*printIt));
+	// 	std::cout << servers[*printIt].getServerName(0) << "; ";
+	// }
+	// std::cout << std::endl;
+	// if (zero >= 0)
+	// 	std::cout << "Zero is " << servers[zero].getServerName(0) << std::endl;
+	// else
+	// 	std::cout << "Zero is NOT there" << std::endl;
 	/* end debug code */
 	switch (matches.size())
 	{
 		case 0:
-			if (!zero)
+			if (zero < 0)
 				throw std::runtime_error("ERROR: No matching server, not even a default 0.0.0.0 found");
 			return (servers[zero]);
 		case 1:
@@ -201,15 +217,23 @@ Server const &	Request::identifyServer(std::vector<Server> const & servers)
 	}
 }
 
-void	Request::findHostMatch(std::vector<Server> const & servers, std::vector<int> & matches, int *zero)
+/**
+ * @brief identifies servers that match the request based on host:port combination
+ * 
+ * @param servers vector of existing Server instances
+ * @param matches vector of integers with indexes of matching servers
+ * @param zero index of the server that listens on 0.0.0.0 (if any)
+ */
+void	Request::findHostMatch(std::vector<Server> const & servers, \
+std::vector<int> & matches, int *zero)
 {
-	std::cout << "Finding match for " << this->_address << ":" << this->_port << std::endl;
 	for (size_t idx = 0; idx < servers.size(); idx++)
 	{
 		for (size_t i = 0; i < servers[idx].getListens().size(); i++)
 		{
 			std::string const & reqAddress = servers[idx].getHost(i);
-			if (servers[idx].getPort(i) == this->_port && (reqAddress == this->_address || isLocalhost(reqAddress)))
+			if (servers[idx].getPort(i) == this->_port && \
+			(reqAddress == this->_address || isLocalhost(reqAddress)))
 				matches.push_back(idx);
 			if (servers[idx].getHost(i) == "0.0.0.0" && *zero < 0)
 				*zero = idx;
@@ -218,7 +242,16 @@ void	Request::findHostMatch(std::vector<Server> const & servers, std::vector<int
 	
 }
 
-int	Request::findServerNameMatch(std::vector<Server> const & servers, std::vector<int>	& matches)
+/**
+ * @brief identifies servers that match the request based on the hostname (in 
+ * case more than one matches have been found based on host:port combination)
+ * 
+ * @param servers vector of existing Server instances
+ * @param matches vector of integers with indexes of matching servers
+ * @return int index of best matching server
+ */
+int	Request::findServerNameMatch(std::vector<Server> const & servers, \
+std::vector<int>	& matches)
 {
 	int							longestLeading = -1;
 	size_t						overlapLeading = 0;
@@ -237,18 +270,23 @@ int	Request::findServerNameMatch(std::vector<Server> const & servers, std::vecto
 			
 			std::vector<std::string>	nameSplit;
 			splitServerName(*itName, nameSplit);
-			if ((*itName)[0] == '*')
+			if ((*itName)[0] == '*' && (*itName)[1] == '.')
 			{
+				// std::cout << "[leading *] ";
 				size_t	overlap = countOverlapLeading(hostSplit, nameSplit);
+				// std::cout << this->_headers.at("Host") << " and " << *itName << " overlap: " << overlap << std::endl;
 				if (overlap > overlapLeading)
 				{
 					overlapLeading = overlap;
 					longestLeading = *it;
 				}
 			}
-			else if ((*itName)[(*itName).length() - 1] == '*')
+			else if ((*itName)[(*itName).length() - 1] == '*' && \
+			(*itName)[(*itName).length() - 2] == '.')
 			{
+				// std::cout << "[trailing *] ";
 				size_t	overlap = countOverlapTrailing(hostSplit, nameSplit);
+				// std::cout << this->_headers.at("Host") << " and " << *itName << " overlap: " << overlap << std::endl;
 				if (overlap > overlapTrailing)
 				{
 					overlapTrailing = overlap;
@@ -265,7 +303,16 @@ int	Request::findServerNameMatch(std::vector<Server> const & servers, std::vecto
 		return (*matches.begin());
 }
 
-size_t	Request::countOverlapLeading(std::vector<std::string> & hostSplit, std::vector<std::string> & nameSplit)
+/**
+ * @brief counts the overlapping elements in hostnames starting with a leading
+ * asterisk
+ * 
+ * @param hostSplit hostname in the request, split by element ('.' or string)
+ * @param nameSplit server_name, split by element ('.' or string)
+ * @return size_t index of the server with longest overlap
+ */
+size_t	Request::countOverlapLeading(std::vector<std::string> & hostSplit, \
+std::vector<std::string> & nameSplit)
 {
 	size_t	revIdxN = nameSplit.size() - 1;
 	size_t	revIdxH = hostSplit.size() - 1;
@@ -280,7 +327,16 @@ size_t	Request::countOverlapLeading(std::vector<std::string> & hostSplit, std::v
 	return (0);
 }
 
-size_t	Request::countOverlapTrailing(std::vector<std::string> & hostSplit, std::vector<std::string> & nameSplit)
+/**
+ * @brief counts the overlapping elements in hostnames starting with a trailing
+ * asterisk
+ * 
+ * @param hostSplit hostname in the request, split by element ('.' or string)
+ * @param nameSplit server_name, split by element ('.' or string)
+ * @return size_t index of the server with longest overlap
+ */
+size_t	Request::countOverlapTrailing(std::vector<std::string> & hostSplit, \
+std::vector<std::string> & nameSplit)
 {
 	for (size_t idx = 0; idx < hostSplit.size(); idx++)
 	{
@@ -292,6 +348,13 @@ size_t	Request::countOverlapTrailing(std::vector<std::string> & hostSplit, std::
 	return (0);		
 }
 
+/**
+ * @brief splits a string (server name) into elements of '.' and strings of other
+ * characters
+ * 
+ * @param name domain name to be split
+ * @param chunks vector in which the elements are saved
+ */
 void	Request::splitServerName(std::string const & name, std::vector<std::string> & chunks)
 {
 	size_t	begin = 0;
@@ -305,6 +368,7 @@ void	Request::splitServerName(std::string const & name, std::vector<std::string>
 	}
 }
 
+// FOR DEBUGGING ONLY
 void	Request::printServer(Server const & server)
 {
 	std::cout << "--- SERVER ---" << std::endl;
@@ -349,6 +413,15 @@ void	Request::removeTrailingSpaces(std::string &line)
 	line.erase(line.find_last_not_of(SPACES) + 1, std::string::npos);
 }
 
+/**
+ * @brief verifies whether the host indication in the request and the host 
+ * (IP address) at which a server is listening are both localhost. 
+ * Returns true if yes and false if either one is not a localhost
+ * 
+ * @param address IP address on which a server is listening
+ * @return true - if both are localhost
+ * @return false - if at least one is not localhost
+ */
 bool	Request::isLocalhost(std::string const &address)
 {
 	std::vector<std::string>	localhost = {"localhost", "127.0.0.1"};
@@ -361,7 +434,11 @@ bool	Request::isLocalhost(std::string const &address)
 	return (count == 2 ? true : false);
 }
 
-
+/**
+ * @brief transforms a string into lowercase
+ * 
+ * @param str reference to a string to be transformed into lowercase
+ */
 void	Request::makeLowercase(std::string & str)
 {
 	for (size_t idx = 0; idx < str.length(); idx++)
@@ -441,9 +518,7 @@ unsigned short	Request::getPort() const
 void	Request::setHost(std::string host)
 {
 	this->_address = this->extractKey(host);
-	std::cout << "[setHost] address before is " << this->_address << std::endl;
 	makeLowercase(this->_address);
-	std::cout << "[setHost] address after is " << this->_address << std::endl;
 	this->_port = stoi(this->extractValue(host)); // what if exception?
 }
 

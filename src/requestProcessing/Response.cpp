@@ -85,16 +85,19 @@ void	Response::prepareResponseGET(Server const & server)
 	this->_req.getTarget().substr(0, this->_req.getTarget().find_first_of('?'));
 	int	rounds = 0;
 	
-	if (this->_req.getMethod() != "GET")
-		std::cout << "I cannot handle this method just yet, sorry!" << std::endl;
+	if (this->_req.getMethod() == "")
+		close(this->_req.getConnFD());
+	else if (this->_req.getMethod() != "GET")
+		std::cout << "I cannot handle the \"" << this->_req.getMethod() \
+		<< "\" method just yet, sorry!" << std::endl;
 	else
 		while (!this->_isReady && rounds++ < 6)
 		{
-			std::cout << "Target Uri is " << targetUri << std::endl;
+			// std::cout << "Target Uri is " << targetUri << std::endl;
 			try 
 			{
 				itLoc = findMatch(targetUri, server.getLocations());
-				std::cout << "Matching location found: " << itLoc->getMatch() << std::endl;
+				// std::cout << "Matching location found: " << itLoc->getMatch() << std::endl;
 				if (targetUri[targetUri.length() - 1] == '/' && !itLoc->getIndexes().empty())
 				{
 					targetUri = findIndexPage(itLoc);
@@ -103,7 +106,7 @@ void	Response::prepareResponseGET(Server const & server)
 				else
 				{
 					this->_filePath = itLoc->getRoot() + targetUri;
-					std::cout << "File path is " << this->_filePath << std::endl;
+					// std::cout << "File path is " << this->_filePath << std::endl;
 					this->retrieveFile(itLoc->getRoot());
 					this->_isReady = true;
 				}
@@ -123,7 +126,7 @@ void	Response::prepareResponseGET(Server const & server)
 				targetUri = "data/www/defaultError.html";
 			}
 			if (rounds == 6)
-				std::cout << "--> ended after 6 rounds <--" << std::endl;
+				std::cout << "--> loop ended after 6 rounds <--" << std::endl;
 		}
 }
 
@@ -144,7 +147,7 @@ std::string	Response::identifyErrorPage(std::vector<Location>::const_iterator it
 	}
 	catch(const std::out_of_range& oor)
 	{
-		std::cerr << "No custom error page found" << std::endl;
+		// std::cerr << "No custom error page found" << std::endl;
 		return("/defaultError.html");
 	}
 }
@@ -168,7 +171,7 @@ std::vector<Location> const & locations)
 	if (itLoc == locations.end())
 	{
 		this->_statusCode = INTERNAL_SERVER_ERROR;
-		throw(std::range_error("No location match"));
+		throw(std::range_error("No location match")); // further handle 
 	}
 	return (itLoc);
 }
@@ -183,7 +186,8 @@ std::vector<Location> const & locations)
  * is the exact match for the target. If no exact match was found, an iterator
  * pointing to the end of the locations vector is returned.
  */
-std::vector<Location>::const_iterator	Response::findExactMatch(std::string target, std::vector<Location> const & locations)
+std::vector<Location>::const_iterator	Response::findExactMatch(std::string target, \
+std::vector<Location> const & locations)
 {
 	std::vector<Location>::const_iterator it;
 	

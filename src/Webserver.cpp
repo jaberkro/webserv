@@ -66,23 +66,23 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 				EV_SET(&evSet, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 					throw Webserver::KeventError();
-				newReq = new Request(fd);
-				newReq->processReq();
-				newReq->printRequest();
-				// determine which server should handle this request (Request::identifyServer)
-				// 1. parse "listen" directives, if multiple matches with equal specificity:
-				// 2. parse "server name" directives find the server that corresponds to the request field's Host
-				// otherwise give it to the default one
-				newResp = new Response(*newReq);
-				delete newReq;
-				newResp->prepareResponseGET(servers.at(0).getLocations()); // argument is ref to the Server
-				// if (response)
-				// {
-				// 	// std::cout << "About to return " << newResp->getMsgLength() << "bytes: " << response << std::endl;
-				// 	send(fd, (char*)response, newResp->getMsgLength(), 0);
-				// 	delete response;
-				// }
-				delete newResp;
+				try
+					{
+						newReq = new Request(fd);
+						newReq->processReq();
+						newReq->printRequest();
+						Server const &	handler = newReq->identifyServer(servers);
+						std::cout << "Responsible server is " << \
+						handler.getServerName(0) << std::endl;
+						newResp = new Response(*newReq);
+						delete newReq;
+						newResp->prepareResponseGET(handler);
+						delete newResp;
+					}
+					catch(const std::exception& e)
+					{
+						std::cerr << "!!! " << e.what() << '\n';
+					}
 				if ((close(fd)) < 0)
 					throw Webserver::CloseError();
 			}
