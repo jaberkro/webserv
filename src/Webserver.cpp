@@ -112,7 +112,7 @@ Webserver::Webserver(std::vector<Server> servers)
 	{
 		for (size_t j = 0; j < servers.at(i).getListens().size(); j++)
 		{
-			Socket sock(servers.at(i).getListens().at(j).second, kq, evSet);
+			Socket sock(servers.at(i).getListens().at(j).first, servers.at(i).getListens().at(j).second, kq, evSet);
 			sckts.push_back(sock);
 		}
 	}

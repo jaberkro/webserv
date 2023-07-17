@@ -4,6 +4,8 @@
 #include <iostream>
 #include <sys/socket.h>
 #include <sys/event.h>
+#include <sys/types.h>
+#include <netdb.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 
@@ -14,7 +16,7 @@ class Socket
 		int	listenfd;
 		struct	sockaddr_in	servAddr;
 	public:
-		Socket(unsigned short newport, int kq, struct kevent evSet);
+		Socket(std::string address, unsigned short newport, int kq, struct kevent evSet);
 		int		getListenfd();
 		void	watchLoop(); //deze weer implementeren en private maken!
 		
@@ -30,6 +32,13 @@ class Socket
 			const char*	what() const throw()
 			{
 				return ("Setsockopt failed");
+			}
+		};
+	class AddressConversionError : public std::exception {
+		public:
+			const char*	what() const throw()
+			{
+				return ("Converting address for socket failed");
 			}
 		};
 	class BindError : public std::exception {
