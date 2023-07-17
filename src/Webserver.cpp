@@ -31,10 +31,6 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 	Response	*newResp;
 	struct sockaddr_storage addr;
 	socklen_t socklen = sizeof(addr);
-	// std::vector<Location>	locations;
-	// uint8_t		*response; // needs to be malloced 
-
-	// createLocation(locations);
 
 	while (1)
 	{
