@@ -41,7 +41,7 @@ void Server::addLocation(Location location)
 	this->_locations.push_back(location);
 }
 
-const std::vector<std::pair<std::string, unsigned short> >	Server::getListens(void) const
+const std::vector<std::pair<std::string, unsigned short>> &	Server::getListens(void) const
 {
 	return (this->_listens);
 }
@@ -66,12 +66,12 @@ const std::string Server::getServerName(int i) const
 	return (this->_serverNames.at(i));
 }
 
-const std::vector<Location> Server::getLocations(void) const
+const std::vector<Location> & Server::getLocations(void) const
 {
 	return (this->_locations);
 }
 
-const Location Server::getLocation(int i) const
+const Location & Server::getLocation(int i) const
 {
 	return (this->_locations.at(i));
 }

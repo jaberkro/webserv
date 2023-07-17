@@ -3,17 +3,7 @@
 
 # include <string>
 # include <map>
-
-/* HOW TO INCORPORATE THIS IN server.cpp:
-
-	#include "Request.hpp"
-	
-	add the following two lines in the while(1) loop below the line calling the accept() function
-		Request	req(connfd);
-		req.processReq();
-
-	+ add Request.cpp in the Makefile
- */
+# include "Server.hpp"
 
 # define HEADER_END "\r\n\r\n"
 # define SPACES " \t\v\r\f"
@@ -28,18 +18,42 @@ class Request
 		Request(Request &);
 		Request &	operator=(Request &);
 
-		void								processReq(void);
-		void								parseFieldLine(std::string &line);
-		bool								parseStartLine(std::string &line);
+		void		processReq(void);
+		bool		parseStartLine(std::string &line);
+		void		parseFieldLine(std::string &line);
+		std::string	extractKey(std::string line);
+		std::string	extractValue(std::string line);
+
+
+		Server const &	identifyServer(std::vector<Server> const & servers);
+		void			findHostMatch(std::vector<Server> const & servers, std::vector<int> & matches, int *zero);
+		int				findServerNameMatch(std::vector<Server> const & servers, std::vector<int>	& matches);
+		void			splitServerName(std::string const & name, std::vector<std::string> & chunks);
+		size_t			countOverlapLeading(std::vector<std::string> & hostSplit, std::vector<std::string> & nameSplit);
+		size_t			countOverlapTrailing(std::vector<std::string> & hostSplit, std::vector<std::string> & nameSplit);
+
+
+
 		std::string	const &					getMethod() const;
+		void								setMethod(std::string method);
 		std::string	const &					getTarget() const;
+		void								setTarget(std::string target);
 		std::string	const &					getProtocolVersion() const;
+		void								setProtocolVersion(std::string protocol);
+		int									getStatusCode() const;
+		void								setStatusCode(int code);
+		std::string const &					getAddress() const;
+		unsigned short						getPort() const;
+		void								setHost(std::string host);
 		std::string	const &					getBody() const;
 		int									getConnFD() const;
-		int									getStatusCode() const;
 		std::map<std::string, std::string>	&getHeaders();
+		bool	isLocalhost(std::string const & address);
+		void	makeLowercase(std::string & str);
 
-		void								printRequest();
+		void								printRequest();	// for debugging purposes, to be deleted
+		void	printServer(Server const & server); // for debugging purposes, to be deleted
+
 
 	private:
 
@@ -53,6 +67,8 @@ class Request
 		std::string					_body;
 		int							_connFD;
 		int							_statusCode;
+		std::string					_address;
+		unsigned short				_port;
 };
 
 
