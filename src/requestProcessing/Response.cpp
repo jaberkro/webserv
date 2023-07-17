@@ -67,6 +67,12 @@ Response &	Response::operator=(Response & r)
 	return (*this);
 }
 
+void	Response::prepareResponseGET(Server const & )
+{
+	std::cout << "Server-related Response prep triggered" << std::endl;
+}
+
+
 /**
  * @brief Prepares the response to a GET method request. It contains a loop, in which 
  * (i) the relevant location is identified, 
@@ -90,9 +96,10 @@ void	Response::prepareResponseGET(std::vector<Location> const & locations)
 	std::memset(response, 0, MAXLINE);
 	std::cout << "--> METHOD IS [" << this->_req.getMethod() << "]" << std::endl;
 	if (this->_req.getMethod() != "GET")
-		this->_statusCode = BAD_REQUEST;
-	if (this->_statusCode == BAD_REQUEST)
-		sendFirstLine(response);
+		std::cout << "I cannot handle this method just yet, sorry!" << std::endl;
+		// this->_statusCode = BAD_REQUEST;
+	// if (this->_statusCode == BAD_REQUEST)
+	// 	sendFirstLine(response);
 	else
 		while (!this->_isReady && round++ < 6)
 		{
@@ -116,14 +123,14 @@ void	Response::prepareResponseGET(std::vector<Location> const & locations)
 			}
 			catch(const std::ios_base::failure & f)
 			{
-				std::cout << "IOS exception caught: ";
-				std::cout << f.what() << std::endl;
+				std::cerr << "IOS exception caught: ";
+				std::cerr << f.what() << std::endl;
 				targetUri = identifyErrorPage(itLoc);
 			}
 			catch(const std::range_error &re)
 			{
-				std::cout << "Range exception caught: ";
-				std::cout << re.what() << std::endl;
+				std::cerr << "Range exception caught: ";
+				std::cerr << re.what() << std::endl;
 				
 				// TO BE ADDED: try to find a corresponding error page in the SERVER block;
 				targetUri = "data/www/defaultError.html";
@@ -148,6 +155,7 @@ std::string	Response::identifyErrorPage(std::vector<Location>::const_iterator it
 	}
 	catch(const std::out_of_range& oor)
 	{
+		std::cerr << "No custom error page found" << std::endl;
 		return("/defaultError.html");
 	}
 }
@@ -194,7 +202,7 @@ std::vector<Location>::const_iterator	Response::findExactMatch(std::string targe
 	{
 		if (it->getModifier() != "=")
 			continue;
-		if (target.compare(it->getMatch()) == 0)
+		if (target == it->getMatch())
 			return (it);
 	}
 	return (it);
@@ -231,7 +239,7 @@ std::vector<Location> const & locations)
 		len = matchSplit.size();
 		for (idx = 0; idx < len; idx++)
 		{
-			if (idx == targetSplit.size() || targetSplit[idx].compare(matchSplit[idx]) != 0)
+			if (idx == targetSplit.size() || targetSplit[idx] != matchSplit[idx])
 			{
 				idx = 0;
 				break;
@@ -318,7 +326,7 @@ void	Response::sendFirstLine(uint8_t *response)
  */
 void	Response::sendHeaders(uint8_t *response, std::string const & root)
 {
-	std::string		contentType = root.compare("data") == 0 ? \
+	std::string		contentType = root == "data" ? \
 	"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
 	std::string::npos) : "text/html";
 

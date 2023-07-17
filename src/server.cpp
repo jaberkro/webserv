@@ -206,12 +206,6 @@ void	Webserver::start(std::vector<Server> servers)
 	int fd;
 	Request		*newReq;
 	Response	*newResp;
-	// std::vector<Location>	locations;
-	// uint8_t		*response; // needs to be malloced 
-
-	
-
-	// createLocation(locations);
 
 	while (1)
 	{
@@ -259,25 +253,25 @@ void	Webserver::start(std::vector<Server> servers)
 						write_exit("accept error");
 						return ;
 					}
-					newReq = new Request(fd);
-					newReq->processReq();
-					newReq->printRequest();
-			// determine which server should handle this request (Request::identifyServer)
-			// 1. parse "listen" directives, if multiple matches with equal specificity:
-			// 2. parse "server name" directives find the server that corresponds to the request field's Host
-			// otherwise give it to the default one
-			
-					newResp = new Response(*newReq);
-					delete newReq;
-					newResp->prepareResponseGET(servers.at(0).getLocations()); // argument is ref to the Server
+					try
+					{
+						newReq = new Request(fd);
+						newReq->processReq();
+						newReq->printRequest();
+						Server const &	handler = newReq->identifyServer(servers);
+						std::cout << "Responsible server is " << handler.getServerName(0) << std::endl;
+						newResp = new Response(*newReq);
+						delete newReq;
+						newResp->prepareResponseGET(handler);
+						// newResp->prepareResponseGET(servers.at(0).getLocations()); // argument is ref to the Server
+						delete newResp;
+					}
+					catch(const std::exception& e)
+					{
+						std::cerr << "!!! " << e.what() << '\n';
+					}
 					
-					// if (response)
-					// {
-					// 	// std::cout << "About to return " << newResp->getMsgLength() << "bytes: " << response << std::endl;
-					// 	send(fd, (char*)response, newResp->getMsgLength(), 0);
-					// 	delete response;
-					// }
-					delete newResp;
+					
 			// }
 			// else
 			// {

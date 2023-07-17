@@ -16,6 +16,7 @@ class Response {
 		Response &	operator=(Response &);
 		
 		/* functions */
+		void									prepareResponseGET(Server const & );
 		void									prepareResponseGET(std::vector<Location> const & locations);
 		std::string								identifyErrorPage(std::vector<Location>::const_iterator itLoc);
 		std::vector<Location>::const_iterator 	findMatch(std::string target, std::vector<Location> const & locations);
