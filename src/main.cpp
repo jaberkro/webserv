@@ -1,7 +1,6 @@
 #include "webserv.hpp"
-#include "webserver.hpp"
 #include <iostream>
-#include "webserver.hpp"
+#include "Webserver.hpp"
 #include <map>
 
 void	printServers(std::vector<Server> &servers)
@@ -90,7 +89,12 @@ int	main(int argc, char **argv)
 	printServers(servers);
 
 	std::cout << "Hello World!" << std::endl;
-	Webserver	webserv;
-	webserv.start(servers);
+	try {
+		Webserver	webserv(servers);
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+	}
 	return (0);
 }

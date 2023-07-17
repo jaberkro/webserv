@@ -1,6 +1,6 @@
 #include "Request.hpp"
 # include "responseCodes.hpp"
-#include "webserver.hpp"
+#include "Webserver.hpp"
 #include <sys/socket.h>
 
 
@@ -461,4 +461,3 @@ std::map<std::string, std::string> &	Request::getHeaders()
 {
 	return (this->_headers);
 }
-

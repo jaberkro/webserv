@@ -7,10 +7,10 @@ SRC_DIR = src
 BUILD_DIR = obj
 
 SRC = 	main.cpp \
-		server.cpp \
+		Webserver.cpp \
 		requestProcessing/Request.cpp \
 		requestProcessing/Response.cpp \
-		socket.cpp \
+		Socket.cpp \
 		classes/Server.cpp \
 		classes/Location.cpp \
 		parser/parse.cpp \

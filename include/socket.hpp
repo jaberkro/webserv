@@ -4,30 +4,66 @@
 #include <iostream>
 #include <sys/socket.h>
 #include <sys/event.h>
+#include <sys/types.h>
+#include <netdb.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-
 
 class Socket
 {
 	private:
 		unsigned short port;
-		// struct uc {
-		// 	int uc_fd;
-		// 	char *uc_addr;
-		// } users[10]; //10 is hardcoded!!
-		// ^^ ?? if I use this instead of global, it fails!? ^^
-		// struct kevent evSet;
-		// int kq;
-		struct	sockaddr_in	servAddr;
-		int		connIndex(int fd);
-		int		connAdd(int fd);
-		int		connDelete(int fd);
-	public:
-		Socket(unsigned short newport);
 		int	listenfd;
-		void	watchLoop();
-		bool	setUpConn(int kq, struct kevent evSet);
+		struct	sockaddr_in	servAddr;
+	public:
+		Socket(std::string address, unsigned short newport, int kq, struct kevent evSet);
+		int		getListenfd();
+		void	watchLoop(); //deze weer implementeren en private maken!
+		
+	class SocketError : public std::exception {
+		public:
+			const char*	what() const throw()
+			{
+				return ("Creation of socket failed");
+			}
+		};
+	class SetsockoptError : public std::exception {
+		public:
+			const char*	what() const throw()
+			{
+				return ("Setsockopt failed");
+			}
+		};
+	class AddressConversionError : public std::exception {
+		public:
+			const char*	what() const throw()
+			{
+				return ("Converting address for socket failed");
+			}
+		};
+	class BindError : public std::exception {
+		public:
+			const char*	what() const throw()
+			{
+				return ("Binding socket failed");
+			}
+		};
+	class ListenError : public std::exception {
+		public:
+			const char*	what() const throw()
+			{
+				return ("Listen for socket failed");
+			}
+		};
+	class KeventError : public std::exception {
+		public:
+			const char*	what() const throw()
+			{
+				return ("Kevent failed");
+			}
+		};
 };
+
+
 
 #endif

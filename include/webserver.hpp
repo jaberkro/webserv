@@ -4,25 +4,45 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
-#include "socket.hpp"
+#include "Socket.hpp"
 #include "Server.hpp"
 
 class Socket;
 
 # define SA struct sockaddr
-# define SERVER_PORT 80
 # define MAXLINE 4000
 
 class Webserver
 {
 	private:
-		std::string	contentPath;
-		
-
-	public:
 		bool		running;
-		void		start(std::vector<Server> servers);
-		int			comparefd(std::vector<Socket> sckts, int fd);
+		std::vector<Socket> sckts;
+		int			kq;
+		int			comparefd(int fd);
+		void		startLoop(struct kevent evSet, std::vector<Server> servers);
+	public:
+		Webserver(std::vector<Server> servers);
+	class KeventError : public std::exception {
+		public:
+			const char*	what() const throw()
+			{
+				return ("Kevent failed");
+			}
+		};
+	class AcceptError : public std::exception {
+		public:
+			const char*	what() const throw()
+			{
+				return ("Accept failed");
+			}
+		};
+	class CloseError : public std::exception {
+		public:
+			const char*	what() const throw()
+			{
+				return ("Closing fd failed");
+			}
+		};
 
 };
 
