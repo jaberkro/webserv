@@ -42,16 +42,7 @@ void Server::addLocation(Location location)
 	this->_locations.push_back(location);
 }
 
-<<<<<<< HEAD
-// void Server::addErrorPages(std::map<int, std::string> errorPages)
-// {
-// 	this->_errorPages.push_back(errorPages);
-// }
-
-const std::vector<std::pair<std::string, unsigned short> >	Server::getListens(void) const
-=======
 const std::vector<std::pair<std::string, unsigned short>> &	Server::getListens(void) const
->>>>>>> f645df327ee059785a7a1ecae32291d08a2497c8
 {
 	return (this->_listens);
 }
