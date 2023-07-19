@@ -14,7 +14,7 @@ t_values	parseAutoindex(std::string line, t_values values)
 	line = ltrim(line);
 	if (findFirstWhitespace(line) != line.size())
 	{
-		std::cout << "Error: can't parse autoindex: too much arguments: [" << line << "]" << std::endl;
+		std::cout << "Error: can't parse autoindex: too many arguments: [" << line << "]" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	if (line.size() == 2 && line == "on")
