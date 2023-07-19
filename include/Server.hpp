@@ -26,16 +26,11 @@ class Server
 		const std::vector<std::string>		getServerNames() const;
 		const std::string					getServerName(int i) const;
 
-<<<<<<< HEAD
 		void								setErrorPages(std::map<int, std::string> errorPages);
 		std::map<int, std::string> const &	getErrorPages() const;
 
-		const std::vector<Location>			getLocations() const;
-		const Location						getLocation(int i) const;
-=======
 		const std::vector<Location>	&		getLocations() const;
-		const Location	&					getLocation(int i) const;
->>>>>>> f645df327ee059785a7a1ecae32291d08a2497c8
+		const Location &					getLocation(int i) const;
 
 	private:
 		std::vector<std::pair<std::string, unsigned short> >	_listens;
