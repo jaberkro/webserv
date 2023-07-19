@@ -18,15 +18,15 @@ class Server
 		void								addServerName(std::string name);
 		void								addLocation(Location location);
 
-		const std::vector<std::pair<std::string, unsigned short> >	getListens() const;
+		const std::vector<std::pair<std::string, unsigned short>> &	getListens() const;
 		const std::string					getHost(int i) const;
 		unsigned short						getPort(int i) const;
 
 		const std::vector<std::string>		getServerNames() const;
 		const std::string					getServerName(int i) const;
 
-		const std::vector<Location>			getLocations() const;
-		const Location						getLocation(int i) const;
+		const std::vector<Location>	&		getLocations() const;
+		const Location	&					getLocation(int i) const;
 
 	private:
 		std::vector<std::pair<std::string, unsigned short> >	_listens;
