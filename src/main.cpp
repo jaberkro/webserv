@@ -3,7 +3,7 @@
 #include "Webserver.hpp"
 #include <map>
 
-void	printServers(std::vector<Server> &servers)
+void	printServers(std::vector<Server> servers)
 {
 	std::cout << std::endl;
 	std::cout << "config:" << std::endl;
@@ -21,43 +21,48 @@ void	printServers(std::vector<Server> &servers)
 		{
 			std::cout << " " << servers.at(i).getServerName(j);
 		}
-		// std::map<int, std::string> serverErrorPages = servers.at(i).getErrorPages();
-		// 	std::cout << "\n\t\terror_page: ";
-		// if (!serverErrorPages.empty())
-		// {
-		// 	for (std::map<int, std::string>::iterator sit= serverErrorPages.begin(); sit!=serverErrorPages.end(); ++sit)
-		// 		std::cout << "\n\t\t\t" << sit->first << " => " << sit->second;
 
-		// 	// std::cout << "\n\t\t\t\t" << errorPages[404];
-		// 	//not working yet
-		// }
+
+		std::map<int, std::string> errorPages = servers.at(i).getErrorPages();
+		if (!errorPages.empty())
+		{
+			std::cout << "\n\t\terror_page: ";
+			std::cout << "size: " << errorPages.size();
+			for (std::map<int, std::string>::iterator sit= errorPages.begin(); sit!=errorPages.end(); ++sit)
+				std::cout << "\n\t\t\t" << sit->first << " => " << sit->second;
+		}
 		for (size_t j = 0; j < servers.at(i).getLocations().size(); j++)
 		{
-			std::cout << "\n\t\tlocation:\n\t\t\tmodifier: ";
-			std::cout << servers.at(i).getLocation(j).getModifier();
-			std::cout << "\n\t\t\tmatch: ";
+			std::cout << "\n\t\tlocation ";
+			if (servers.at(i).getLocation(j).getModifier() != "(none)")
+				std::cout << servers.at(i).getLocation(j).getModifier() << " ";
 			std::cout << servers.at(i).getLocation(j).getMatch();
-			std::cout << "\n\t\t\troot: ";
-			std::cout << servers.at(i).getLocation(j).getRoot();
-			std::cout << "\n\t\t\tindex:";
-			for (size_t k = 0; k < servers.at(i).getLocation(j).getIndexes().size(); k++)
+			if (servers.at(i).getLocation(j).getRoot().size())
 			{
-				std::cout << " " << servers.at(i).getLocation(j).getIndex(k);
+				std::cout << "\n\t\t\troot: ";
+				std::cout << servers.at(i).getLocation(j).getRoot();
+			}
+			if (servers.at(i).getLocation(j).getIndexes().size())
+			{
+				std::cout << "\n\t\t\tindex:";
+				for (size_t k = 0; k < servers.at(i).getLocation(j).getIndexes().size(); k++)
+				{
+					std::cout << " " << servers.at(i).getLocation(j).getIndex(k);
+				}
 			}
 			if (servers.at(i).getLocation(j).getAutoindex() == true)
 				std::cout << "\n\t\t\tautoindex: on";
-			else
-				std::cout << "\n\t\t\tautoindex: off";
-			std::cout << "\n\t\t\tclient_max_body_size: ";
-			std::cout << servers.at(i).getLocation(j).getMaxBodySize();
+			if (servers.at(i).getLocation(j).getMaxBodySize() != 1000000)
+			{
+				std::cout << "\n\t\t\tclient_max_body_size: ";
+				std::cout << servers.at(i).getLocation(j).getMaxBodySize();
+			}
 			std::map<int, std::string> errorPages = servers.at(i).getLocation(j).getErrorPages();
 			if (!errorPages.empty())
 			{
 				std::cout << "\n\t\t\terror_page: ";
 				for (std::map<int, std::string>::iterator it= errorPages.begin(); it!=errorPages.end(); ++it)
 					std::cout << "\n\t\t\t\t" << it->first << " => " << it->second;
-
-				// std::cout << "\n\t\t\t\t" << errorPages[404];
 			}
 			if (servers.at(i).getLocation(j).getAllowed().size() != 0)
 			{
@@ -102,12 +107,12 @@ int	main(int argc, char **argv)
 
 	std::cout << "Hello World!" << std::endl;
 	//turn the try block of webserv off to test the parsing with make test
-	try {
-		Webserver	webserv(servers);
-	}
-	catch (const std::exception& e)
-	{
-		std::cerr << e.what() << '\n';
-	}
+	// try {
+	// 	Webserver	webserv(servers);
+	// }
+	// catch (const std::exception& e)
+	// {
+	// 	std::cerr << e.what() << '\n';
+	// }
 	return (0);
 }

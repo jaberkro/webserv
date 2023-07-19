@@ -16,6 +16,7 @@ Server& Server::operator=(const Server &src)
 {
 	this->_listens = src._listens;
 	this->_serverNames = src._serverNames;
+	this->_errorPages = src._errorPages;
 	this->_locations = src._locations;
 	// std::cout << "Copy assignment operator called on Server" << std::endl;
 	return (*this);
