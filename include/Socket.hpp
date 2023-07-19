@@ -43,10 +43,14 @@ class Socket
 		};
 	class BindError : public std::exception {
 		public:
+			BindError() : message(std::strerror(errno)) {}
 			const char*	what() const throw()
 			{
-				return ("Binding socket failed");
+				std::cout << "Bind error";
+				return (message.c_str());
 			}
+		private:
+			std::string message;
 		};
 	class ListenError : public std::exception {
 		public:

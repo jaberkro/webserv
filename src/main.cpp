@@ -75,6 +75,11 @@ void	printServers(std::vector<Server> &servers)
 	std::cout << std::endl;
 }
 
+void	func_atexit(void)
+{
+	system("leaks webserv");
+}
+
 int	main(int argc, char **argv)
 {
 	std::vector<Server> servers;
@@ -96,5 +101,6 @@ int	main(int argc, char **argv)
 	{
 		std::cerr << e.what() << '\n';
 	}
+	// atexit(func_atexit);
 	return (0);
 }

@@ -25,7 +25,7 @@ int		Webserver::comparefd(int eventfd)
 
 void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 {
-	int fd, nev, i;
+	int fd = 0, nev = 0, i;
 	struct kevent evList[2];
 	Request		*newReq;
 	Response	*newResp;
@@ -48,6 +48,7 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 				printf("Disconnect\n");
 				fd = evList[i].ident;
 				EV_SET(&evSet, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+				EV_SET(&evSet, fd, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);//see gphilipp Slack
 				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 					throw Webserver::KeventError();
 				close(fd);
@@ -60,7 +61,7 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 					throw Webserver::AcceptError();
 				// if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
 				// {
-				// 	write_exit("fcntl error");
+				// 	perror("fctnl");
 				// 	return ;
 				// }
 				EV_SET(&evSet, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
@@ -86,9 +87,10 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 				if ((close(fd)) < 0)
 					throw Webserver::CloseError();
 			}
-			else if (evList[i].filter == EVFILT_READ)
+			else if (evList[i].filter == EVFILT_READ) //Hier request readen!! Voor pending content
 			{
-				char buf[256];
+				//At each call ofthis event, add a oneshot event for the timeout event (EVFILT_TIMER)!
+				char buf[evList[i].data]; //eventList.data returns size of pending content
 				size_t bytes_read;
 
 				bytes_read = recv(evList[i].ident, buf, sizeof(buf), 0);
@@ -96,6 +98,18 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 				if ((int)bytes_read < 0)
 					printf("%d bytes read\n", (int)bytes_read);
 			}
+			else if (evList[i].filter == EVFILT_WRITE)//Hier response senden!
+			{
+				//send response content that you bind to your request class. When all data is sent, delete TIMEOUT events and close conn
+				send(evList[i].ident, "Write Event", 11, 0);//This obviously should be smth else
+			}
+			else if (evList[i].filter == EVFILT_TIMER)
+			{
+				std::cout << "Time-out!!" << std::endl;
+				//Hier Timeout handlen: bind current request to a 408 response Error, delete read ev and add write ev
+			}
+			else if (fd != 0)
+				close(fd);
 		}
 	}
 	running = false;
