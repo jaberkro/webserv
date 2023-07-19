@@ -23,11 +23,12 @@ t_values		parseRoot(std::string line, t_values values)
 		std::cout << "Error: can't parse root: too many arguments: [" << line << "]" << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	if (line.find("/") != 0)
+	if ((line.find("/") != 0 && line.find("\"") != 0) || (line.find("\"") == 0 && line.size() > 1 && (line.at(1) != '\"' || line.size() != 2)))
 	{
 		std::cout << "Error: can't parse root: path should start with '/': [" << line << "]" << std::endl;
 		exit(EXIT_FAILURE);
 	}
+	line = protectedSubstr(line, 1, line.size() - 1);
 	if (line.find_last_of("/") == line.size() - 1)
 	{
 		std::cout << "Error: can't parse root: path should not end with '/': [" << line << "]" << std::endl;
