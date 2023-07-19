@@ -14,7 +14,8 @@ void parseHTTP(std::vector<Server> &servers, std::fstream &file, t_values values
 {
 	std::string line;
 	int			directive;
-
+	Server		newestServer;
+	
 	while (getValidLine(file, line))
 	{
 		if (line == "")
@@ -22,7 +23,15 @@ void parseHTTP(std::vector<Server> &servers, std::fstream &file, t_values values
 		else if (line == "}")
 			break ;
 		else if (line == "server {")
-			servers.push_back((parseServer(file, values)));
+		{
+			newestServer = parseServer(file, values);
+			servers.push_back(newestServer);
+		}
+		else if (line.find("error_page") == 0)
+		{
+			std::cout << "Error: [" << line << "]: not implemented in http block: can only be inside a server or location block" << std::endl;
+			exit(EXIT_FAILURE);
+		}
 		else if (line.find("location") == 0)
 		{
 			std::cout << "Error: [" << line << "] should be inside a server block:\nserver {\n\tlocation <optional modifier> <match> {\n\n\t}\n}" << std::endl;

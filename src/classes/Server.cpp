@@ -16,6 +16,7 @@ Server& Server::operator=(const Server &src)
 {
 	this->_listens = src._listens;
 	this->_serverNames = src._serverNames;
+	this->_errorPages = src._errorPages;
 	this->_locations = src._locations;
 	// std::cout << "Copy assignment operator called on Server" << std::endl;
 	return (*this);
@@ -74,4 +75,14 @@ const std::vector<Location> & Server::getLocations(void) const
 const Location & Server::getLocation(int i) const
 {
 	return (this->_locations.at(i));
+}
+
+void	Server::setErrorPages(std::map<int, std::string> errorPages)
+{
+	this->_errorPages = errorPages;
+}
+
+std::map<int, std::string> const &	Server::getErrorPages(void) const
+{
+	return (this->_errorPages);
 }

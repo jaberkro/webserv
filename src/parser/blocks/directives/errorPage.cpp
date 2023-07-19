@@ -27,7 +27,7 @@ t_values	parseErrorPage(std::string line, t_values values)
 			std::cout << "Error: can't parse error_page: [" << key << "]: not a number" << std::endl;
 			exit(EXIT_FAILURE);
 		}
-		values.errorPages[stoi(protectedSubstr(line, 0, findFirstWhitespace(line)))] = value;
+		values.errorPages[stoi(protectedSubstr(line, 0, findFirstWhitespace(line)))] = value; // try catch block for stoi needed
 		line = protectedSubstr(line, findFirstWhitespace(line) + 1);
 		line = ltrim(line);
 	}
@@ -38,7 +38,7 @@ t_values	parseErrorPage(std::string line, t_values values)
 			std::cout << "Error: can't parse error_page: [" << line << "]: not a number" << std::endl;
 			exit(EXIT_FAILURE);
 		}
-		values.errorPages[stoi(line)] = value;
+		values.errorPages[stoi(line)] = value; // catch possible exception
 	}
 	return (values);
 }

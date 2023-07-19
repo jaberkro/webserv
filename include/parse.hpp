@@ -6,15 +6,15 @@
 
 typedef struct s_values
 {
-	std::string					root;
+	std::string					root = "";
 	std::vector<std::string>	indexes;
-	bool						autoindex;
+	bool						autoindex = false;
 	unsigned int				maxBodySize = 1000000;
 	std::map<int, std::string>	errorPages;
 	std::vector<std::string>	allowed;
 	std::vector<std::string>	denied;
-	int							returnCode;
-	std::string					returnText;
+	int							returnCode = 0;
+	std::string					returnText = "";
 }	t_values;
 
 //utils
@@ -30,7 +30,7 @@ bool		allDigits(std::string s);
 
 //parsing
 void		parseHTTP(std::vector<Server> &servers, std::fstream &file, t_values values);
-Server 		parseServer(std::fstream &file, t_values values);
+Server		parseServer(std::fstream &file, t_values values);
 Location 	parseLocation(std::fstream &file, std::string line, t_values values);
 
 std::pair<std::string, unsigned short> parseListen(std::string line);
