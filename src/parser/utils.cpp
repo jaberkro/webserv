@@ -140,13 +140,12 @@ size_t	findFirstWhitespace(std::string line)
 {
 	if (line == "")
 		return (0);
-	if (line.find(" ") == std::string::npos && line.find("\t") == std::string::npos)
+	if (line.find(" ") == std::string::npos && \
+		line.find("\t") == std::string::npos && \
+		line.find("\v") == std::string::npos && \
+		line.find("\b") == std::string::npos)
 		return (line.size());
-	else if (line.find(" ") == std::string::npos)
-		return (line.find("\t"));
-	else if (line.find("\t") == std::string::npos)
-		return (line.find(" "));
-	return (std::min(line.find(" "), line.find("\t")));
+	return (line.find_first_of(" \t\v\b"));
 }
 
 /**
