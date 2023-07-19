@@ -59,7 +59,7 @@ void parse(std::vector<Server> &servers, char *configFile)
 		}
 		else if (line == "server {" || line.find("location") == 0 || hasInheritanceDirective(line) != -1)
 		{
-			std::cout << "Error: http block missing: \nhttp {\n\n}" << std::endl;
+			std::cout << "Error: [" << line << "]: should be inside http block: \nhttp {\n\n}" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 		else
