@@ -23,6 +23,23 @@ int		Webserver::comparefd(int eventfd)
 	return (0);
 }
 
+void	print_info(struct kevent evList1, struct kevent evList2, int nev, struct kevent evSet, int fd)
+{
+	std::cout << "= evList[1] | evList[2] =" << std::endl;
+	std::cout << "-------------------------"<< std::endl;
+	std::cout << "ident: " << evList1.ident << "    |  " << evList2.ident << std::endl;
+	std::cout << "filter: " << evList1.filter << "  |  " << evList2.filter << std::endl;
+	std::cout << "flags: " << evList1.flags << "   |  " << evList2.flags << std::endl;
+	std::cout << std::endl;
+	std::cout << "nev: " << nev << std::endl << std::endl;
+	std::cout << "     = evSet =" << std::endl;
+	std::cout << "ident: " << evSet.ident << std::endl;
+	std::cout << "filter: " << evSet.filter << std::endl;
+	std::cout << "flags: " << evSet.flags << std::endl;
+	std::cout << std::endl;
+	std::cout << "fd: " << fd << std::endl;
+}
+
 void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 {
 	int fd = 0, nev = 0, i;
@@ -32,6 +49,7 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 	struct sockaddr_storage addr;
 	socklen_t socklen = sizeof(addr);
 
+
 	while (1)
 	{
 		running = true;
@@ -39,6 +57,7 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 			throw Webserver::KeventError();
 		for (i = 0; i<nev; i++)
 		{
+			print_info(evList[0], evList[1], nev, evSet, fd);
 			if (evList[i].flags & EV_EOF)
 			{
 				printf("Disconnect\n");
@@ -63,30 +82,26 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 				EV_SET(&evSet, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 					throw Webserver::KeventError();
-				try
-					{
-						newReq = new Request(fd);
-						newReq->processReq();
-						newReq->printRequest();
-						Server const &	handler = newReq->identifyServer(servers);
-						std::cout << "Responsible server is " << \
-						handler.getServerName(0) << std::endl;
-						newResp = new Response(*newReq);
-						delete newReq;
-						newResp->prepareResponseGET(handler);
-						delete newResp;
-					}
-					catch(const std::exception& e)
-					{
-						std::cerr << "!!! " << e.what() << '\n';
-					}
+				newReq = new Request(fd);
+				newReq->processReq();
+				newReq->printRequest();
+				Server const &	handler = newReq->identifyServer(servers);
+				std::cout << "Responsible server is " << \
+				handler.getServerName(0) << std::endl;
+				newResp = new Response(*newReq);
+				delete newReq;
+				newResp->prepareResponseGET(handler);
+				delete newResp;
+				EV_SET(&evSet, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+					throw Webserver::KeventError();
 				if ((close(fd)) < 0)
 					throw Webserver::CloseError();
 			}
 			else if (evList[i].filter == EVFILT_READ) //Hier request readen!! Voor pending content
 			{
 				//At each call ofthis event, add a oneshot event for the timeout event (EVFILT_TIMER)!
-				char buf[evList[i].data]; //eventList.data returns size of pending content
+				char buf[256];//[evList[i].data]; //eventList.data returns size of pending content
 				size_t bytes_read;
 
 				bytes_read = recv(evList[i].ident, buf, sizeof(buf), 0);
