@@ -36,7 +36,13 @@ Socket::Socket(std::string address, unsigned short newport, int kq, struct keven
 	else
 		throw Socket::AddressConversionError();
 	if ((bind(listenfd, (SA *) &servAddr, sizeof(servAddr))) < 0)//bind listening socket to address
-		throw Socket::BindError();
+	{
+		int error_code = errno;
+		if (error_code == EADDRINUSE)
+			std::cout << "(Above mentioned address is already in use, scoket is not initialized)" << std::endl;
+		else
+			throw BindError();
+	}
 	// {
 	// 	perror("bind:");
 	// 	return ;
@@ -54,7 +60,7 @@ Socket::Socket(std::string address, unsigned short newport, int kq, struct keven
 	struct timespec timeout;
 	timeout.tv_sec = 10; //Timeout after 10 sec
 	timeout.tv_nsec = 0;//this is nanosecs
-	EV_SET(&evSet, 0, EVFILT_TIMER, EV_ADD, 0, 0, NULL);
+	EV_SET(&evSet, 0, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 	if (kevent(kq, &evSet, 1, NULL, 0, &timeout) == -1)
 		throw Socket::KeventError();
 }

@@ -46,7 +46,7 @@ class Socket
 			BindError() : message(std::strerror(errno)) {}
 			const char*	what() const throw()
 			{
-				std::cout << "Bind error";
+				std::cout << "Bind error: ";
 				return (message.c_str());
 			}
 		private:
