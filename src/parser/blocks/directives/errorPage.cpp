@@ -32,7 +32,21 @@ t_values	parseErrorPage(std::string line, t_values values)
 			std::cout << "Error: can't parse error_page: [" << key << "]: not a number" << std::endl;
 			exit(EXIT_FAILURE);
 		}
-		values.errorPages[stoi(protectedSubstr(line, 0, findFirstWhitespace(line)))] = value; // try catch block for stoi needed
+		try 
+		{
+			std::cout << "[" << key << "]" << std::endl;
+			if (key.size() != 3)
+			{
+				std::cout << "Error: can't parse error_page: [" << key << "]: not in range [100, 999]" << std::endl;
+				exit(EXIT_FAILURE);
+			}
+			values.errorPages[stoull(key)] = value;
+		}
+		catch(const std::exception& e)
+		{
+			std::cout << e.what() << std::endl;
+			exit(EXIT_FAILURE);
+		}
 		line = protectedSubstr(line, findFirstWhitespace(line) + 1);
 		line = ltrim(line);
 	}
@@ -40,10 +54,23 @@ t_values	parseErrorPage(std::string line, t_values values)
 	{
 		if (!allDigits(line))
 		{
-			std::cout << "Error: can't parse error_page: [" << line << "]: not a number" << std::endl;
+			std::cout << "Error: can't parse error_page: [" << line << "]: not a number in range [100, 999]" << std::endl;
 			exit(EXIT_FAILURE);
 		}
-		values.errorPages[stoi(line)] = value; // catch possible exception
+		try 
+		{
+			if (line.size() != 3)
+			{
+				std::cout << "Error: can't parse error_page: [" << line << "]: not in range [100, 999]" << std::endl;
+				exit(EXIT_FAILURE);
+			}
+			values.errorPages[stoull(line)] = value;
+		}
+		catch(const std::exception& e)
+		{
+			std::cout << e.what() << std::endl;
+			exit(EXIT_FAILURE);
+		}
 	}
 	return (values);
 }
