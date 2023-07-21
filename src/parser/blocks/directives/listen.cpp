@@ -9,6 +9,13 @@ static void	portError(std::string notPort)
 	exit(EXIT_FAILURE);
 }
 
+static void	hostError(std::string notHost)
+{
+	std::cout << "Error: can't parse listen directive: invalid host: " << \
+		notHost << ": invalid IP address" << std::endl;
+	exit(EXIT_FAILURE);
+}
+
 /**
  * @brief parse a listen command
  * 
@@ -20,9 +27,7 @@ static unsigned short	parsePort(std::string line)
 	int	port;
 
 	if (line.size() == 0)
-	{
 		return (80);
-	}
 	if (line.size() > 5 || !allDigits(line))
 		portError(line);
 	try
@@ -50,11 +55,7 @@ static void checkValidHost(std::string host)
 	{
 		if (host.at(i) == '.')
 		{
-			if (num > 255)
-			{
-				std::cout << "Error: invalid host: " << host << ": number too big: " << num << std::endl;
-				exit(EXIT_FAILURE);
-			}
+			hostError(host);
 			dotCount++;
 			num = 0;
 		}
@@ -64,21 +65,12 @@ static void checkValidHost(std::string host)
 			num += host.at(i) - 48;
 		}
 		else
-		{
-			std::cout << "Error: invalid host: " << host << ": should be 4 numbers in range [0, 255] divided by '.'" << std::endl;
-			exit(EXIT_FAILURE);
-		}	
+			hostError(host);
 	}
 	if (num > 255)
-	{
-		std::cout << "Error: invalid host: " << host << ": number too big: " << num << std::endl;
-		exit(EXIT_FAILURE);
-	}
+		hostError(host);
 	if (dotCount != 3)
-	{
-		std::cout << "Error: can't parse listen directive: invalid host: " << host << ": incorrect amount of '.': should be 3." << std::endl;
-		exit(EXIT_FAILURE);
-	}
+		hostError(host);
 }
 
 static void checkEmptyString(std::string line)
@@ -102,19 +94,11 @@ static std::string parseHost(std::string &line)
 {
 	std::string	newHost;
 
-	line = protectedSubstr(line, 6);
-	line = ltrim(line);
-	checkEmptyString(line);
 	if (line.find(':') == 0)
 	{
-		if (line.size() > 1)
-		{
-			line = protectedSubstr(line, 1, line.size() - 1);
-			line = ltrim(line);
-		}
-		else
-			line = "";
 		newHost = "0.0.0.0";
+		line = protectedSubstr(line, 1, line.size() - 1);
+		line = ltrim(line);
 	}
 	else if (line.find(':') != std::string::npos)
 	{
@@ -125,16 +109,15 @@ static std::string parseHost(std::string &line)
 			if (isalpha(newHost.at(i)))
 				newHost.at(i) = tolower(newHost.at(i));
 		}
-		checkValidHost(newHost);	
 	}
 	else if (!allDigits(line))
 	{
-		checkValidHost(line);
 		newHost = line;
 		line = "";
 	}
 	else
 		newHost = "0.0.0.0";
+	checkValidHost(newHost);	
 	return (newHost);
 }
 
@@ -146,7 +129,11 @@ static std::string parseHost(std::string &line)
  */
 std::pair<std::string, unsigned short> parseListen(std::string line)
 {
-	std::pair<std::string, unsigned short> newListen(parseHost(line), parsePort(line));
+	std::pair<std::string, unsigned short> newListen;
 
+	line = protectedSubstr(line, 6);
+	line = ltrim(line);
+	checkEmptyString(line);
+	newListen = make_pair(parseHost(line), parsePort(line));
 	return (newListen);
 }
