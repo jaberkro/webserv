@@ -35,7 +35,7 @@ t_values	parseReturn(std::string line, t_values values)
 	}
 	line = protectedSubstr(line, findFirstWhitespace(line), line.size() - findFirstWhitespace(line));
 	line = ltrim(line);
-	if (findFirstWhitespace(line) != line.size() && line.size() > 1 && line.at(0) != '"')
+	if (findFirstWhitespace(line) != line.size() && line.size() > 1 && line.at(0) != '"') // return 404 "quote" more; is now still accepted
 	{
 		std::cout << "Error: can't parse return: too many text arguments: [" << line<< "]" << std::endl;
 		exit(EXIT_FAILURE);
