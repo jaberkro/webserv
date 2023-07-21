@@ -17,6 +17,11 @@ t_values	parseErrorPage(std::string line, t_values values)
 	line = ltrim(line);
 	// values.errorPages.clear(); //outcomment this if error_page should overwrite itself
 	value = protectedSubstr(line, line.find_last_of(" \t") + 1, line.size() - line.find_last_of(" \t") + 1);
+	if (value.find("/") != 0 || value.find(".") == std::string::npos || value.find(".") == value.size() - 1)
+	{
+		std::cout << "Error: can't parse error_page: [" << value << "]: page should start with '/' and contain extension: /<name>.<extension" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	line = protectedSubstr(line, 0, line.find_last_of(" \t") + 1);
 	line = rtrim(line);
 	while (findFirstWhitespace(line) != line.size() && line != "" && findFirstWhitespace(line) != 0)
