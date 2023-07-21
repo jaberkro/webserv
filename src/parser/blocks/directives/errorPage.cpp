@@ -54,12 +54,14 @@ static void checkEmptyString(std::string line)
 t_values	parseErrorPage(std::string line, t_values values)
 {
 	std::string	filename;
+	size_t		lastWhitespace;
 
 	line = protectedSubstr(line, 10);
 	line = ltrim(line);
 	checkEmptyString(line);
 	// values.errorPages.clear(); //outcomment this if error_page should overwrite itself
-	filename = protectedSubstr(line, line.find_last_of(" \t\v\b") + 1, line.size() - line.find_last_of(" \t\v\b") + 1);
+	lastWhitespace = line.find_last_of(" \t\v\b") + 1;
+	filename = protectedSubstr(line, lastWhitespace, line.size() - lastWhitespace);
 	checkValidFilename(filename);
 	line = protectedSubstr(line, 0, line.find_last_of(" \t") + 1);
 	line = rtrim(line);
