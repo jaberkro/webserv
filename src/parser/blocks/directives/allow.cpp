@@ -24,7 +24,6 @@ static void checkEmptyString(std::string line)
 		exit(EXIT_FAILURE);
 	}
 }
-	checkEmptyString(line);
 
 t_values	parseAllow(std::string line, t_values values)
 {
