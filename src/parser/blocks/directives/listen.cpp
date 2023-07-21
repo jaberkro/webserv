@@ -55,7 +55,8 @@ static void checkValidHost(std::string host)
 	{
 		if (host.at(i) == '.')
 		{
-			hostError(host);
+			if (num > 255)
+				hostError(host);
 			dotCount++;
 			num = 0;
 		}
