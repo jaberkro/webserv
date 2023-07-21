@@ -8,6 +8,11 @@ t_values	parseReturn(std::string line, t_values values)
 
 	line = protectedSubstr(line, 6);
 	line = ltrim(line);
+	if (line == "")
+	{
+		std::cout << "Error: return needs at least one argument: return <code> [text];" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	code = protectedSubstr(line, 0, findFirstWhitespace(line));
 	if (code.size() != 3 || !allDigits(code))
 	{
@@ -17,7 +22,7 @@ t_values	parseReturn(std::string line, t_values values)
 	try
 	{
 		values.returnCode = stoi(code);
-		if (values.returnCode < 200 || values.returnCode > 600) // more elaborate test to check for allowed error codes
+		if (!validErrorCode(values.returnCode))
 		{
 			std::cout << "Error: can't parse return: invalid code: [" << values.returnCode << "]" << std::endl;
 			exit(EXIT_FAILURE);
@@ -30,6 +35,11 @@ t_values	parseReturn(std::string line, t_values values)
 	}
 	line = protectedSubstr(line, findFirstWhitespace(line), line.size() - findFirstWhitespace(line));
 	line = ltrim(line);
+	if (findFirstWhitespace(line) != line.size() && line.size() > 1 && line.at(0) != '"')
+	{
+		std::cout << "Error: can't parse return: too many text arguments: [" << line<< "]" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	values.returnText = line;
 	return (values);
 }
