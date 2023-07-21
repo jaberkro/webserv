@@ -20,6 +20,11 @@ t_values	parseDeny(std::string line, t_values values)
 {
 	line = protectedSubstr(line, 4);
 	line = ltrim(line);
+	if (line == "")
+	{
+		std::cout << "Error: deny needs at least one argument: deny <method>;" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	while (findFirstWhitespace(line) != line.size() && line != "" && findFirstWhitespace(line) != 0)
 	{
 		if (isAllowedMethod(protectedSubstr(line, 0, findFirstWhitespace(line))))
@@ -37,7 +42,7 @@ t_values	parseDeny(std::string line, t_values values)
 		}
 	}
 	if (line != "")
-		{
+	{
 		if (isAllowedMethod(line))
 		{
 			values.denied.push_back(line);

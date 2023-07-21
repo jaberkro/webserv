@@ -20,6 +20,11 @@ t_values	parseAllow(std::string line, t_values values)
 {
 	line = protectedSubstr(line, 5);
 	line = ltrim(line);
+	if (line == "")
+	{
+		std::cout << "Error: allow needs at least one argument: allow <method>;" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	while (findFirstWhitespace(line) != line.size() && line != "" && findFirstWhitespace(line) != 0)
 	{
 		if (isAllowedMethod(protectedSubstr(line, 0, findFirstWhitespace(line))))
