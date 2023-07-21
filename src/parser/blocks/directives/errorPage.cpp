@@ -54,17 +54,23 @@ t_values	parseErrorPage(std::string line, t_values values)
 	{
 		if (!allDigits(line))
 		{
-			std::cout << "Error: can't parse error_page: [" << line << "]: not a number in range [100, 999]" << std::endl;
+			std::cout << "Error: can't parse error_page: [" << line << "]: not a number" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 		try 
 		{
 			if (line.size() != 3)
 			{
-				std::cout << "Error: can't parse error_page: [" << line << "]: not in range [100, 999]" << std::endl;
+				std::cout << "Error: can't parse error_page: [" << line << "]: not a valid error code" << std::endl;
 				exit(EXIT_FAILURE);
 			}
-			values.errorPages[stoull(line)] = value;
+			if (validErrorCode(stoi(line)))
+				values.errorPages[stoi(line)] = value;
+			else
+			{
+				std::cout << "Error: can't parse error_page: [" << line << "]: not a valid error code" << std::endl;
+				exit(EXIT_FAILURE);
+			}	
 		}
 		catch(const std::exception& e)
 		{
