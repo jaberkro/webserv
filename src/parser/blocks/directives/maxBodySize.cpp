@@ -15,6 +15,11 @@ t_values		parseMaxBodySize(std::string line, t_values values)
 
 	line = protectedSubstr(line, 20);
 	line = ltrim(line);
+	if (line == "")
+	{
+		std::cout << "Error: client_max_body_size needs one argument: client_max_body_size <size>;" << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	if (findFirstWhitespace(line) != line.size())
 	{
 		std::cout << "Error: can't parse client_max_body_size: too much arguments: [" << line << "]" << std::endl;
@@ -25,12 +30,12 @@ t_values		parseMaxBodySize(std::string line, t_values values)
 		std::cout << "Error: can't parse client_max_body_size: [" << line << "]: not a number" << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	if (line.back() == 'k' || line.back() == 'K')
+	if ((line.back() == 'k' || line.back() == 'K') && line.size() > 1)
 	{
 		line.pop_back();
 		multiplier = 1000;
 	}
-	else if (line.back() == 'm' || line.back() == 'M')
+	else if ((line.back() == 'm' || line.back() == 'M') && line.size() > 1)
 	{
 		line.pop_back();
 		multiplier = 1000000;
@@ -40,10 +45,19 @@ t_values		parseMaxBodySize(std::string line, t_values values)
 		std::cout << "Error: can't parse client_max_body_size: [" << line << "]: not a number" << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	//check if there is a maximum value
 	try
 	{
-		values.maxBodySize = (unsigned int)stoi(line) * multiplier; // c manner, update to c++ way
+		if ((line.size() > 3 && multiplier == 1000000) || (line.size() > 6 && multiplier == 1000) || line.size() > 9)
+		{
+			std::cout << "Error: can't parse client_max_body_size: [" << line << "] * [" << multiplier << "]: input number too big: max 100 megabytes" << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		values.maxBodySize = stoull(line) * multiplier;
+		if (values.maxBodySize > 100000000)
+		{
+			std::cout << "Error: can't parse client_max_body_size: [" << values.maxBodySize << "]: input number too big: max 100 megabytes" << std::endl;
+			exit(EXIT_FAILURE);
+		}
 	}
 	catch(const std::exception& e)
 	{
