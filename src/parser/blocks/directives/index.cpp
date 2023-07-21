@@ -1,6 +1,24 @@
 #include "parse.hpp"
 #include <iostream>
 
+static void checkExtension(std::string index)
+{
+	if (index.find(".") == std::string::npos || index.find(".") == index.size() - 1)
+	{
+		std::cout << "Error: index argument needs to have a name and extension seperated by '.': index <fileName>.<extension>;" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
+static void checkEmptyString(std::string line)
+{
+	if (line == "")
+	{
+		std::cout << "Error: index needs at least one argument: index <fileName>.<extension>;" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
 /**
  * @brief parse an index directive
  * 
@@ -12,19 +30,11 @@ t_values	parseIndex(std::string line, t_values values)
 {
 	line = protectedSubstr(line, 5);
 	line = ltrim(line);
-	if (line == "")
-	{
-		std::cout << "Error: index needs at least one argument: index <fileName>.<extension>;" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	checkEmptyString(line);
 	while (findFirstWhitespace(line) != line.size() && line != "" && findFirstWhitespace(line) != 0)
 	{
 		std::string newIndex = protectedSubstr(line, 0, findFirstWhitespace(line));
-		if (newIndex.find(".") == std::string::npos || newIndex.find(".") == newIndex.size() - 1)
-		{
-			std::cout << "Error: index argument needs to have a name and extension seperated by '.': index <fileName>.<extension>;" << std::endl;
-			exit(EXIT_FAILURE);
-		}
+		checkExtension(newIndex);
 		if (newIndex.find("/") != 0)
 			values.indexes.push_back("/" + newIndex);
 		else
@@ -34,11 +44,7 @@ t_values	parseIndex(std::string line, t_values values)
 	}
 	if (line != "")
 	{
-		if (line.find(".") == std::string::npos || line.find(".") == line.size() - 1)
-		{
-			std::cout << "Error: index argument needs to have a name and extension seperated by '.': index <fileName>.<extension>;" << std::endl;
-			exit(EXIT_FAILURE);
-		}
+		checkExtension(line);
 		if (line.find("/") != 0)
 			values.indexes.push_back("/" + line);
 		else

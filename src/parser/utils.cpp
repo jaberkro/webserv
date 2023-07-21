@@ -178,3 +178,10 @@ bool	allDigits(std::string s)
 	}
 	return (1);
 }
+
+bool	validErrorCode(int code)
+{
+	if (code >= 200 && code < 600) // this needs to be fine tuned
+		return (true);
+	return (false);
+}

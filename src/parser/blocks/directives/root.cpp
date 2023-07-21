@@ -2,6 +2,15 @@
 #include <string>
 #include <iostream>
 
+static void checkEmptyString(std::string line)
+{
+	if (line == "")
+	{
+		std::cout << "Error: root needs one argument: root <path>;" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
 /**
  * @brief parse a root directive
  * 
@@ -13,11 +22,7 @@ t_values		parseRoot(std::string line, t_values values)
 {
 	line = protectedSubstr(line, 4);
 	line = ltrim(line);
-	if (line == "")
-	{
-		std::cout << "Error: root needs one argument: root <path>;" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	checkEmptyString(line);
 	if (findFirstWhitespace(line) != line.size())
 	{
 		std::cout << "Error: can't parse root: too many arguments: [" << line << "]" << std::endl;

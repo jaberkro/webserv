@@ -17,7 +17,7 @@ class Location
 		std::string					_root;
 		std::vector<std::string>	_indexes;
 		bool						_autoindex;
-		unsigned int				_maxBodySize;
+		unsigned long long			_maxBodySize;
 		std::vector<std::string>	_allowed;
 		std::vector<std::string>	_denied;
 		std::pair<int, std::string>	_return;
