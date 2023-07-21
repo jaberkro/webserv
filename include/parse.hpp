@@ -27,6 +27,7 @@ int			getValidLine(std::fstream &file, std::string &line);
 size_t		findFirstWhitespace(std::string line);
 
 bool		allDigits(std::string s);
+bool		validErrorCode(int code);
 
 //parsing
 void		parseHTTP(std::vector<Server> &servers, std::fstream &file, t_values values);
