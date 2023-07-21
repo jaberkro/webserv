@@ -1,6 +1,15 @@
 #include "parse.hpp"
 #include <iostream>
 
+static void checkEmptyString(std::string line)
+{
+	if (line == "")
+	{
+		std::cout << "Error: index needs at least one argument: index <fileName>.<extension>;" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
 /**
  * @brief parse an index directive
  * 
@@ -12,11 +21,7 @@ t_values	parseIndex(std::string line, t_values values)
 {
 	line = protectedSubstr(line, 5);
 	line = ltrim(line);
-	if (line == "")
-	{
-		std::cout << "Error: index needs at least one argument: index <fileName>.<extension>;" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	checkEmptyString(line);
 	while (findFirstWhitespace(line) != line.size() && line != "" && findFirstWhitespace(line) != 0)
 	{
 		std::string newIndex = protectedSubstr(line, 0, findFirstWhitespace(line));

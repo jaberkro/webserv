@@ -16,15 +16,20 @@ static bool	isAllowedMethod(std::string toCheck)
 	return (0);
 }
 
-t_values	parseDeny(std::string line, t_values values)
+static void checkEmptyString(std::string line)
 {
-	line = protectedSubstr(line, 4);
-	line = ltrim(line);
 	if (line == "")
 	{
 		std::cout << "Error: deny needs at least one argument: deny <method>;" << std::endl;
 		exit(EXIT_FAILURE);
 	}
+}
+
+t_values	parseDeny(std::string line, t_values values)
+{
+	line = protectedSubstr(line, 4);
+	line = ltrim(line);
+	checkEmptyString(line);
 	while (findFirstWhitespace(line) != line.size() && line != "" && findFirstWhitespace(line) != 0)
 	{
 		if (isAllowedMethod(protectedSubstr(line, 0, findFirstWhitespace(line))))

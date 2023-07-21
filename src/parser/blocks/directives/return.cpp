@@ -2,17 +2,22 @@
 #include <string>
 #include <iostream>
 
+static void checkEmptyString(std::string line)
+{
+	if (line == "")
+	{
+		std::cout << "Error: return needs at least one argument: return <code> [text];" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
 t_values	parseReturn(std::string line, t_values values)
 {
 	std::string code;
 
 	line = protectedSubstr(line, 6);
 	line = ltrim(line);
-	if (line == "")
-	{
-		std::cout << "Error: return needs at least one argument: return <code> [text];" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	checkEmptyString(line);
 	code = protectedSubstr(line, 0, findFirstWhitespace(line));
 	if (code.size() != 3 || !allDigits(code))
 	{

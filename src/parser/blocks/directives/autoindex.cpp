@@ -1,6 +1,15 @@
 #include "parse.hpp"
 #include <iostream>
 
+static void checkEmptyString(std::string line)
+{
+	if (line == "")
+	{
+		std::cout << "Error: autoindex needs one argument: autoindex <value>;" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
 /**
  * @brief parse an autoindex directive
  * 
@@ -12,11 +21,7 @@ t_values	parseAutoindex(std::string line, t_values values)
 {
 	line = protectedSubstr(line, 9);
 	line = ltrim(line);
-	if (line == "")
-	{
-		std::cout << "Error: autoindex needs one argument: autoindex <value>;" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	checkEmptyString(line);
 	if (findFirstWhitespace(line) != line.size())
 	{
 		std::cout << "Error: can't parse autoindex: too many arguments: [" << line << "]" << std::endl;

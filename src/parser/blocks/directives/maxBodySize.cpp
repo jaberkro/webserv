@@ -2,6 +2,15 @@
 #include <string>
 #include <iostream>
 
+static void checkEmptyString(std::string line)
+{
+	if (line == "")
+	{
+		std::cout << "Error: client_max_body_size needs one argument: client_max_body_size <size>;" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
 /**
  * @brief parse a client_max_body_size directive
  * 
@@ -15,11 +24,7 @@ t_values		parseMaxBodySize(std::string line, t_values values)
 
 	line = protectedSubstr(line, 20);
 	line = ltrim(line);
-	if (line == "")
-	{
-		std::cout << "Error: client_max_body_size needs one argument: client_max_body_size <size>;" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	checkEmptyString(line);
 	if (findFirstWhitespace(line) != line.size())
 	{
 		std::cout << "Error: can't parse client_max_body_size: too much arguments: [" << line << "]" << std::endl;

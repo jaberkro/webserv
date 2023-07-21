@@ -81,6 +81,15 @@ static void checkValidHost(std::string host)
 	}
 }
 
+static void checkEmptyString(std::string line)
+{
+	if (line == "")
+	{
+		std::cout << "Error: can't parse listen directive without arguments" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
 /**
  * @brief parse a listen command
  *  use first half of std::string to parse the host, 
@@ -95,11 +104,7 @@ static std::string parseHost(std::string &line)
 
 	line = protectedSubstr(line, 6);
 	line = ltrim(line);
-	if (line == "")
-	{
-		std::cout << "Error: can't parse listen directive without arguments" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	checkEmptyString(line);
 	if (line.find(':') == 0)
 	{
 		if (line.size() > 1)
