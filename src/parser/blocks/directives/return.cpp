@@ -2,6 +2,20 @@
 #include <string>
 #include <iostream>
 
+static bool quotedArgument(std::string text)
+{
+	if (text.at(0) != '"' || text.size() == 1 || text.back() != '"')
+	{
+		return (false);
+	}
+	for (size_t i = 1; i < text.size() - 2; i++)
+	{
+		if (text.at(i) == '"')
+			return (false);
+	}
+	return (true);
+}
+
 static void checkEmptyString(std::string line)
 {
 	if (line == "")
@@ -40,7 +54,7 @@ t_values	parseReturn(std::string line, t_values values)
 	}
 	line = protectedSubstr(line, findFirstWhitespace(line), line.size() - findFirstWhitespace(line));
 	line = ltrim(line);
-	if (findFirstWhitespace(line) != line.size() && line.size() > 1 && line.at(0) != '"') // return 404 "quote" more; is now still accepted
+	if (line.size() > 0 && findFirstWhitespace(line) != line.size() && !quotedArgument(line)) // return 404 "quote" more; is now still accepted
 	{
 		std::cout << "Error: can't parse return: too many text arguments: [" << line<< "]" << std::endl;
 		exit(EXIT_FAILURE);
