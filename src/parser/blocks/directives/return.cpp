@@ -20,11 +20,19 @@ static void checkEmptyString(std::string line)
 {
 	if (line == "")
 	{
-		std::cout << "Error: return needs at least one argument: return <code> [text];" << std::endl;
+		std::cout << "Error: return needs at least one argument: ";
+		std::cout << "return <code> [text];" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 }
 
+/**
+ * @brief parse a return directive and store it in values
+ * 
+ * @param line the line to parse
+ * @param values the values to be updated
+ * @return t_values the updated values
+ */
 t_values	parseReturn(std::string line, t_values values)
 {
 	std::string code;
@@ -32,29 +40,11 @@ t_values	parseReturn(std::string line, t_values values)
 	line = protectedSubstr(line, 6);
 	line = ltrim(line);
 	checkEmptyString(line);
-	code = protectedSubstr(line, 0, findFirstWhitespace(line));
-	if (code.size() != 3 || !allDigits(code))
-	{
-		std::cout << "Error: can't parse return: code should be 3 digits: [" << code << "]" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	try
-	{
-		values.returnCode = stoi(code);
-		if (!validErrorCode(values.returnCode))
-		{
-			std::cout << "Error: can't parse return: invalid code: [" << values.returnCode << "]" << std::endl;
-			exit(EXIT_FAILURE);
-		}
-	}
-	catch(const std::exception& e)
-	{
-		std::cerr << e.what() << '\n';
-		exit(EXIT_FAILURE);
-	}
-	line = protectedSubstr(line, findFirstWhitespace(line), line.size() - findFirstWhitespace(line));
+	code = protectedSubstr(line, 0, firstWhitespace(line));
+	values.returnCode = parseErrorCode(code, "return");
+	line = protectedSubstr(line, firstWhitespace(line), line.size() - firstWhitespace(line));
 	line = ltrim(line);
-	if (line.size() > 0 && findFirstWhitespace(line) != line.size() && !quotedArgument(line)) // return 404 "quote" more; is now still accepted
+	if (line.size() > 0 && firstWhitespace(line) != line.size() && !quotedArgument(line))
 	{
 		std::cout << "Error: can't parse return: too many text arguments: [" << line<< "]" << std::endl;
 		exit(EXIT_FAILURE);

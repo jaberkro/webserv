@@ -116,7 +116,6 @@ int	getValidLine(std::fstream &file, std::string &line)
 	line = rtrim(line);
 	if (line == "")
 		return (1);
-	// std::cout << line << std::endl;
 	if (line.back() != ';' && line.back() != '{' && line.back() != '}')
 	{
 		std::cout << "Error: missing ';', '{' or '}' in configuration file" << std::endl;
@@ -136,7 +135,7 @@ int	getValidLine(std::fstream &file, std::string &line)
  * @return size_t the index of the first space or horizontal tab found, 
  * size of string if no tab or space was found, 0 if line is empty
  */
-size_t	findFirstWhitespace(std::string line)
+size_t	firstWhitespace(std::string line)
 {
 	if (line == "")
 		return (0);
@@ -146,25 +145,6 @@ size_t	findFirstWhitespace(std::string line)
 		line.find("\b") == std::string::npos)
 		return (line.size());
 	return (line.find_first_of(" \t\v\b"));
-}
-
-/**
- * @brief find the last space or horizontal tab
- * 
- * @return size_t the index of the last space or horizontal tab found, 
- * size of string if no tab or space was found, 0 if line is empty
- */
-size_t	findLastWhitespace(std::string line)
-{
-	if (line == "")
-		return (0);
-	if (line.find_last_of(" ") == std::string::npos && line.find_last_of("\t") == std::string::npos)
-		return (line.size());
-	else if (line.find_last_of(" ") == std::string::npos)
-		return (line.find_last_of("\t"));
-	else if (line.find_last_of("\t") == std::string::npos)
-		return (line.find_last_of(" "));
-	return (std::max(line.find_last_of(" "), line.find_last_of("\t")));
 }
 
 bool	allDigits(std::string s)
@@ -179,9 +159,30 @@ bool	allDigits(std::string s)
 	return (1);
 }
 
-bool	validErrorCode(int code)
+int	parseErrorCode(std::string code, std::string directive)
 {
-	if (code >= 200 && code < 600) // this needs to be fine tuned
-		return (true);
-	return (false);
+	int newCode;
+
+	if (code.size() != 3 || !allDigits(code))
+	{
+		std::cout << "Error: can't parse " << directive;
+		std::cout << ": code should be 3 digits: " << code << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	try
+	{
+		newCode = stoi(code);
+		if (newCode < 200 || newCode > 600) // this needs to be fine tuned
+		{
+			std::cout << "Error: can't parse " << directive;
+			std::cout << ": invalid code: [" << code << "]" << std::endl;
+			exit(EXIT_FAILURE);
+		}
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+		exit(EXIT_FAILURE);
+	}
+	return (newCode);
 }

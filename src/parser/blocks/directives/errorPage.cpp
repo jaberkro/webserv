@@ -1,28 +1,6 @@
 #include "parse.hpp"
 #include <iostream>
 
-static void codeError(std::string code)
-{
-	std::cout << "Error: can't parse error_page: [" << code << "]: not a valid error code" << std::endl;
-	exit(EXIT_FAILURE);
-}
-
-static t_values addErrorPage(std::string code, std::string file, t_values values)
-{
-	try 
-	{
-		if (!allDigits(code) || code.size() != 3 || !validErrorCode(stoi(code)))
-			codeError(code);
-		values.errorPages[stoi(code)] = file;
-	}
-	catch(const std::exception& e)
-	{
-		std::cout << e.what() << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	return (values);
-}
-
 static void checkValidFilename(std::string filename)
 {
 	if (filename.find("/") != 0 || filename.find(".") == std::string::npos || \
@@ -54,6 +32,7 @@ static void checkEmptyString(std::string line)
 t_values	parseErrorPage(std::string line, t_values values)
 {
 	std::string	filename;
+	std::string	code;
 	size_t		lastWhitespace;
 
 	line = protectedSubstr(line, 10);
@@ -65,13 +44,14 @@ t_values	parseErrorPage(std::string line, t_values values)
 	checkValidFilename(filename);
 	line = protectedSubstr(line, 0, line.find_last_of(" \t") + 1);
 	line = rtrim(line);
-	while (findFirstWhitespace(line) != line.size() && line != "" && findFirstWhitespace(line) != 0)
+	while (firstWhitespace(line) != line.size() && line != "" && firstWhitespace(line) != 0)
 	{
-		values = addErrorPage(protectedSubstr(line, 0, findFirstWhitespace(line)), filename, values);
-		line = protectedSubstr(line, findFirstWhitespace(line) + 1);
+		code = protectedSubstr(line, 0, firstWhitespace(line));
+		values.errorPages[parseErrorCode(code, "error_page")] = filename;
+		line = protectedSubstr(line, firstWhitespace(line) + 1);
 		line = ltrim(line);
 	}
 	if (line != "")
-		values = addErrorPage(line, filename, values);
+		values.errorPages[parseErrorCode(line, "error_page")] = filename;
 	return (values);
 }
