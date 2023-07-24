@@ -35,7 +35,8 @@ static void checkEmptyString(std::string line)
 {
 	if (line == "")
 	{
-		std::cout << "Error: deny needs at least one argument: deny <method>;" << std::endl;
+		std::cout << "Error: deny needs at least one argument: ";
+		std::cout << "deny <method>;" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 }
