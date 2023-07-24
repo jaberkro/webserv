@@ -23,7 +23,7 @@ t_values		parseRoot(std::string line, t_values values)
 	line = protectedSubstr(line, 4);
 	line = ltrim(line);
 	checkEmptyString(line);
-	if (findFirstWhitespace(line) != line.size())
+	if (firstWhitespace(line) != line.size())
 	{
 		std::cout << "Error: can't parse root: too many arguments: [" << line << "]" << std::endl;
 		exit(EXIT_FAILURE);

@@ -31,15 +31,15 @@ t_values	parseIndex(std::string line, t_values values)
 	line = protectedSubstr(line, 5);
 	line = ltrim(line);
 	checkEmptyString(line);
-	while (findFirstWhitespace(line) != line.size() && line != "" && findFirstWhitespace(line) != 0)
+	while (firstWhitespace(line) != line.size() && line != "" && firstWhitespace(line) != 0)
 	{
-		std::string newIndex = protectedSubstr(line, 0, findFirstWhitespace(line));
+		std::string newIndex = protectedSubstr(line, 0, firstWhitespace(line));
 		checkExtension(newIndex);
 		if (newIndex.find("/") != 0)
 			values.indexes.push_back("/" + newIndex);
 		else
 			values.indexes.push_back(newIndex);
-		line = protectedSubstr(line, findFirstWhitespace(line) + 1);
+		line = protectedSubstr(line, firstWhitespace(line) + 1);
 		line = ltrim(line);
 	}
 	if (line != "")

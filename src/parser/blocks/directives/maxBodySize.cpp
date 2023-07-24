@@ -25,7 +25,7 @@ t_values		parseMaxBodySize(std::string line, t_values values)
 	line = protectedSubstr(line, 20);
 	line = ltrim(line);
 	checkEmptyString(line);
-	if (findFirstWhitespace(line) != line.size())
+	if (firstWhitespace(line) != line.size())
 	{
 		std::cout << "Error: can't parse client_max_body_size: too much arguments: [" << line << "]" << std::endl;
 		exit(EXIT_FAILURE);

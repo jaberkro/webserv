@@ -10,8 +10,8 @@ static void methodError(std::string line)
 
 static t_values	addDeny(std::string &line, t_values values)
 {
-	values.denied.push_back(protectedSubstr(line, 0, findFirstWhitespace(line)));
-	line = protectedSubstr(line, findFirstWhitespace(line) + 1);
+	values.denied.push_back(protectedSubstr(line, 0, firstWhitespace(line)));
+	line = protectedSubstr(line, firstWhitespace(line) + 1);
 	line = ltrim(line);
 	return (values);
 }
@@ -45,10 +45,10 @@ t_values	parseDeny(std::string line, t_values values)
 	line = protectedSubstr(line, 4);
 	line = ltrim(line);
 	checkEmptyString(line);
-	while (findFirstWhitespace(line) != line.size() && line != "" && findFirstWhitespace(line) != 0)
+	while (firstWhitespace(line) != line.size() && line != "" && firstWhitespace(line) != 0)
 	{
-		if (!isAllowedMethod(protectedSubstr(line, 0, findFirstWhitespace(line))))
-			methodError(protectedSubstr(line, 0, findFirstWhitespace(line)));
+		if (!isAllowedMethod(protectedSubstr(line, 0, firstWhitespace(line))))
+			methodError(protectedSubstr(line, 0, firstWhitespace(line)));
 		values = addDeny(line, values);
 	}
 	if (line != "")

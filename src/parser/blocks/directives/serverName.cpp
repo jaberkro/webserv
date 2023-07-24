@@ -23,10 +23,10 @@ void parseServerNames(Server &server, std::string &line)
 	line = protectedSubstr(line, 11);
 	line = ltrim(line);
 	checkEmptyString(line);
-	while (findFirstWhitespace(line) != line.size() && line != "" && findFirstWhitespace(line) != 0)
+	while (firstWhitespace(line) != line.size() && line != "" && firstWhitespace(line) != 0)
 	{
-		server.addServerName(protectedSubstr(line, 0, findFirstWhitespace(line)));
-		line = protectedSubstr(line, findFirstWhitespace(line) + 1);
+		server.addServerName(protectedSubstr(line, 0, firstWhitespace(line)));
+		line = protectedSubstr(line, firstWhitespace(line) + 1);
 		line = ltrim(line);
 	}
 	if (line != "")

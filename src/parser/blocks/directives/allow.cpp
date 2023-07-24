@@ -10,8 +10,8 @@ static void methodError(std::string line)
 
 static t_values	addAllow(std::string &line, t_values values)
 {
-	values.allowed.push_back(protectedSubstr(line, 0, findFirstWhitespace(line)));
-	line = protectedSubstr(line, findFirstWhitespace(line) + 1);
+	values.allowed.push_back(protectedSubstr(line, 0, firstWhitespace(line)));
+	line = protectedSubstr(line, firstWhitespace(line) + 1);
 	line = ltrim(line);
 	return (values);
 }
@@ -44,10 +44,10 @@ t_values	parseAllow(std::string line, t_values values)
 	line = protectedSubstr(line, 5);
 	line = ltrim(line);
 	checkEmptyString(line);
-	while (findFirstWhitespace(line) != line.size() && line != "" && findFirstWhitespace(line) != 0)
+	while (firstWhitespace(line) != line.size() && line != "" && firstWhitespace(line) != 0)
 	{
-		if (!isAllowedMethod(protectedSubstr(line, 0, findFirstWhitespace(line))))
-			methodError(protectedSubstr(line, 0, findFirstWhitespace(line)));
+		if (!isAllowedMethod(protectedSubstr(line, 0, firstWhitespace(line))))
+			methodError(protectedSubstr(line, 0, firstWhitespace(line)));
 		values = addAllow(line, values);
 	}
 	if (line != "")

@@ -11,7 +11,7 @@ static std::string findMatch(std::string &line)
 		std::cout << "Error: invalid location block: not enough arguments" << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	return (protectedSubstr(line, 0, findFirstWhitespace(line)));
+	return (protectedSubstr(line, 0, firstWhitespace(line)));
 }
 
 static std::string findModifier(std::string &line)
@@ -54,12 +54,12 @@ Location parseLocation(std::fstream &file, std::string line, t_values values)
 	location.setModifier(findModifier(line));
 	if (location.getModifier() != "(none)")
 	{
-		line = protectedSubstr(line, findFirstWhitespace(line));
+		line = protectedSubstr(line, firstWhitespace(line));
 		line = ltrim(line);
 	}
 
 	location.setMatch(findMatch(line));
-	if (findFirstWhitespace(line) != line.size())
+	if (firstWhitespace(line) != line.size())
 	{
 		std::cout << "Error: invalid location block: too many matches: [" << line << "]" << std::endl; //remove regex as options?
 		exit(EXIT_FAILURE);

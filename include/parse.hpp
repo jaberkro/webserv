@@ -24,10 +24,10 @@ std::string protectedSubstr(std::string s, size_t start, size_t size);
 std::string	ltrim(std::string s);
 std::string	rtrim(std::string s);
 int			getValidLine(std::fstream &file, std::string &line);
-size_t		findFirstWhitespace(std::string line);
+size_t		firstWhitespace(std::string line);
 
 bool		allDigits(std::string s);
-bool		validErrorCode(int code);
+int			parseErrorCode(std::string code, std::string directive);
 
 //parsing
 void		parseHTTP(std::vector<Server> &servers, std::fstream &file, t_values values);
