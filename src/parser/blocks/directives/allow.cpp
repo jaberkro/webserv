@@ -44,7 +44,7 @@ t_values	parseAllow(std::string line, t_values values)
 	line = protectedSubstr(line, 5);
 	line = ltrim(line);
 	checkEmptyString(line);
-	while (firstWhitespace(line) != line.size() && line != "" && firstWhitespace(line) != 0)
+	while (firstWhitespace(line) != line.size() && firstWhitespace(line) != 0)
 	{
 		if (!isAllowedMethod(protectedSubstr(line, 0, firstWhitespace(line))))
 			methodError(protectedSubstr(line, 0, firstWhitespace(line)));

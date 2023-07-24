@@ -6,8 +6,9 @@ static void checkValidFilename(std::string filename)
 	if (filename.find("/") != 0 || filename.find(".") == std::string::npos || \
 		filename.find(".") == filename.size() - 1)
 	{
-		std::cout << "Error: can't parse error_page: [" << filename << \
-			"]: filename should start with '/' and contain extension: /<name>.<extension" << std::endl;
+		std::cout << "Error: can't parse error_page: [" << filename << "]: ";
+		std::cout << "filename should start with '/' and contain extension: ";
+		std::cout << "<name>.<extension" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 }
@@ -16,7 +17,8 @@ static void checkEmptyString(std::string line)
 {
 	if (line == "")
 	{
-		std::cout << "Error: error_page needs at least two arguments: error_page <code> /<filename>;" << std::endl;
+		std::cout << "Error: error_page needs at least two arguments: ";
+		std::cout << "error_page <code> /<filename>;" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 }
@@ -44,7 +46,7 @@ t_values	parseErrorPage(std::string line, t_values values)
 	checkValidFilename(filename);
 	line = protectedSubstr(line, 0, line.find_last_of(" \t") + 1);
 	line = rtrim(line);
-	while (firstWhitespace(line) != line.size() && line != "" && firstWhitespace(line) != 0)
+	while (firstWhitespace(line) != line.size() && firstWhitespace(line) != 0)
 	{
 		code = protectedSubstr(line, 0, firstWhitespace(line));
 		values.errorPages[parseErrorCode(code, "error_page")] = filename;

@@ -31,7 +31,7 @@ t_values	parseIndex(std::string line, t_values values)
 	line = protectedSubstr(line, 5);
 	line = ltrim(line);
 	checkEmptyString(line);
-	while (firstWhitespace(line) != line.size() && line != "" && firstWhitespace(line) != 0)
+	while (firstWhitespace(line) != line.size() && firstWhitespace(line) != 0)
 	{
 		std::string newIndex = protectedSubstr(line, 0, firstWhitespace(line));
 		checkExtension(newIndex);
