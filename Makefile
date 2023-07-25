@@ -10,6 +10,7 @@ SRC = 	main.cpp \
 		Webserver.cpp \
 		requestProcessing/Request.cpp \
 		requestProcessing/Response.cpp \
+		requestProcessing/PostCGI.cpp \
 		Socket.cpp \
 		classes/Server.cpp \
 		classes/Location.cpp \
