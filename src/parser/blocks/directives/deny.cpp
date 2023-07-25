@@ -1,25 +1,6 @@
 #include "parse.hpp"
+#include <string>
 #include <iostream>
-
-static t_values	addDeny(std::string &line, t_values values)
-{
-	if (firstWhitespace(line) != line.size())
-	{
-		values.denied.push_back(protectedSubstr(line, 0, firstWhitespace(line)));
-		line = protectedSubstr(line, firstWhitespace(line) + 1);
-		line = ltrim(line);
-	}
-	else
-		values.denied.push_back(line);
-	return (values);
-}
-
-static void methodError(std::string line)
-{
-	std::cout << "Error: can't parse deny: invalid method: [" << line << \
-		"]. Allowed methods are: GET, POST, DELETE, all" << std::endl;
-	exit(EXIT_FAILURE);
-}
 
 static bool	isAllowedMethod(std::string toCheck)
 {
@@ -36,32 +17,28 @@ static bool	isAllowedMethod(std::string toCheck)
 	return (0);
 }
 
-static void checkEmptyString(std::string line)
-{
-	if (line == "")
-	{
-		std::cout << "Error: deny needs at least one argument: ";
-		std::cout << "deny <method>;" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-}
-
 t_values	parseDeny(std::string line, t_values values)
 {
+	std::string reason = "needs at least one argument: deny <method>;";
+	std::string newMethod;
+
 	line = protectedSubstr(line, 4);
 	line = ltrim(line);
-	checkEmptyString(line);
+	checkEmptyString(line, "deny", reason);
 	while (firstWhitespace(line) != line.size() && firstWhitespace(line) != 0)
 	{
-		if (!isAllowedMethod(protectedSubstr(line, 0, firstWhitespace(line))))
-			methodError(protectedSubstr(line, 0, firstWhitespace(line)));
-		values = addDeny(line, values);
+		newMethod = protectedSubstr(line, 0, firstWhitespace(line));
+		if (!isAllowedMethod(newMethod))
+			methodError(newMethod, "deny", "GET, POST, DELETE, all");
+		values.denied.push_back(newMethod);
+		line = protectedSubstr(line, firstWhitespace(line) + 1);
+		line = ltrim(line);
 	}
 	if (line != "")
 	{
 		if (!isAllowedMethod(line))
-			methodError(line);
-		values = addDeny(line, values);
+			methodError(line, "deny", "GET, POST, DELETE, all");
+		values.denied.push_back(line);
 	}
 	return (values);
 }
