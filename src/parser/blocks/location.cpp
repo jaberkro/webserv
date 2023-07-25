@@ -105,6 +105,7 @@ Location parseLocation(std::fstream &file, std::string line, t_values values)
 	location.setAllowed(values.allowed);
 	location.setDenied(values.denied);
 	location.setReturn(values.returnCode, values.returnText);
+	location.setUploadDir(values.uploadDir);
 	return (location);
 }
 

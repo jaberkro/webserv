@@ -31,6 +31,9 @@ t_values	parseInheritanceDirective(int directive, std::string line, t_values val
 		case 5:
 			values = parseReturn(line, values);
 			break;
+		case 6:
+			values = parseUploadDir(line, values);
+			break;
 	}
 	return (values);
 }
@@ -43,11 +46,11 @@ t_values	parseInheritanceDirective(int directive, std::string line, t_values val
  */
 int	hasInheritanceDirective(std::string line)
 {
-	std::string directives[] = {"root", "index", "autoindex", "client_max_body_size", "error_page", "return"};
+	std::string directives[] = {"root", "index", "autoindex", "client_max_body_size", "error_page", "return", "upload_dir"};
 
 	int i = 0;
 
-	while (i < 6)
+	while (i < 7)
 	{
 		if (line.find(directives[i]) == 0)
 			return (i);

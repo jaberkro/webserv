@@ -116,3 +116,13 @@ const std::pair<int, std::string>    Location::getReturn(void) const
 {
 	return (this->_return);
 }
+
+void	Location::setUploadDir(std::string uploadDir)
+{
+	this->_uploadDir = uploadDir;
+}
+
+std::string	Location::getUploadDir(void) const
+{
+	return (this->_uploadDir);
+}

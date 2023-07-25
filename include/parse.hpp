@@ -15,6 +15,7 @@ typedef struct s_values
 	std::vector<std::string>	denied;
 	int							returnCode = 0;
 	std::string					returnText = "";
+	std::string					uploadDir = "";
 }	t_values;
 
 //utils
@@ -50,5 +51,6 @@ t_values	parseErrorPage(std::string line, t_values values);
 t_values	parseAllow(std::string line, t_values values);
 t_values	parseDeny(std::string line, t_values values);
 t_values	parseReturn(std::string line, t_values values);
+t_values	parseUploadDir(std::string line, t_values values);
 
 #endif
