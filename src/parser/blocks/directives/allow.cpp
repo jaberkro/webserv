@@ -2,19 +2,6 @@
 #include <string>
 #include <iostream>
 
-static t_values	addAllow(std::string &line, t_values values)
-{
-	if (firstWhitespace(line) != line.size())
-	{
-		values.allowed.push_back(protectedSubstr(line, 0, firstWhitespace(line)));
-		line = protectedSubstr(line, firstWhitespace(line) + 1);
-		line = ltrim(line);
-	}
-	else
-		values.allowed.push_back(line);
-	return (values);
-}
-
 static bool	isAllowedMethod(std::string toCheck)
 {
 	std::string directives[] = {"GET", "POST", "DELETE"};
@@ -42,13 +29,15 @@ t_values	parseAllow(std::string line, t_values values)
 		newMethod = protectedSubstr(line, 0, firstWhitespace(line));
 		if (!isAllowedMethod(newMethod))
 			methodError(newMethod, "allow", "GET, POST, DELETE");
-		values = addAllow(line, values);
+		values.allowed.push_back(newMethod);
+		line = protectedSubstr(line, firstWhitespace(line) + 1);
+		line = ltrim(line);
 	}
 	if (line != "")
 	{
 		if (!isAllowedMethod(line))
 			methodError(line, "allow", "GET, POST, DELETE");	
-		values = addAllow(line, values);
+		values.allowed.push_back(line);
 	}
 	return (values);
 }
