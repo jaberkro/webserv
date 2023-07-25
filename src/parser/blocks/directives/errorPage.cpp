@@ -1,27 +1,5 @@
 #include "parse.hpp"
-#include <iostream>
-
-static void checkValidFilename(std::string filename)
-{
-	if (filename.find("/") != 0 || filename.find(".") == std::string::npos || \
-		filename.find(".") == filename.size() - 1)
-	{
-		std::cout << "Error: can't parse error_page: [" << filename << "]: ";
-		std::cout << "filename should start with '/' and contain extension: ";
-		std::cout << "<name>.<extension" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-}
-
-static void checkEmptyString(std::string line)
-{
-	if (line == "")
-	{
-		std::cout << "Error: error_page needs at least two arguments: ";
-		std::cout << "error_page <code> /<filename>;" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-}
+#include <string>
 
 /**
  * @brief parse an error_page directive
@@ -32,17 +10,19 @@ static void checkEmptyString(std::string line)
  */
 t_values	parseErrorPage(std::string line, t_values values)
 {
+	std::string	reason = "needs at least two arguments: error_page";
 	std::string	file;
 	std::string	code;
 	size_t		lastWhitespace;
 
 	line = protectedSubstr(line, 10);
 	line = ltrim(line);
-	checkEmptyString(line);
-	// values.errorPages.clear(); //if error_page should overwrite itself
+	checkEmptyString(line, "error_page", reason + " <code> <file>");
+	// values.errorPages.clear(); //use if error_page should overwrite itself
 	lastWhitespace = line.find_last_of(" \t\v\b") + 1;
 	file = protectedSubstr(line, lastWhitespace, line.size() - lastWhitespace);
-	checkValidFilename(file);
+	checkStartingSlash(file, "error_page");
+	checkHasDot(file, "error_page");
 	line = protectedSubstr(line, 0, line.find_last_of(" \t") + 1);
 	line = rtrim(line);
 	while (firstWhitespace(line) != line.size() && firstWhitespace(line) != 0)
