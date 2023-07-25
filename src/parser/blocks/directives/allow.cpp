@@ -34,7 +34,8 @@ static void checkEmptyString(std::string line)
 {
 	if (line == "")
 	{
-		std::cout << "Error: allow needs at least one argument: allow <method>;" << std::endl;
+		std::cout << "Error: allow needs at least one argument: ";
+		std::cout << "allow <method>;" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 }
