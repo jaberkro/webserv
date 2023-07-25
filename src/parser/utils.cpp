@@ -1,103 +1,7 @@
-#include <string>
+#include "parse.hpp"
 #include <fstream>
+#include <string>
 #include <iostream>
-
-/**
- * @brief substr that catches exception, prints it and sends back "" in case an excption occured
- * 
- * @param s the string to make a substring from
- * @param start the index to start the substring from
- * @return std::string 
- */
-std::string protectedSubstr(std::string s, size_t start)
-{
-	std::string	newString;
-
-	if (s == "")
-		return ("");
-	try
-	{
-		newString = s.substr(start);
-	}
-	catch(const std::exception& e)
-	{
-		std::cerr << e.what() << '\n';
-		return ("");
-	}
-	return (newString);
-}
-
-/**
- * @brief substr that catches exception, prints it and sends back "" in case an excption occured
- * 
- * @param s the string to make a substring from
- * @param start the index to start the substring from
- * @param size the amount of characters to include in the new substring
- * @return std::string 
- */
-std::string protectedSubstr(std::string s, size_t start, size_t size)
-{
-	std::string	newString;
-
-	if (s == "")
-		return ("");
-	try
-	{
-		newString = s.substr(start, size);
-	}
-	catch(const std::exception& e)
-	{
-		std::cerr << e.what() << '\n';
-		return ("");
-	}
-	return (newString);
-}
-
-/**
- * @brief remove whitespace at beginning of an std::string
- * 
- * @param s the std::string to be trimmed
- * @return the trimmed std::string
- */
-std::string	ltrim(std::string s)
-{
-	size_t i = 0;
-
-	if (s == "")
-		return ("");
-	while (i < s.size() && (s.at(i) == '\t' || s.at(i) == ' ' || s.at(i) == '\v' || s.at(i) == '\b' || s.at(i) == '\r'))
-	{
-		i++;
-	}
-	if (i == s.size())
-		return ("");
-	else if (i == 0)
-		return (s);
-	return (protectedSubstr(s, i));
-}
-
-/**
- * @brief remove whitespace at the end of an std::string
- * 
- * @param s the std::string to be trimmed
- * @return the trimmed std::string
- */
-std::string	rtrim(std::string s)
-{
-	size_t i = s.size() - 1;
-
-	if (s == "")
-		return ("");
-	while (i >= 0 && (s.at(i) == '\t' || s.at(i) == ' ' || s.at(i) == '\v' || s.at(i) == '\b' || s.at(i) == '\r'))
-	{
-		i--;
-	}
-	if (i < 0)
-		return ("");
-	else if (i == s.size() - 1)
-		return (s);
-	return (protectedSubstr(s, 0, i + 1));
-}
 
 /**
  * @brief getline that checks the line for valid input, trims whitespaces at the beginning and end of the string and removes comments
@@ -163,12 +67,10 @@ int	parseErrorCode(std::string code, std::string directive)
 {
 	int newCode;
 
-	if (code.size() != 3 || !allDigits(code))
-	{
-		std::cout << "Error: can't parse " << directive;
-		std::cout << ": code should be 3 digits: " << code << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	if (!allDigits(code))
+		nanError(code, directive);
+	if (code.size() > 3)
+		tooBigError(code, directive, "600"); // this needs to be fine tuned
 	try
 	{
 		newCode = stoi(code);
@@ -185,4 +87,14 @@ int	parseErrorCode(std::string code, std::string directive)
 		exit(EXIT_FAILURE);
 	}
 	return (newCode);
+}
+
+std::string convertToLower(std::string str)
+{
+	for (size_t i = 0; i < str.size(); i++)
+	{
+		if (isalpha(str.at(i)))
+			str.at(i) = tolower(str.at(i));
+	}
+	return (str);
 }
