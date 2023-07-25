@@ -1,6 +1,5 @@
 #include "parse.hpp"
 #include <string>
-#include <iostream>
 
 static bool quotedArgument(std::string text)
 {
@@ -16,16 +15,6 @@ static bool quotedArgument(std::string text)
 	return (true);
 }
 
-static void checkEmptyString(std::string line)
-{
-	if (line == "")
-	{
-		std::cout << "Error: return needs at least one argument: ";
-		std::cout << "return <code> [text];" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-}
-
 /**
  * @brief parse a return directive and store it in values
  * 
@@ -35,28 +24,22 @@ static void checkEmptyString(std::string line)
  */
 t_values	parseReturn(std::string line, t_values values)
 {
+	std::string	reason = "needs at least one argument: return <code> [text];";
 	std::string	code;
 	size_t		firstSpace;
 
 	line = protectedSubstr(line, 6);
 	line = ltrim(line);
-	checkEmptyString(line);
+	checkEmptyString(line, "return", reason);
 	firstSpace = firstWhitespace(line);
 	code = protectedSubstr(line, 0, firstSpace);
 	values.returnCode = parseErrorCode(code, "return");
 	line = protectedSubstr(line, firstSpace, line.size() - firstSpace);
 	line = ltrim(line);
-	if (line.size() > 0 && firstWhitespace(line) != line.size() && \
-		!quotedArgument(line))
-	{
-		std::cout << "Error: can't parse return: too many text arguments: ";
-		std::cout << "[" << line<< "]" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	if (quotedArgument(line))
-	{
+	if (!quotedArgument(line))
+		checkOneArgumentOnly(line, "return text parameter");
+	else
 		line = protectedSubstr(line, 1, line.size() - 2);
-	}
 	values.returnText = line;
 	return (values);
 }
