@@ -5,7 +5,8 @@ static void checkEmptyString(std::string line)
 {
 	if (line == "")
 	{
-		std::cout << "Error: autoindex needs one argument: autoindex <value>;" << std::endl;
+		std::cout << "Error: autoindex needs one argument: ";
+		std::cout << "autoindex <value>;" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 }
@@ -24,7 +25,8 @@ t_values	parseAutoindex(std::string line, t_values values)
 	checkEmptyString(line);
 	if (firstWhitespace(line) != line.size())
 	{
-		std::cout << "Error: can't parse autoindex: too many arguments: [" << line << "]" << std::endl;
+		std::cout << "Error: can't parse autoindex: too many arguments: ";
+		std::cout << "[" << line << "]" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	if (line.size() == 2 && line == "on")
@@ -33,7 +35,9 @@ t_values	parseAutoindex(std::string line, t_values values)
 		values.autoindex = false;
 	else
 	{
-		std::cout << "Error: can't parse autoindex: value should be 'on' or 'off': [" << line << "]" << std::endl;
+		std::cout << "Error: can't parse autoindex: ";
+		std::cout << "value should be 'on' or 'off': ";
+		std::cout << "[" << line << "]" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	return (values);
