@@ -3,9 +3,12 @@
 
 static void checkExtension(std::string index)
 {
-	if (index.find(".") == std::string::npos || index.find(".") == index.size() - 1)
+	if (index.find(".") == std::string::npos || \
+		index.find(".") == index.size() - 1)
 	{
-		std::cout << "Error: index argument needs to have a name and extension seperated by '.': index <fileName>.<extension>;" << std::endl;
+		std::cout << "Error: index argument needs to have: ";
+		std::cout << "a name and extension seperated by '.': ";
+		std::cout << "index <fileName>.<extension>;" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 }
@@ -14,7 +17,8 @@ static void checkEmptyString(std::string line)
 {
 	if (line == "")
 	{
-		std::cout << "Error: index needs at least one argument: index <fileName>.<extension>;" << std::endl;
+		std::cout << "Error: index needs at least one argument: ";
+		std::cout << "index <fileName>.<extension>;" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 }
@@ -24,7 +28,8 @@ static void checkEmptyString(std::string line)
  * 
  * @param line the line to parse
  * @param values the struct to update
- * @return t_values the updated struct containing the parsed index appended to the already existing index
+ * @return t_values the updated struct containing the parsed index
+ *  appended to the already existing index.
  */
 t_values	parseIndex(std::string line, t_values values)
 {
