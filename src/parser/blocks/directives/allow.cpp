@@ -1,12 +1,6 @@
 #include "parse.hpp"
+#include <string>
 #include <iostream>
-
-static void methodError(std::string line)
-{
-	std::cout << "Error: can't parse allow: invalid method: [" << line << \
-		"]. Allowed methods are: GET, POST, DELETE" << std::endl;
-	exit(EXIT_FAILURE);
-}
 
 static t_values	addAllow(std::string &line, t_values values)
 {
@@ -35,31 +29,25 @@ static bool	isAllowedMethod(std::string toCheck)
 	return (0);
 }
 
-static void checkEmptyString(std::string line)
-{
-	if (line == "")
-	{
-		std::cout << "Error: allow needs at least one argument: ";
-		std::cout << "allow <method>;" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-}
-
 t_values	parseAllow(std::string line, t_values values)
 {
+	std::string reason = "needs at least one argument: allow <method>;";
+	std::string	newMethod;
+
 	line = protectedSubstr(line, 5);
 	line = ltrim(line);
-	checkEmptyString(line);
+	checkEmptyString(line, "allow", reason);
 	while (firstWhitespace(line) != line.size() && firstWhitespace(line) != 0)
 	{
-		if (!isAllowedMethod(protectedSubstr(line, 0, firstWhitespace(line))))
-			methodError(protectedSubstr(line, 0, firstWhitespace(line)));
+		newMethod = protectedSubstr(line, 0, firstWhitespace(line));
+		if (!isAllowedMethod(newMethod))
+			methodError(newMethod, "allow", "GET, POST, DELETE");
 		values = addAllow(line, values);
 	}
 	if (line != "")
 	{
 		if (!isAllowedMethod(line))
-			methodError(line);	
+			methodError(line, "allow", "GET, POST, DELETE");	
 		values = addAllow(line, values);
 	}
 	return (values);
