@@ -68,9 +68,7 @@ static void checkValidHost(std::string host)
 		else
 			hostError(host);
 	}
-	if (num > 255)
-		hostError(host);
-	if (dotCount != 3)
+	if (num > 255 || dotCount != 3)
 		hostError(host);
 }
 
