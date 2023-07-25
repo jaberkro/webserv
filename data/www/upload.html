@@ -8,9 +8,9 @@
 		<p>Here you can share your cat images with us:</p>
 		<img src="images/mailbox.jpeg" alt="Cat in mailbox">
 
-		<form method="POST">
+		<form method="POST" enctype="multipart/form-data" action="script.py">
 			<label for="myfile">Choose a cat picture:</label>
-			<input type="file" id="myfile" name = "myfile">
+			<input type="file" id="myfile" name = "myfile" accept=".jpg,.jpeg,.png" required>
 			<input type="submit">
 		</form>
 
