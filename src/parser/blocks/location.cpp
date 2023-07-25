@@ -4,99 +4,8 @@
 #include <fstream>
 #include <utility>
 
-static std::string findMatch(std::string &line)
+void	storeValuesInLocation(t_values values, Location &location)
 {
-	if (line.size() == 0)
-	{
-		std::cout << "Error: invalid location block: not enough arguments" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	return (protectedSubstr(line, 0, firstWhitespace(line)));
-}
-
-static std::string findModifier(std::string &line)
-{
-	if (line.size() == 0)
-	{
-		std::cout << "Error: invalid location block: not enough arguments" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	if (line.find("= ") == 0)
-		return ("=");
-	else if (line.find("~ ") == 0)
-	{
-		std::cout << "Error: invalid location block modifier: ~: regex not implemented" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	else if (line.find("~* ") == 0)
-	{
-		std::cout << "Error: invalid location block modifier: ~*: regex not implemented" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	else if (line.find("^~ ") == 0)
-	{
-		std::cout << "Error: invalid location block modifier: ^~: regex not implemented" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	return ("(none)");
-}
-
-Location parseLocation(std::fstream &file, std::string line, t_values values)
-{
-	Location	location;
-	int			directive;
-
-	line = protectedSubstr(line, 8);
-	line = ltrim(line);
-	line.pop_back();
-	line = rtrim(line);
-
-	location.setModifier(findModifier(line));
-	if (location.getModifier() != "(none)")
-	{
-		line = protectedSubstr(line, firstWhitespace(line));
-		line = ltrim(line);
-	}
-
-	location.setMatch(findMatch(line));
-	if (firstWhitespace(line) != line.size())
-	{
-		std::cout << "Error: invalid location block: too many matches: [" << line << "]" << std::endl; //remove regex as options?
-		exit(EXIT_FAILURE);
-	}
-	while (getValidLine(file, line))
-	{
-		if (line == "")
-			continue ;
-		else if (line == "}")
-			break ;
-		else if (line.find("location") == 0 && line.back() == '{')
-		{
-			std::cout << "Error: can't parse location block inside location block; not implemented" << std::endl;
-			exit(EXIT_FAILURE);
-		}
-		else
-		{
-			directive = hasInheritanceDirective(line);
-			if (directive == -1)
-			{
-				directive = hasLocationDirective(line);
-				if (directive == -1)
-				{
-					std::cout << "Error: can't parse location block near [" << line << "]" << std::endl;
-					exit(EXIT_FAILURE);
-				}
-				values = parseLocationDirective(directive, line, values);
-			}
-			else
-				values = parseInheritanceDirective(directive, line, values);
-		}
-	}
-	if (line != "}")
-	{
-		std::cout << "Error: location block not closed before end of file" << std::endl;
-		exit(EXIT_FAILURE);
-	}
 	location.setRoot(values.root);
 	location.setIndexes(values.indexes);
 	location.setAutoindex(values.autoindex);
@@ -106,6 +15,65 @@ Location parseLocation(std::fstream &file, std::string line, t_values values)
 	location.setDenied(values.denied);
 	location.setReturn(values.returnCode, values.returnText);
 	location.setUploadDir(values.uploadDir);
-	return (location);
 }
 
+static void checkNotImplementedLocation(std::string line)
+{
+	if (line.find("location") == 0)
+		notImplementedError(line, "location", "server block");
+	else if (line.find("http") == 0)
+		notImplementedError(line, "location", "begin of configuration file");
+	else if (line.find("listen") == 0)
+		notImplementedError(line, "location", "server block");
+	else if (line.find("server_name") == 0)
+		notImplementedError(line, "location", "server block");
+}
+
+void parseModifierAndMatch(Location &location, std::string &line)
+{
+	line = protectedSubstr(line, 8);
+	line = ltrim(line);
+	line.pop_back();
+	line = rtrim(line);
+	checkEmptyString(line, "location", "not enough arguments");
+	if (line.find("= ") == 0)
+		location.setModifier("=");
+	else
+		location.setModifier("(none)");
+	if (location.getModifier() != "(none)")
+	{
+		line = protectedSubstr(line, firstWhitespace(line));
+		line = ltrim(line);
+	}
+	checkEmptyString(line, "location", "not enough arguments");
+	location.setMatch(protectedSubstr(line, 0, firstWhitespace(line)));
+}
+
+Location parseLocation(std::fstream &file, std::string line, t_values values)
+{
+	Location	location;
+
+	parseModifierAndMatch(location, line);
+	checkOneArgumentOnly(line, "location match");
+	while (getValidLine(file, line))
+	{
+		if (line == "")
+			continue ;
+		else if (line == "}")
+			break ;
+		else
+		{
+			checkNotImplementedLocation(line);
+			if (hasDirective(line) == -1 && hasLocDirective(line) == -1)
+				notRecognizedError(line, "location");
+			else if (hasDirective(line) == -1)
+				values = parseLocDirective(hasLocDirective(line), line, values);
+			else
+				values = parseDirective(hasDirective(line), line, values);
+		}
+	}
+	if (line != "}")
+		notClosedError("location");
+	storeValuesInLocation(values, location);
+	return (location);
+}

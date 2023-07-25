@@ -2,14 +2,15 @@
 #include <string>
 
 /**
- * @brief switch case executing inheritance directive functions
+ * @brief switch case executing directive parsing for directives 
+ * that can be found in all blocks (http, server, location)
  * 
  * @param directive the case to execute
  * @param line the std::string to be parsed
  * @param values the struct with values to be updated
- * @return t_values the updated struct with inheritance values
+ * @return t_values the updated struct with inheritance values.
  */
-t_values	parseInheritanceDirective(int directive, std::string line, t_values values)
+t_values	parseDirective(int directive, std::string line, t_values values)
 {
 	switch(directive)
 	{
@@ -39,14 +40,17 @@ t_values	parseInheritanceDirective(int directive, std::string line, t_values val
 }
 
 /**
- * @brief checks if an std::string starts with one of the inheritance directives
+ * @brief checks if an std::string starts with one of the directives that can 
+ * be foudn in all blocks
  * 
  * @param line the std::string to check
- * @return int the index of the inheritance directive that is at the start of the std::string. If there is no match, -1 is returned
+ * @return int the index of the inheritance directive that is at the start of 
+ * the std::string. If there is no match, -1 is returned
  */
-int	hasInheritanceDirective(std::string line)
+int	hasDirective(std::string line)
 {
-	std::string directives[] = {"root", "index", "autoindex", "client_max_body_size", "error_page", "return", "upload_dir"};
+	std::string directives[] = {"root", "index", "autoindex", \
+		"client_max_body_size", "error_page", "return", "upload_dir"};
 
 	int i = 0;
 
@@ -60,14 +64,15 @@ int	hasInheritanceDirective(std::string line)
 }
 
 /**
- * @brief switch case executing inheritance directive functions
+ * @brief switch case executing directive parsing functions that can be found
+ * only inside a location block only
  * 
  * @param directive the case to execute
  * @param line the std::string to be parsed
  * @param values the struct with values to be updated
  * @return t_values the updated struct with inheritance values
  */
-t_values	parseLocationDirective(int directive, std::string line, t_values values)
+t_values	parseLocDirective(int directive, std::string line, t_values values)
 {
 	switch(directive)
 	{
@@ -85,9 +90,10 @@ t_values	parseLocationDirective(int directive, std::string line, t_values values
  * @brief checks if an std::string starts with one of the location directives
  * 
  * @param line the std::string to check
- * @return int the index of the location directive that is at the start of the std::string. If there is no match, -1 is returned
+ * @return int the index of the location directive that is at the start of 
+ * the std::string. If there is no match, -1 is returned.
  */
-int	hasLocationDirective(std::string line)
+int	hasLocDirective(std::string line)
 {
 	std::string directives[] = {"allow", "deny"};
 
