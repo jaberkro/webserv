@@ -1,27 +1,5 @@
 #include "parse.hpp"
-#include <iostream>
-
-static void checkExtension(std::string index)
-{
-	if (index.find(".") == std::string::npos || \
-		index.find(".") == index.size() - 1)
-	{
-		std::cout << "Error: index argument needs to have: ";
-		std::cout << "a name and extension seperated by '.': ";
-		std::cout << "index <fileName>.<extension>;" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-}
-
-static void checkEmptyString(std::string line)
-{
-	if (line == "")
-	{
-		std::cout << "Error: index needs at least one argument: ";
-		std::cout << "index <fileName>.<extension>;" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-}
+#include <string>
 
 /**
  * @brief parse an index directive
@@ -29,17 +7,19 @@ static void checkEmptyString(std::string line)
  * @param line the line to parse
  * @param values the struct to update
  * @return t_values the updated struct containing the parsed index
- *  appended to the already existing index.
+ *  appended to the already existing index
  */
 t_values	parseIndex(std::string line, t_values values)
 {
+	std::string reason = "needs at least one argument: index <file>";
+
 	line = protectedSubstr(line, 5);
 	line = ltrim(line);
-	checkEmptyString(line);
+	checkEmptyString(line, "index", reason);
 	while (firstWhitespace(line) != line.size() && firstWhitespace(line) != 0)
 	{
 		std::string newIndex = protectedSubstr(line, 0, firstWhitespace(line));
-		checkExtension(newIndex);
+		checkHasDot(newIndex, "index");
 		if (newIndex.find("/") != 0)
 			values.indexes.push_back("/" + newIndex);
 		else
@@ -49,7 +29,7 @@ t_values	parseIndex(std::string line, t_values values)
 	}
 	if (line != "")
 	{
-		checkExtension(line);
+		checkHasDot(line, "index");
 		if (line.find("/") != 0)
 			values.indexes.push_back("/" + line);
 		else
