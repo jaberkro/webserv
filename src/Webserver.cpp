@@ -71,8 +71,16 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 						std::cout << "Responsible server is " << \
 						handler.getServerName(0) << std::endl;
 						newResp = new Response(*newReq);
-						delete newReq;
-						newResp->prepareResponseGET(handler);
+						if (newReq->getMethod() == "POST")
+						{
+							delete newReq;
+							newResp->prepareResponsePOST(handler);
+						}
+						else
+						{
+							delete newReq;
+							newResp->prepareResponseGET(handler);
+						}
 						delete newResp;
 					}
 					catch(const std::exception& e)
@@ -99,8 +107,8 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 
 Webserver::Webserver(std::vector<Server> servers)
 {
-	if (this->running)
-		return ;
+	// if (this->running)
+	// 	return ;
 	if ((kq = kqueue()) < 0)
 		throw Webserver::KeventError();
 	struct kevent evSet;
