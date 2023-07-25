@@ -28,7 +28,8 @@ SRC = 	main.cpp \
 		parser/blocks/directives/errorPage.cpp \
 		parser/blocks/directives/allow.cpp \
 		parser/blocks/directives/deny.cpp \
-		parser/blocks/directives/return.cpp
+		parser/blocks/directives/return.cpp \
+		parser/blocks/directives/uploadDir.cpp
 
 OBJ := $(addprefix $(BUILD_DIR)/, $(SRC:.cpp=.o))
 SRC := $(addprefix $(SRC_DIR)/, $(SRC))
