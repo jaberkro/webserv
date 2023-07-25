@@ -1,19 +1,24 @@
 #include "parse.hpp"
 #include <iostream>
 
+static t_values	addDeny(std::string &line, t_values values)
+{
+	if (firstWhitespace(line) != line.size())
+	{
+		values.denied.push_back(protectedSubstr(line, 0, firstWhitespace(line)));
+		line = protectedSubstr(line, firstWhitespace(line) + 1);
+		line = ltrim(line);
+	}
+	else
+		values.denied.push_back(line);
+	return (values);
+}
+
 static void methodError(std::string line)
 {
 	std::cout << "Error: can't parse deny: invalid method: [" << line << \
 		"]. Allowed methods are: GET, POST, DELETE, all" << std::endl;
 	exit(EXIT_FAILURE);
-}
-
-static t_values	addDeny(std::string &line, t_values values)
-{
-	values.denied.push_back(protectedSubstr(line, 0, firstWhitespace(line)));
-	line = protectedSubstr(line, firstWhitespace(line) + 1);
-	line = ltrim(line);
-	return (values);
 }
 
 static bool	isAllowedMethod(std::string toCheck)

@@ -10,9 +10,14 @@ static void methodError(std::string line)
 
 static t_values	addAllow(std::string &line, t_values values)
 {
-	values.allowed.push_back(protectedSubstr(line, 0, firstWhitespace(line)));
-	line = protectedSubstr(line, firstWhitespace(line) + 1);
-	line = ltrim(line);
+	if (firstWhitespace(line) != line.size())
+	{
+		values.allowed.push_back(protectedSubstr(line, 0, firstWhitespace(line)));
+		line = protectedSubstr(line, firstWhitespace(line) + 1);
+		line = ltrim(line);
+	}
+	else
+		values.allowed.push_back(line);
 	return (values);
 }
 
@@ -54,7 +59,7 @@ t_values	parseAllow(std::string line, t_values values)
 	if (line != "")
 	{
 		if (!isAllowedMethod(line))
-			methodError(line);			
+			methodError(line);	
 		values = addAllow(line, values);
 	}
 	return (values);
