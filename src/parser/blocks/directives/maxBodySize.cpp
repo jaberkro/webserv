@@ -2,13 +2,31 @@
 #include <string>
 #include <iostream>
 
-static void checkEmptyString(std::string line)
+static unsigned int convertBodySize(std::string line, std::string directive)
 {
-	if (line == "")
+	int				multiplier = 1;
+	unsigned int	bodySize = 0;
+
+	if ((line.back() == 'k' || line.back() == 'K') && line.size() > 1)
+		multiplier = 1000;
+	else if ((line.back() == 'm' || line.back() == 'M') && line.size() > 1)
+		multiplier = 1000000;
+	else if (!isdigit(line.back()))
+		nanError(line, directive);
+	if ((line.size() > 4 && line.back() == 'm') || \
+		(line.size() > 4 && line.back() == 'M') || \
+		(line.size() > 7 && line.back() == 'k') || \
+		(line.size() > 7 && line.back() == 'K') || \
+		line.size() > 9)
 	{
-		std::cout << "Error: client_max_body_size needs one argument: client_max_body_size <size>;" << std::endl;
-		exit(EXIT_FAILURE);
+		tooBigError(line, directive, "100MB");
 	}
+	if (multiplier != 1)
+		line.pop_back();
+	bodySize = stoull(line) * multiplier;
+	if (bodySize > 100000000)
+		tooBigError(std::to_string(bodySize), directive, "100MB");
+	return (bodySize);
 }
 
 /**
@@ -16,53 +34,22 @@ static void checkEmptyString(std::string line)
  * 
  * @param line the line to parse
  * @param values the struct to update
- * @return t_values the updated struct containing the parsed client_max_body_size
+ * @return t_values the updated struct containing the parsed 
+ * client_max_body_size.
  */
 t_values		parseMaxBodySize(std::string line, t_values values)
 {
-	int	multiplier = 1;
+	std::string reason = "needs one argument: client_max_body_size <size>;";
 
 	line = protectedSubstr(line, 20);
 	line = ltrim(line);
-	checkEmptyString(line);
-	if (firstWhitespace(line) != line.size())
-	{
-		std::cout << "Error: can't parse client_max_body_size: too much arguments: [" << line << "]" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	checkEmptyString(line, "client_max_body_size", reason);
+	checkOneArgumentOnly(line, "client_max_body_size");
 	if (!allDigits(protectedSubstr(line, 0, line.size() - 1)))
-	{
-		std::cout << "Error: can't parse client_max_body_size: [" << line << "]: not a number" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	if ((line.back() == 'k' || line.back() == 'K') && line.size() > 1)
-	{
-		line.pop_back();
-		multiplier = 1000;
-	}
-	else if ((line.back() == 'm' || line.back() == 'M') && line.size() > 1)
-	{
-		line.pop_back();
-		multiplier = 1000000;
-	}
-	else if (!isdigit(line.back()))
-	{
-		std::cout << "Error: can't parse client_max_body_size: [" << line << "]: not a number" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+		nanError(line, "client_max_body_size");
 	try
 	{
-		if ((line.size() > 3 && multiplier == 1000000) || (line.size() > 6 && multiplier == 1000) || line.size() > 9)
-		{
-			std::cout << "Error: can't parse client_max_body_size: [" << line << "] * [" << multiplier << "]: input number too big: max 100 megabytes" << std::endl;
-			exit(EXIT_FAILURE);
-		}
-		values.maxBodySize = stoull(line) * multiplier;
-		if (values.maxBodySize > 100000000)
-		{
-			std::cout << "Error: can't parse client_max_body_size: [" << values.maxBodySize << "]: input number too big: max 100 megabytes" << std::endl;
-			exit(EXIT_FAILURE);
-		}
+		values.maxBodySize = convertBodySize(line, "client_max_body_size");
 	}
 	catch(const std::exception& e)
 	{
