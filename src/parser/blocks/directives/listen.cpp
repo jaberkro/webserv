@@ -76,9 +76,20 @@ static void checkEmptyString(std::string line)
 {
 	if (line == "")
 	{
-		std::cout << "Error: can't parse listen directive without arguments" << std::endl;
+		std::cout << "Error: can't parse listen directive ";
+		std::cout << "without arguments" << std::endl;
 		exit(EXIT_FAILURE);
 	}
+}
+
+static std::string convertToLower(std::string str)
+{
+	for (size_t i = 0; i < str.size(); i++)
+	{
+		if (isalpha(str.at(i)))
+			str.at(i) = tolower(str.at(i));
+	}
+	return (str);
 }
 
 /**
@@ -93,21 +104,14 @@ static std::string parseHost(std::string &line)
 {
 	std::string	newHost;
 
-	if (line.find(':') == 0)
-	{
-		newHost = "0.0.0.0";
-		line = protectedSubstr(line, 1, line.size() - 1);
-		line = ltrim(line);
-	}
-	else if (line.find(':') != std::string::npos)
+	if (line.find(':') != std::string::npos)
 	{
 		newHost = protectedSubstr(line, 0, line.find(':'));
+		if (newHost == "")
+			newHost = "0.0.0.0";
 		line = protectedSubstr(line, line.find(':') + 1);
-		for (size_t i = 0; i < newHost.size(); i++)
-		{
-			if (isalpha(newHost.at(i)))
-				newHost.at(i) = tolower(newHost.at(i));
-		}
+		line = ltrim(line);
+		newHost = convertToLower(newHost);
 	}
 	else if (!allDigits(line))
 	{
