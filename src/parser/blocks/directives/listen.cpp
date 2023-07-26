@@ -1,20 +1,6 @@
 #include "parse.hpp"
-#include <iostream>
 #include <string>
-
-static void	portError(std::string notPort)
-{
-	std::cout << "Error: incorrect port in configuration file: [" << notPort;
-	std::cout << "]: port must be a number in range [0, 65535]" << std::endl;
-	exit(EXIT_FAILURE);
-}
-
-static void	hostError(std::string notHost)
-{
-	std::cout << "Error: can't parse listen directive: invalid host: " << \
-		notHost << ": invalid IP address" << std::endl;
-	exit(EXIT_FAILURE);
-}
+#include <iostream>
 
 /**
  * @brief parse a listen command
@@ -68,19 +54,8 @@ static void checkValidHost(std::string host)
 		else
 			hostError(host);
 	}
-	if (num > 255)
+	if (num > 255 || dotCount != 3)
 		hostError(host);
-	if (dotCount != 3)
-		hostError(host);
-}
-
-static void checkEmptyString(std::string line)
-{
-	if (line == "")
-	{
-		std::cout << "Error: can't parse listen directive without arguments" << std::endl;
-		exit(EXIT_FAILURE);
-	}
 }
 
 /**
@@ -95,21 +70,14 @@ static std::string parseHost(std::string &line)
 {
 	std::string	newHost;
 
-	if (line.find(':') == 0)
-	{
-		newHost = "0.0.0.0";
-		line = protectedSubstr(line, 1, line.size() - 1);
-		line = ltrim(line);
-	}
-	else if (line.find(':') != std::string::npos)
+	if (line.find(':') != std::string::npos)
 	{
 		newHost = protectedSubstr(line, 0, line.find(':'));
+		if (newHost == "")
+			newHost = "0.0.0.0";
 		line = protectedSubstr(line, line.find(':') + 1);
-		for (size_t i = 0; i < newHost.size(); i++)
-		{
-			if (isalpha(newHost.at(i)))
-				newHost.at(i) = tolower(newHost.at(i));
-		}
+		line = ltrim(line);
+		newHost = convertToLower(newHost);
 	}
 	else if (!allDigits(line))
 	{
@@ -126,15 +94,17 @@ static std::string parseHost(std::string &line)
  * @brief parse a listen line
  * 
  * @param line the string to find a host and port in
- * @return std::pair<std::string, unsigned short> a pair containing the host and port of this listen line
+ * @return std::pair<std::string, unsigned short> a pair containing
+ *  the host and port of this listen line.
  */
 std::pair<std::string, unsigned short> parseListen(std::string line)
 {
+	std::string reason = "needs argument(s): listen [host]:[port]";
 	std::pair<std::string, unsigned short> newListen;
 
 	line = protectedSubstr(line, 6);
 	line = ltrim(line);
-	checkEmptyString(line);
+	checkEmptyString(line, "listen", reason);
 	newListen = make_pair(parseHost(line), parsePort(line));
 	return (newListen);
 }

@@ -21,6 +21,7 @@ class Location
 		std::vector<std::string>	_allowed;
 		std::vector<std::string>	_denied;
 		std::pair<int, std::string>	_return;
+		std::string					_uploadDir;
 	
 	public:
 		// functions
@@ -56,6 +57,9 @@ class Location
 
 		void                				setReturn(int code, std::string text);
 		const std::pair<int, std::string>   getReturn(void) const;
+
+		void	            setUploadDir(std::string uploadDir);
+		std::string	        getUploadDir() const;
 };
 
 #endif

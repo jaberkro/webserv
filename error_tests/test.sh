@@ -15,6 +15,8 @@ let ERRORS=0
 
 echo -e "${PINK}${BRIGHT}Testing webserv configuration files that should give an error...${RESET}"
 
+chmod 000 error_tests/invalid/00_open/01_no_access.conf
+
 for directory in $(ls error_tests/invalid/);
 	do
 	echo ""
@@ -60,3 +62,5 @@ if (($ERRORS > 0)); then
 else
 	echo -e "${GREEN}${BRIGHT}All tests passed! $ERRORS errors${RESET}"
 fi
+
+chmod 755 error_tests/invalid/00_open/01_no_access.conf

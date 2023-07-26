@@ -1,16 +1,6 @@
 #include "Server.hpp"
 #include "parse.hpp"
 #include <string>
-# include <iostream>
-
-static void checkEmptyString(std::string line)
-{
-	if (line == "")
-	{
-		std::cout << "Error: server_name needs at least one argument: server_name <name>;" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-}
 
 /**
  * @brief parse a server_name command
@@ -20,13 +10,15 @@ static void checkEmptyString(std::string line)
  */
 void parseServerNames(Server &server, std::string &line)
 {
+	std::string reason = "needs at least one argument: server_name <name>";
+
 	line = protectedSubstr(line, 11);
 	line = ltrim(line);
-	checkEmptyString(line);
-	while (findFirstWhitespace(line) != line.size() && line != "" && findFirstWhitespace(line) != 0)
+	checkEmptyString(line, "server_name", reason);
+	while (firstWhitespace(line) != line.size() && firstWhitespace(line) != 0)
 	{
-		server.addServerName(protectedSubstr(line, 0, findFirstWhitespace(line)));
-		line = protectedSubstr(line, findFirstWhitespace(line) + 1);
+		server.addServerName(protectedSubstr(line, 0, firstWhitespace(line)));
+		line = protectedSubstr(line, firstWhitespace(line) + 1);
 		line = ltrim(line);
 	}
 	if (line != "")
