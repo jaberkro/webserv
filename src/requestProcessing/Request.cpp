@@ -141,6 +141,7 @@ void	Request::processReq(void)
 	while ((n = recv(this->_connFD, &socketBuffer, MAXLINE - 1, 0)) > 0) 
 	{
 		processingBuffer += socketBuffer;
+		fullRequest += socketBuffer;
 		while (!firstLineComplete)
 		{
 			this->extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
@@ -156,20 +157,58 @@ void	Request::processReq(void)
 			this->parseFieldLine(line);
 		}
 		// CODE TO BE ADDED FOR READING THE BODY
-
-		if (processingBuffer == "\r\n")
-			break;
-
-		// if Content-Length specified (while received <= Content-Length)
-		// while (firstLineComplete & headersComplete)
-		// {
-		// 	bodyRead += processingBuffer.length();
-		// 	extractStr(processingBuffer, this->_body, processingBuffer.length());
-		// 	std::cout << "now in the body part" << std::endl;
-		// 	if (bodyRead == 0) // replace 0 with content-length
-		// 		return;
-		// }
+	
+		if (processingBuffer == "\r\n" || headersComplete)
+			break; //Silenced to be able to get the body!
 	}
+	std::cout << "Processing buffer: [" << processingBuffer << "]" << std::endl;
+	std::string contentLengthStr = _headers["Content-Length"];
+	int contentLength = atoi(contentLengthStr.c_str());
+	std::cout << "Contentlen: " << contentLength << std::endl;
+	try{
+	if (headersComplete && contentLength > 0) //means there is a body to read
+	{
+		char *socketBuf = new char[contentLength + 1];
+   		std::memset(socketBuf, 0, contentLength + 1);
+		size_t sizeToRead = 0;
+		size_t bytesRead = 0;
+		size_t totalBytesRead = 0;
+		_body.clear();
+		_body = "";
+		while (totalBytesRead < static_cast<size_t>(contentLength))
+		{
+			sizeToRead = contentLength - totalBytesRead;
+			if (sizeToRead > static_cast<size_t>(contentLength) + 1)
+				sizeToRead = static_cast<size_t>(contentLength) + 1;
+			bytesRead = recv(this->_connFD, &socketBuf, sizeToRead, 0);
+			std::cout << "socketBuffer: [" << socketBuf << "], bytesread: " << bytesRead << std::endl;
+			if (bytesRead < 0)
+				perror("RECV ERROR: ");
+			if (bytesRead <= 0)
+				break;
+
+			_body.append(socketBuf, bytesRead);
+			std::cout << "HIEROOO222" << std::endl;
+			totalBytesRead += bytesRead;
+		}
+		// delete[] socketBuf;
+	}
+	fullRequest.append(_body, strlen(_body.c_str()));
+	}
+	catch (const std::length_error& e)
+	{
+		std::cerr << e.what() << '\n';
+	}
+
+	// if Content-Length specified (while received <= Content-Length)
+	// while (firstLineComplete & headersComplete)
+	// {
+	// 	bodyRead += processingBuffer.length();
+	// 	extractStr(processingBuffer, this->_body, processingBuffer.length());
+	// 	std::cout << "now in the body part" << std::endl;
+	// 	if (bodyRead == 0) // replace 0 with content-length
+	// 		return;
+	// }
 }
 
 /**
@@ -536,4 +575,9 @@ int	Request::getConnFD() const
 std::map<std::string, std::string> &	Request::getHeaders()
 {
 	return (this->_headers);
+}
+
+std::string	Request::getFullRequest()
+{
+	return(this->fullRequest);
 }

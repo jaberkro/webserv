@@ -15,12 +15,13 @@ PostCGI::PostCGI()
 	while (environ[sizeEnv])
 		sizeEnv++;
 	env = new char*[sizeEnv + 4];
-	arg[0] = strdup("cgi-bin/script.py"); //Need this as arg with constructor!
-	arg[3] = strdup("TESTFILE.txt"); //ˆˆ
+	arg[0] = strdup("cgi-bin/uploadFile.py"); //Need this as arg with constructor!
+	std::cout << "script: [" << arg[0] << "]" << std::endl;
+	arg[3] = strdup("TESTFILE2.txt"); //ˆˆ
 	arg[4] = NULL;
 	for (i = 0; i < sizeEnv; i++)
 		env[i] = strdup(environ[i]);
-	env[i++] = strdup("PATH_INFO=cgi-bin/script.py"); //ˆˆ
+	env[i++] = strdup("PATH_INFO=cgi-bin/uploadFile.py"); //ˆˆ
 	env[i++] = strdup("CONTENT_LENGTH=35");//ˆˆ
 	env[i++] = strdup("REQUEST_METHOD=POST");
 	env[i++] = strdup("UPLOAD_DIR=data/uploads/");
@@ -32,15 +33,18 @@ PostCGI::~PostCGI()
 
 }
 
-int	PostCGI::run()//misschien vectorpair laten returnen met info voor response? Afh. van wat script returns
+void	PostCGI::run(std::string fullRequest)//misschien vectorpair laten returnen met info voor response? Afh. van wat script returns
 {
-	const char	*msg = "Hi from the parent process!";
+	// const char	*msg = "Hi from the parent process!";
 	char		*buf = new char[LEN + 1];
 
 	try 
 	{
+
 		if (pipe(webservToScript) < 0 || pipe(scriptToWebserv) < 0)
 			throw std::runtime_error("Pipe failed");
+		//std::cout << "script: [" << arg[0] << "]" << std::endl;
+		arg[0] = strdup("cgi-bin/uploadFile.py"); //Need this as arg with constructor!
 		arg[1] = strdup(std::to_string(webservToScript[R]).c_str());
 		arg[2] = strdup(std::to_string(scriptToWebserv[W]).c_str());
 		id = fork();
@@ -50,18 +54,29 @@ int	PostCGI::run()//misschien vectorpair laten returnen met info voor response? 
 		{
 			close(webservToScript[W]);
 			close(scriptToWebserv[R]);
-			// std::cout << "script: [" << arg[0] << "]" << std::endl;
+			dup2(webservToScript[R], STDIN_FILENO);
+			close(webservToScript[R]);
+			dup2(scriptToWebserv[W], STDOUT_FILENO);
+			close(scriptToWebserv[W]);
 			if (execve(arg[0], arg, env) < 0)
 				std::cerr << strerror(errno) << std::endl;
+			std::cout << "script: [" << arg[0] << "]" << std::endl;
 		}
 		else
 		{
 			close(scriptToWebserv[W]);
 			close(webservToScript[R]);
-			write(webservToScript[W], static_cast<const void *>(msg), strlen(msg));
+			std::cout << "Full request: [ " << fullRequest << "]" << std::endl;
+			write(webservToScript[W], fullRequest.c_str(), strlen(fullRequest.c_str()));// static_cast<const void *>(msg), strlen(msg));
 			close(webservToScript[W]);
-			read(scriptToWebserv[R], buf, LEN);
-			std::cout << "Parent received this message: " << buf << std::endl;
+			std::string fullResponse;
+			while (read(scriptToWebserv[R], buf, LEN) > 0)
+				fullResponse.append(buf);
+			response = fullResponse;
+			
+			//buf[bytesRead] = '\0';
+			// std::cout << "Parent received this message: " << buf << std::endl;
+			std::cout << "Parent received this response: " << response << std::endl;
 			close(scriptToWebserv[R]);
 			waitpid(id, &exitCode, 0);
 			if (WIFEXITED(exitCode))
@@ -81,6 +96,9 @@ int	PostCGI::run()//misschien vectorpair laten returnen met info voor response? 
 		delete env[sizeEnv++];
 	delete[] env;
 	delete[] buf;
-	
-	return (0);
+}
+
+std::string	PostCGI::getResponse()
+{
+	return(this->response);
 }

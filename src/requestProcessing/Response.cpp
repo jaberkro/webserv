@@ -68,16 +68,21 @@ Response &	Response::operator=(Response & r)
 	return (*this);
 }
 
-void	Response::prepareResponsePOST(Server const & server)
+void	Response::prepareResponsePOST(Server const & server, std::string fullRequest)
 {
 	
 	Server tmp(server);
 
 	//Hier info klaarzetten die mee moet naar constructor van PostCGI
 	PostCGI	cgi;
-	cgi.run();
-
+	cgi.run(fullRequest);
+	
+	// snprintf(cgi.getResponse().c_str(), MAXLINE, \
+	// "%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, \
+	// this->_responseCodes.at(this->_statusCode).c_str());
+	send(this->_req.getConnFD(), cgi.getResponse().c_str(), std::strlen(cgi.getResponse().c_str()), 0);
 }
+
 
 
 /**

@@ -1,6 +1,7 @@
 #ifndef POSTCGI_HPP
 # define POSTCGI_HPP
 #include <unistd.h>
+#include <iostream>
 
 #define NUM_OF_ARGS 6
 #define R 0
@@ -17,10 +18,12 @@ class PostCGI
 		char	**arg;
 		size_t	sizeEnv;
 		char	**env;//std:string of vector van maken?
+		std::string	response;
 	public:
 		PostCGI();
 		~PostCGI();
-		int	run();
+		void	run(std::string fullRequest);
+		std::string	getResponse();
 };
 
 #endif
