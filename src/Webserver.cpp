@@ -73,8 +73,8 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 						newResp = new Response(*newReq);
 						if (newReq->getMethod() == "POST")
 						{
+							newResp->prepareResponsePOST(handler, newReq->getFullRequest());
 							delete newReq;
-							newResp->prepareResponsePOST(handler);
 						}
 						else
 						{

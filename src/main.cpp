@@ -109,12 +109,12 @@ int	main(int argc, char **argv)
 
 	std::cout << "Hello World!" << std::endl;
 	//turn the try block of webserv off to test the parsing with make test
-	// try {
-	// 	Webserver	webserv(servers);
-	// }
-	// catch (const std::exception& e)
-	// {
-	// 	std::cerr << e.what() << '\n';
-	// }
+	try {
+		Webserver	webserv(servers);
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+	}
 	return (0);
 }
