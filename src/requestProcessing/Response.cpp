@@ -68,14 +68,14 @@ Response &	Response::operator=(Response & r)
 	return (*this);
 }
 
-void	Response::prepareResponsePOST(Server const & server, std::string fullRequest)
+void	Response::prepareResponsePOST(Server const & server, std::string ) // [Darina:] ik heb de naam van de std::string variable weggehaald zodat ie niet klaagt over unused variable
 {
 	
 	Server tmp(server);
 
 	//Hier info klaarzetten die mee moet naar constructor van PostCGI
 	PostCGI	cgi;
-	cgi.run(fullRequest);
+	cgi.run(this->_req);
 	
 	// snprintf(cgi.getResponse().c_str(), MAXLINE, \
 	// "%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, \

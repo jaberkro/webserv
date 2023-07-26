@@ -132,16 +132,20 @@ void	Request::processReq(void)
 {
 	char		socketBuffer[MAXLINE];
 	std::string	processingBuffer, line;
-	int			n = 0;
+	// int			n = 0;
+	ssize_t		bytesRead = 0;
+	size_t		totalBytesRead = 0;
 	size_t		nlPos = 0;
 	bool		firstLineComplete = false;
 	bool		headersComplete = false;
 
 	std::memset(socketBuffer, 0, MAXLINE);
-	while ((n = recv(this->_connFD, &socketBuffer, MAXLINE - 1, 0)) > 0) 
+	while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE - 1, 0)) > 0) 
 	{
 		processingBuffer += socketBuffer;
 		fullRequest += socketBuffer;
+		totalBytesRead += bytesRead;
+		std::memset(socketBuffer, 0, MAXLINE);
 		while (!firstLineComplete)
 		{
 			this->extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
@@ -158,42 +162,55 @@ void	Request::processReq(void)
 		}
 		// CODE TO BE ADDED FOR READING THE BODY
 	
-		if (processingBuffer == "\r\n" || headersComplete)
+		if (headersComplete)
+		{
+			// std::cout << "Before erasing: >" << processingBuffer << "<" << std::endl;
+			processingBuffer.erase(0, 2);
+			// std::cout << "After erasing: >" << processingBuffer << "<" << std::endl;
+			this->_body.append(processingBuffer);
+			processingBuffer.clear();
 			break; //Silenced to be able to get the body!
+		}
 	}
-	std::cout << "Processing buffer: [" << processingBuffer << "]" << std::endl;
+	// std::cout << "Processing buffer: [" << processingBuffer << "]" << std::endl;
 	std::string contentLengthStr = _headers["Content-Length"];
 	int contentLength = atoi(contentLengthStr.c_str());
 	std::cout << "Contentlen: " << contentLength << std::endl;
-	try{
-	if (headersComplete && contentLength > 0) //means there is a body to read
+	try
 	{
-		char *socketBuf = new char[contentLength + 1];
-   		std::memset(socketBuf, 0, contentLength + 1);
-		size_t sizeToRead = 0;
-		size_t bytesRead = 0;
-		size_t totalBytesRead = 0;
-		_body.clear();
-		_body = "";
-		while (totalBytesRead < static_cast<size_t>(contentLength))
+		if (headersComplete && contentLength > 0) //means there is a body to read
 		{
-			sizeToRead = contentLength - totalBytesRead;
-			if (sizeToRead > static_cast<size_t>(contentLength) + 1)
-				sizeToRead = static_cast<size_t>(contentLength) + 1;
-			bytesRead = recv(this->_connFD, &socketBuf, sizeToRead, 0);
-			std::cout << "socketBuffer: [" << socketBuf << "], bytesread: " << bytesRead << std::endl;
-			if (bytesRead < 0)
-				perror("RECV ERROR: ");
-			if (bytesRead <= 0)
-				break;
+			// char *socketBuf = new char[contentLength + 1];
+			// std::memset(socketBuf, 0, contentLength + 1);
+			size_t	sizeToRead = MAXLINE - 1;
+			size_t	counter = 1;
+			// _body.clear();
+			// _body = "";
+			while (totalBytesRead < static_cast<size_t>(contentLength))
+			{
+				sizeToRead = std::min(contentLength - totalBytesRead, static_cast<size_t>(MAXLINE - 1));
+				std::cout << "Round " << counter++ << ": total read: " << totalBytesRead << ", content length: " << contentLength << ", size to read: " << sizeToRead << std::endl;
+				// sizeToRead = contentLength - totalBytesRead;
+				// if (sizeToRead > static_cast<size_t>(contentLength) + 1)
+				// 	sizeToRead = static_cast<size_t>(contentLength) + 1;
+				bytesRead = recv(this->_connFD, &socketBuffer, sizeToRead, 0);
+				// std::cout << "socketBuffer: [" << socketBuffer << "], bytesread: " << bytesRead << std::endl;
+				std::cout << "Just read " << bytesRead << " bytes" << std::endl;
+				if (bytesRead < 0)
+					perror("RECV ERROR: ");
+				if (bytesRead <= 0)
+					break;
 
-			_body.append(socketBuf, bytesRead);
-			std::cout << "HIEROOO222" << std::endl;
-			totalBytesRead += bytesRead;
-		}
+				_body.append(socketBuffer);
+				fullRequest.append(socketBuffer);
+				// std::cout << "HIEROOO222" << std::endl;
+				totalBytesRead += bytesRead;
+				std::memset(socketBuffer, 0, MAXLINE);
+				std::cout << "End of loop. Total read is " << totalBytesRead << std::endl;
+			}
 		// delete[] socketBuf;
-	}
-	fullRequest.append(_body, strlen(_body.c_str()));
+		}
+		std::cout << "Body now: ->" << this->_body << "<-" << std::endl;
 	}
 	catch (const std::length_error& e)
 	{

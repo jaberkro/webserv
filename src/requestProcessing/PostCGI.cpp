@@ -14,7 +14,7 @@ PostCGI::PostCGI()
 	
 	while (environ[sizeEnv])
 		sizeEnv++;
-	env = new char*[sizeEnv + 4];
+	env = new char*[sizeEnv + 5];
 	arg[0] = strdup("cgi-bin/uploadFile.py"); //Need this as arg with constructor!
 	std::cout << "script: [" << arg[0] << "]" << std::endl;
 	arg[3] = strdup("TESTFILE2.txt"); //ˆˆ
@@ -33,10 +33,11 @@ PostCGI::~PostCGI()
 
 }
 
-void	PostCGI::run(std::string fullRequest)//misschien vectorpair laten returnen met info voor response? Afh. van wat script returns
+void	PostCGI::run(Request const & req)//misschien vectorpair laten returnen met info voor response? Afh. van wat script returns
 {
 	// const char	*msg = "Hi from the parent process!";
-	char		*buf = new char[LEN + 1];
+	char	*buf = new char[LEN + 1];
+	ssize_t	readBytes = 0;
 
 	try 
 	{
@@ -66,12 +67,15 @@ void	PostCGI::run(std::string fullRequest)//misschien vectorpair laten returnen 
 		{
 			close(scriptToWebserv[W]);
 			close(webservToScript[R]);
-			std::cout << "Full request: [ " << fullRequest << "]" << std::endl;
-			write(webservToScript[W], fullRequest.c_str(), strlen(fullRequest.c_str()));// static_cast<const void *>(msg), strlen(msg));
+			std::cout << "Body: [" << req.getBody() << "]" << std::endl;
+			write(webservToScript[W], req.getBody().c_str(), req.getBody().size());// static_cast<const void *>(msg), strlen(msg));
 			close(webservToScript[W]);
 			std::string fullResponse;
-			while (read(scriptToWebserv[R], buf, LEN) > 0)
+			while ((readBytes = read(scriptToWebserv[R], buf, LEN)) > 0)
+			{
+				buf[readBytes] = '\0';
 				fullResponse.append(buf);
+			}
 			response = fullResponse;
 			
 			//buf[bytesRead] = '\0';
