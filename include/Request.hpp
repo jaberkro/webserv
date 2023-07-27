@@ -48,7 +48,7 @@ class Request
 		std::string	const &					getBody() const;
 		int									getConnFD() const;
 		std::map<std::string, std::string>	&getHeaders();
-		std::string							getFullRequest();
+		std::string	const &						getFullRequest() const;
 		bool	isLocalhost(std::string const & address);
 		void	makeLowercase(std::string & str);
 

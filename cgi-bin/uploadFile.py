@@ -1,7 +1,7 @@
 #!/usr/local/bin/python3
 
 import cgi, os
-import cgitb
+import cgitb # for debugging messages
 import sys
 
 # required environment variables: UPLOAD_DIR and PROTOCOL_VERSION
@@ -10,9 +10,20 @@ cgitb.enable()
 
 
 print("PYTHON SCRIPT STARTED", file=sys.stderr)
-uploadDir = os.environ["UPLOAD_DIR"]
+
+# Read the entire request (headers + body) from stdin
+full_request = sys.stdin.buffer.read()
+
+# Print the received request (for debugging purposes)
+print("Received request:")
+print(full_request)
+
+uploadDir = os.getenv("UPLOAD_DIR")
 form = cgi.FieldStorage()
 # print("Filename is ", form['filename'], file=sys.stderr)
+
+
+
 
 print("Form keys:", form.keys())  # Print the keys present in the form
 if 'file' in form:

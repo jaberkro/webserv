@@ -22,10 +22,13 @@ PostCGI::PostCGI()
 	for (i = 0; i < sizeEnv; i++)
 		env[i] = strdup(environ[i]);
 	env[i++] = strdup("PATH_INFO=cgi-bin/uploadFile.py"); //ˆˆ
-	env[i++] = strdup("CONTENT_LENGTH=35");//ˆˆ
+	env[i++] = strdup("CONTENT_LENGTH=99235");//ˆˆ //Is nu even de len van de jpg die ik probeer te uploaden BS
 	env[i++] = strdup("REQUEST_METHOD=POST");
 	env[i++] = strdup("UPLOAD_DIR=data/uploads/");
 	env[i] = NULL;
+	setenv("PATH_INFO", "cgi-bin/uploadFile.py", 0);
+	setenv("REQUEST_METHOD", "POST", 0);
+	setenv("UPLOAD_DIR", "data/uploads/", 0);
 }
 
 PostCGI::~PostCGI()
@@ -33,7 +36,7 @@ PostCGI::~PostCGI()
 
 }
 
-void	PostCGI::run(Request const & req)//misschien vectorpair laten returnen met info voor response? Afh. van wat script returns
+void	PostCGI::run(Request const & _req, std::string )//misschien vectorpair laten returnen met info voor response? Afh. van wat script returns
 {
 	// const char	*msg = "Hi from the parent process!";
 	char	*buf = new char[LEN + 1];
@@ -67,8 +70,9 @@ void	PostCGI::run(Request const & req)//misschien vectorpair laten returnen met 
 		{
 			close(scriptToWebserv[W]);
 			close(webservToScript[R]);
-			std::cout << "Body: [" << req.getBody() << "]" << std::endl;
-			write(webservToScript[W], req.getBody().c_str(), req.getBody().size());// static_cast<const void *>(msg), strlen(msg));
+			std::cout << "FULLBODY IN CGI.RUN FUNC: [" << _req.getBody() << "]" << std::endl;
+			write(webservToScript[W], _req.getBody().c_str(), _req.getBody().size());// static_cast<const void *>(msg), strlen(msg));
+			// write(webservToScript[W], req.getBody().c_str(), req.getBody().size());// static_cast<const void *>(msg), strlen(msg));
 			close(webservToScript[W]);
 			std::string fullResponse;
 			while ((readBytes = read(scriptToWebserv[R], buf, LEN)) > 0)
@@ -80,7 +84,7 @@ void	PostCGI::run(Request const & req)//misschien vectorpair laten returnen met 
 			
 			//buf[bytesRead] = '\0';
 			// std::cout << "Parent received this message: " << buf << std::endl;
-			std::cout << "Parent received this response: " << response << std::endl;
+			std::cout << "Parent received this response: [" << response << "]" << std::endl;
 			close(scriptToWebserv[R]);
 			waitpid(id, &exitCode, 0);
 			if (WIFEXITED(exitCode))

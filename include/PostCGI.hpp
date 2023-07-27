@@ -24,7 +24,7 @@ class PostCGI
 	public:
 		PostCGI();
 		~PostCGI();
-		void	run(Request const & req);
+		void	run(Request const & req, std::string fullReq);
 		std::string	getResponse();
 };
 
