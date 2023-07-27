@@ -180,19 +180,12 @@ void	Request::processReq(void)
 	{
 		if (headersComplete && contentLength > 0) //means there is a body to read
 		{
-			// char *socketBuf = new char[contentLength + 1];
-			// std::memset(socketBuf, 0, contentLength + 1);
 			size_t	sizeToRead = MAXLINE - 1;
 			size_t	counter = 1;
-			// _body.clear();
-			// _body = "";
 			while (totalBytesRead < static_cast<size_t>(contentLength))
 			{
 				sizeToRead = std::min(contentLength - totalBytesRead, static_cast<size_t>(MAXLINE - 1));
 				std::cout << "Round " << counter++ << ": total read: " << totalBytesRead << ", content length: " << contentLength << ", size to read: " << sizeToRead << std::endl;
-				// sizeToRead = contentLength - totalBytesRead;
-				// if (sizeToRead > static_cast<size_t>(contentLength) + 1)
-				// 	sizeToRead = static_cast<size_t>(contentLength) + 1;
 				bytesRead = recv(this->_connFD, &socketBuffer, sizeToRead, 0);
 				// std::cout << "socketBuffer: [" << socketBuffer << "], bytesread: " << bytesRead << std::endl;
 				std::cout << "Just read " << bytesRead << " bytes" << std::endl;
@@ -203,7 +196,6 @@ void	Request::processReq(void)
 
 				_body.append(socketBuffer);
 				fullRequest.append(socketBuffer);
-				// std::cout << "HIEROOO222" << std::endl;
 				totalBytesRead += bytesRead;
 				std::memset(socketBuffer, 0, MAXLINE);
 				std::cout << "End of loop. Total read is " << totalBytesRead << std::endl;
