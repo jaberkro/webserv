@@ -13,15 +13,15 @@ void	printServers(std::vector<Server> servers)
 		{
 			for (size_t j = 0; j < servers.at(i).getListens().size(); j++)
 			{
-				std::cout << "\n\thost: " << servers.at(i).getHost(j) << "\t";
-				std::cout << "port: " << servers.at(i).getPort(j);
+				std::cout << "\n\thost: [" << servers.at(i).getHost(j) << "]\t";
+				std::cout << "port: [" << servers.at(i).getPort(j) << "]";
 			}
 		}
 		if (servers.at(i).getServerNames().size() > 0)
 			std::cout << "\n\tserver_name:";
 		for (size_t j = 0; j < servers.at(i).getServerNames().size(); j++)
 		{
-			std::cout << " " << servers.at(i).getServerName(j);
+			std::cout << " [" << servers.at(i).getServerName(j) << "]";
 		}
 
 
@@ -31,7 +31,7 @@ void	printServers(std::vector<Server> servers)
 			std::cout << "\n\terror_page: ";
 			std::cout << "size: " << errorPages.size();
 			for (std::map<int, std::string>::iterator sit= errorPages.begin(); sit!=errorPages.end(); ++sit)
-				std::cout << "\n\t\t" << sit->first << " => " << sit->second;
+				std::cout << "\n\t\t[" << sit->first << "] => [" << sit->second << "]";
 		}
 		for (size_t j = 0; j < servers.at(i).getLocations().size(); j++)
 		{
@@ -41,30 +41,30 @@ void	printServers(std::vector<Server> servers)
 			std::cout << servers.at(i).getLocation(j).getMatch() << ":";
 			if (servers.at(i).getLocation(j).getRoot().size())
 			{
-				std::cout << "\n\t\troot: ";
-				std::cout << servers.at(i).getLocation(j).getRoot();
+				std::cout << "\n\t\troot: [";
+				std::cout << servers.at(i).getLocation(j).getRoot() << "]";
 			}
 			if (servers.at(i).getLocation(j).getIndexes().size())
 			{
 				std::cout << "\n\t\tindex:";
 				for (size_t k = 0; k < servers.at(i).getLocation(j).getIndexes().size(); k++)
 				{
-					std::cout << " " << servers.at(i).getLocation(j).getIndex(k);
+					std::cout << " [" << servers.at(i).getLocation(j).getIndex(k) << "]";
 				}
 			}
 			if (servers.at(i).getLocation(j).getAutoindex() == true)
 				std::cout << "\n\t\tautoindex: on";
 			if (servers.at(i).getLocation(j).getMaxBodySize() != 1000000)
 			{
-				std::cout << "\n\t\tclient_max_body_size: ";
-				std::cout << servers.at(i).getLocation(j).getMaxBodySize();
+				std::cout << "\n\t\tclient_max_body_size: [";
+				std::cout << servers.at(i).getLocation(j).getMaxBodySize() << "]";
 			}
 			std::map<int, std::string> errorPages = servers.at(i).getLocation(j).getErrorPages();
 			if (!errorPages.empty())
 			{
 				std::cout << "\n\t\terror_page: ";
 				for (std::map<int, std::string>::iterator it= errorPages.begin(); it!=errorPages.end(); ++it)
-					std::cout << "\n\t\t\t" << it->first << " => " << it->second;
+					std::cout << "\n\t\t\t[" << it->first << "] => [" << it->second << "]";
 			}
 			if (servers.at(i).getLocation(j).getAllowed().size() != 0)
 			{
@@ -87,6 +87,10 @@ void	printServers(std::vector<Server> servers)
 				std::cout << "\n\t\treturn: [" << servers.at(i).getLocation(j).getReturn().first << "]";
 				if (servers.at(i).getLocation(j).getReturn().second != "")
 					std::cout << " [" << servers.at(i).getLocation(j).getReturn().second << "]";
+			}
+			if (servers.at(i).getLocation(j).getUploadDir().size() != 0)
+			{
+				std::cout << "\n\t\tupload_dir: [" << servers.at(i).getLocation(j).getUploadDir() << "]";
 			}
 		}
 		std::cout << std::endl;

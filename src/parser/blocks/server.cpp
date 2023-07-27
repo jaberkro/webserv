@@ -2,6 +2,45 @@
 #include "parse.hpp"
 #include <iostream>
 
+static void storeValuesInServer(Server &newServer, t_values values)
+{
+	if (newServer.getLocations().size() == 0)
+	{
+		std::cout << "Error: can't parse server block without location block ";
+		std::cout << "inside of it: \nserver {\n\tlocation <optional";
+		std::cout << " modifier> <match>{\n\n\t}\n}" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	if (newServer.getListens().size() == 0)
+		newServer.addListen(std::make_pair("0.0.0.0", 80));
+	if (!values.errorPages.empty())
+		newServer.setErrorPages(values.errorPages);
+}
+
+static void checkNotImplementedServer(std::string line)
+{
+	if (line.find("http") == 0)
+		notImplementedError(line, "server", "begin of configuration file");
+	else if (line.find("allow") == 0)
+		notImplementedError(line, "server", "location block");
+	else if (line.find("deny") == 0)
+		notImplementedError(line, "server", "location block");
+}
+
+static int parsedImplementedServerOnly(Server &newServer, std::string line, \
+	std::fstream &file, t_values values)
+{
+	if (line.find("location") == 0 && line.back() == '{')
+		newServer.addLocation(parseLocation(file, line, values));
+	else if (line.find("listen") == 0)
+		newServer.addListen(parseListen(line));
+	else if (line.find("server_name") == 0)
+		parseServerNames(newServer, line);
+	else
+		return (0);
+	return (1);
+}
+
 /**
  * @brief parse a server block
  * 
@@ -12,7 +51,6 @@ Server parseServer(std::fstream &file, t_values values)
 {
 	std::string	line;
 	Server		newServer;
-	int			directive;
 
 	while (getValidLine(file, line))
 	{
@@ -20,36 +58,16 @@ Server parseServer(std::fstream &file, t_values values)
 			continue ;
 		else if (line == "}")
 			break ;
-		else if (line.find("location") == 0 && line.back() == '{')
-			newServer.addLocation(parseLocation(file, line, values));
-		else if (line.find("listen") == 0)
-			newServer.addListen(parseListen(line));
-		else if (line.find("server_name") == 0)
-			parseServerNames(newServer, line);
-		else
+		else if (!parsedImplementedServerOnly(newServer, line, file, values))
 		{
-			directive = hasInheritanceDirective(line);
-			if (directive == -1)
-			{
-				std::cout << "Error: can't parse server block near [" << line << "]" << std::endl;
-				exit(EXIT_FAILURE);
-			}
-			values = parseInheritanceDirective(directive, line, values);
+			checkNotImplementedServer(line);
+			if (hasDirective(line) == -1)
+				notRecognizedError(line, "server");
+			values = parseDirective(hasDirective(line), line, values);
 		}
 	}
 	if (line != "}")
-	{
-		std::cout << "Error: server block not closed before end of file" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	if (newServer.getLocations().size() == 0)
-	{
-		std::cout << "Error: can't parse server block without location block inside of it: \nserver {\n\tlocation <optional modifier> <match>{\n\n\t}\n}" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	if (newServer.getListens().size() == 0)
-		newServer.addListen(std::make_pair("0.0.0.0", 80));
-	if (!values.errorPages.empty())
-		newServer.setErrorPages(values.errorPages);
+		notClosedError("server");
+	storeValuesInServer(newServer, values);
 	return (newServer);
 }
