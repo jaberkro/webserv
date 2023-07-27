@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Upload</title>
+		<title>Delete</title>
 		<link href="styles.css" rel="stylesheet">
 	</head>
 	<body>
@@ -9,11 +9,12 @@
 			<a href="/index.html">Home</a>
 			<a href="/about.html">About</a>
 			<a href="/contact.html">Contact</a>
-			<a class="active" href="/upload.html">Upload</a>
+			<a href="/upload.html">Upload</a>
+			<a class="active" href="/delete/html">Delete</a>
 		</div>
-		<h1>Show me yours!</h1>
-		<p>Here you can share your cat images with us:</p>
-		<img src="images/mailbox.jpeg" alt="Cat in mailbox">
+		<h1>Delete a picture?</h1>
+		<img src="images/sad.jpeg" alt="Sad cat">
+		<p>Click here to delete a picture from our database:</p>
 
 		<form method="POST" enctype="multipart/form-data" action="uploadFile.py">
 			<label for="myfile">Choose a cat picture:</label>
@@ -23,7 +24,7 @@
 
 		<br><a href="/index.html" target="_blank">Home</a>
 		<a href="/about.html" target="_blank">About</a>
-		<a href="/contact.html" target="_blank">Contact</a>
 		<a href="/upload.html" target="_blank">Upload</a>
+		<a href="/contact.html" target="_blank">Contact</a>
 	</body>
 </html>
