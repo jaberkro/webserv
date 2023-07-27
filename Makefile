@@ -14,10 +14,11 @@ SRC = 	main.cpp \
 		classes/Server.cpp \
 		classes/Location.cpp \
 		parser/parse.cpp \
-		parser/utils.cpp \
-		parser/trimUtils.cpp \
-		parser/checkExit.cpp \
-		parser/errorExit.cpp \
+		parser/utils/utils.cpp \
+		parser/utils/trimUtils.cpp \
+		parser/utils/checkExit.cpp \
+		parser/utils/errorExit.cpp \
+		parser/utils/print.cpp \
 		parser/blocks/http.cpp \
 		parser/blocks/server.cpp \
 		parser/blocks/location.cpp \
