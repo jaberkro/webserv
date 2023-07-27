@@ -50,3 +50,8 @@ Socket::Socket(std::string address, unsigned short newport, int kq, struct keven
 		throw Socket::KeventError();
 }
 
+// 0000
+// 0001 // lezen
+// 0010 // wirte
+
+// if (x & 0010) 
