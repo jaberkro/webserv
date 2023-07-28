@@ -75,7 +75,7 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 						{
 								std::cout << "\n\nFULLREQUEST: [" << newReq->getFullRequest() << "]" << std::endl;
 							//Hier werkt request value nog
-							newResp->prepareResponsePOST(handler, newReq->getFullRequest());
+							newResp->prepareResponsePOST(handler);
 							delete newReq;
 						}
 						else

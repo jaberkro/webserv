@@ -11,7 +11,7 @@ Socket::Socket(std::string address, unsigned short newport, int kq, struct keven
 {
 	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) //AF_INET = internet socket, SOCK_STREAM = tcp stream
 		throw Socket::SocketError();
-	int reuse; //this and setsockopt avoids the bind error and allows to reuse the address
+	int reuse = 1; //this and setsockopt avoids the bind error and allows to reuse the address
 	if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1)
 		throw Socket::SetsockoptError();
 	//setting up address you're listening on
@@ -41,11 +41,12 @@ Socket::Socket(std::string address, unsigned short newport, int kq, struct keven
 		return ;
 	}
 		// throw Socket::BindError();
-	if ((listen(listenfd, 10)) < 0)
+	if ((listen(listenfd, SOMAXCONN)) < 0)//was 10, SOMAXCONN is max possible connections on your system (usually 128)
 		throw Socket::ListenError();
     // if (fcntl(listenfd, F_SETFL, O_NONBLOCK) < 0)
    	// 	return (write_exit("fcntl error"));
-	EV_SET(&evSet, listenfd, EVFILT_READ, EV_ADD, 0, 0, NULL);//EV_SET is a macro that fills the kevent struct
+	// added EV-ENABLE
+	EV_SET(&evSet, listenfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);//EV_SET is a macro that fills the kevent struct
 	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 		throw Socket::KeventError();
 }

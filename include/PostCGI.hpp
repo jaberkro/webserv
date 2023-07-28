@@ -21,10 +21,11 @@ class PostCGI
 		size_t	sizeEnv;
 		char	**env;//std:string of vector van maken? [Darina: denk dat het zo kan blijven want execve verwacht een **char]
 		std::string	response;
+		Request	_req;
 	public:
-		PostCGI();
+		PostCGI(Request req);
 		~PostCGI();
-		void	run(Request const & req, std::string fullReq);
+		void	run(Request const & req);
 		std::string	getResponse();
 };
 
