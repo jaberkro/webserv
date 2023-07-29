@@ -83,7 +83,6 @@ void	Response::prepareResponsePOST(Server const & server)
 	snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), cgi.getResponse().c_str());
 	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
-
 }
 
 

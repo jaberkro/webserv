@@ -48,6 +48,7 @@ int			getValidLine(std::fstream &file, std::string &line);
 bool		allDigits(std::string s);
 int			parseErrorCode(std::string code, std::string directive);
 std::string	convertToLower(std::string str);
+void		printServers(std::vector<Server> servers);
 
 //parsing
 void		parseHTTP(std::vector<Server> &servers, std::fstream &file);
