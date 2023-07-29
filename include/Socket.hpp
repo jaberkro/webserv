@@ -15,6 +15,7 @@ class Socket
 		unsigned short port;
 		int	listenfd;
 		struct	sockaddr_in	servAddr;
+		void	setAddressHostPort(std::string address);
 	public:
 		Socket(std::string address, unsigned short newport, int kq, struct kevent evSet);
 		int		getListenfd();

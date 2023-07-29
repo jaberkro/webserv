@@ -25,10 +25,9 @@ PostCGI::PostCGI(Request req) : _req(req)
 	env[i++] = strdup("PATH_INFO=cgi-bin/uploadFile.py"); //ˆˆ
 	std::map<std::string, std::string> _reqHeaders = _req.getHeaders();
 	std::string contentLengthStr = "CONTENT_LENGTH=" + _reqHeaders["Content-Length"];
-	std::cout << "The contentlengthstr is: [" << contentLengthStr.c_str() << "]" << std::endl;
+	// std::cout << "The contentlengthstr is: [" << contentLengthStr.c_str() << "]" << std::endl;
 	std::string contentTypeStr = "CONTENT_TYPE=" + _reqHeaders["Content-Type"];
-	std::cout << "The contentTypestr is: [" << contentTypeStr.c_str() << "]" << std::endl;
-	
+	// std::cout << "The contentTypestr is: [" << contentTypeStr.c_str() << "]" << std::endl;
 	env[i++] = strdup(contentLengthStr.c_str());
 	env[i++] = strdup(contentTypeStr.c_str());
 	env[i++] = strdup("GATEWAY_INTERFACE=CGI/1.1");
@@ -46,7 +45,6 @@ PostCGI::PostCGI(Request req) : _req(req)
 	env[i++] = strdup("SERVER_SOFTWARE=");
 	env[i++] = strdup("SERVER_PROTOCOL=HTTP/1.1");
 	env[i++] = strdup("PATH_TRANSLATED=cgi-bin/uploadFile.py");
-
 	env[i] = NULL;
 }
 
@@ -66,7 +64,6 @@ void	PostCGI::run(Request const & _req)//misschien vectorpair laten returnen met
 
 		if (pipe(webservToScript) < 0 || pipe(scriptToWebserv) < 0)
 			throw std::runtime_error("Pipe failed");
-		//std::cout << "script: [" << arg[0] << "]" << std::endl;
 		arg[0] = strdup("cgi-bin/uploadFile.py"); //Need this as arg with constructor!
 		arg[1] = strdup(std::to_string(webservToScript[R]).c_str());
 		arg[2] = strdup(std::to_string(scriptToWebserv[W]).c_str());

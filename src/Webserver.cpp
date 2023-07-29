@@ -22,11 +22,17 @@ int		Webserver::comparefd(int eventfd)
 	}
 	return (0);
 }
+/**
+ * @brief Starts and runs the loop of the webserver that checks for events
+ * 
+ * @param evSet 
+ * @param servers 
+ */
 
-void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
+void	Webserver::runWebserver(std::vector<Server> servers)
 {
 	int fd, nev, i;
-	struct kevent evList[2];
+	struct kevent evList;
 	Request		*newReq;
 	Response	*newResp;
 	struct sockaddr_storage addr;
@@ -35,32 +41,32 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 	while (1)
 	{
 		running = true;
-		if ((nev = kevent(kq, NULL, 0, evList, 2, NULL)) < 1) //<1 because the return value is the num of events place in queue
+		if ((nev = kevent(kq, NULL, 0, &evList, 2, NULL)) < 1) //<1 because the return value is the num of events place in queue
 			throw Webserver::KeventError();
 		for (i = 0; i<nev; i++)
 		{
-			if (evList[i].flags & EV_EOF)
+			if (evList.flags & EV_EOF)
 			{
 				printf("Disconnect\n");
-				fd = evList[i].ident;
-				EV_SET(&evSet, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+				fd = evList.ident;
+				EV_SET(&evList, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);//was evSet
+				if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
 					throw Webserver::KeventError();
 				close(fd);
 			}
-			else if (comparefd((int)evList[i].ident) == 1)
+			else if (comparefd((int)evList.ident) == 1)
 			{
 				printf("Here1\n");
 
-				if ((fd = accept(evList[i].ident, (struct sockaddr *)&addr, &socklen)) < 0)
+				if ((fd = accept(evList.ident, (struct sockaddr *)&addr, &socklen)) < 0)
 					throw Webserver::AcceptError();
 				// if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
 				// {
 				// 	write_exit("fcntl error");
 				// 	return ;
 				// }
-				EV_SET(&evSet, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+				EV_SET(&evList, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);//was evSet
+				if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
 					throw Webserver::KeventError();
 				try
 					{
@@ -92,12 +98,12 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 				if ((close(fd)) < 0)
 					throw Webserver::CloseError();
 			}
-			else if (evList[i].filter == EVFILT_READ)
+			else if (evList.filter == EVFILT_READ)
 			{
 				char buf[256];
 				size_t bytes_read;
 
-				bytes_read = recv(evList[i].ident, buf, sizeof(buf), 0);
+				bytes_read = recv(evList.ident, buf, sizeof(buf), 0);
 				printf("=================%d BYTESSSSSSSS===============\n", (int)bytes_read);
 				if ((int)bytes_read < 0)
 					printf("%d bytes read\n", (int)bytes_read);
@@ -107,10 +113,17 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 	running = false;
 }
 
+/**
+ * @brief Construct a new Webserver:: Webserver object.
+ * I) the kqueue will be initialized
+ * II) the sockets will be initialized
+ * II) the loop to check the connections and events is started with runWebserver()
+ * 
+ * @param servers a vector of Server instances with information about every server
+ */
+
 Webserver::Webserver(std::vector<Server> servers)
 {
-	// if (this->running)
-	// 	return ;
 	if ((kq = kqueue()) < 0)
 		throw Webserver::KeventError();
 	struct kevent evSet;
@@ -122,6 +135,22 @@ Webserver::Webserver(std::vector<Server> servers)
 			sckts.push_back(sock);
 		}
 	}
-	startLoop(evSet, servers);
+	runWebserver(servers);
 }
 
+// Webserver::Webserver(const Webserver &src)
+// {
+
+// }
+
+// Webserver::Webserver& operator=(const Webserver &src)
+// {
+// 	running = src.running;
+
+// }
+
+
+Webserver::~Webserver()
+{
+	//Hier nog correcte fd's sluiten!
+}

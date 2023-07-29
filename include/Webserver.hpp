@@ -10,7 +10,7 @@
 class Socket;
 
 # define SA struct sockaddr
-# define MAXLINE 4000
+# define MAXLINE 4000 //which vaue should this be?
 
 class Webserver
 {
@@ -19,9 +19,13 @@ class Webserver
 		std::vector<Socket> sckts;
 		int			kq;
 		int			comparefd(int fd);
-		void		startLoop(struct kevent evSet, std::vector<Server> servers);
+		void		runWebserver(std::vector<Server> servers);
+		Webserver(const Webserver &src); //private because shouldn't be instantiated!
+		Webserver& operator=(const Webserver &src); //idem
 	public:
 		Webserver(std::vector<Server> servers);
+		~Webserver();
+
 	class KeventError : public std::exception {
 		public:
 			const char*	what() const throw()
@@ -43,7 +47,6 @@ class Webserver
 				return ("Closing fd failed");
 			}
 		};
-
 };
 
 
