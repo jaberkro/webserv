@@ -175,6 +175,7 @@ void	Request::processReq(void)
 	// std::cout << "Processing buffer: [" << processingBuffer << "]" << std::endl;
 	std::string contentLengthStr = _headers["Content-Length"];
 	int contentLength = atoi(contentLengthStr.c_str());
+	setenv("CONTENT-LENGTH", contentLengthStr.c_str(), 0);
 	std::cout << "Contentlen: " << contentLength << std::endl;
 	try
 	{
@@ -586,7 +587,8 @@ std::map<std::string, std::string> &	Request::getHeaders()
 	return (this->_headers);
 }
 
-std::string	Request::getFullRequest()
+
+std::string	const & Request::getFullRequest() const
 {
 	return(this->fullRequest);
 }

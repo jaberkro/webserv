@@ -68,19 +68,21 @@ Response &	Response::operator=(Response & r)
 	return (*this);
 }
 
-void	Response::prepareResponsePOST(Server const & server, std::string ) // [Darina:] ik heb de naam van de std::string variable weggehaald zodat ie niet klaagt over unused variable
+void	Response::prepareResponsePOST(Server const & server)
 {
 	
 	Server tmp(server);
 
 	//Hier info klaarzetten die mee moet naar constructor van PostCGI
-	PostCGI	cgi;
+	PostCGI	cgi(this->_req);
 	cgi.run(this->_req);
+
+	uint8_t	response[MAXLINE + 1];
 	
-	// snprintf(cgi.getResponse().c_str(), MAXLINE, \
-	// "%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, \
-	// this->_responseCodes.at(this->_statusCode).c_str());
-	send(this->_req.getConnFD(), cgi.getResponse().c_str(), std::strlen(cgi.getResponse().c_str()), 0);
+	std::memset(response, 0, MAXLINE);
+	snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), cgi.getResponse().c_str());
+	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
+	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
 
 
@@ -330,6 +332,8 @@ void	Response::sendFirstLine(void)
 	snprintf((char *)response, MAXLINE, \
 	"%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, \
 	this->_responseCodes.at(this->_statusCode).c_str());
+	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
+
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
 
@@ -351,6 +355,8 @@ void	Response::sendHeaders(std::string const & root)
 	std::memset(response, 0, MAXLINE);
 	snprintf((char *)response, MAXLINE, \
 	"Content-Type: %s\r\nContent-Length: %zu\r\n\r\n", contentType.c_str(), this->_fileLength);
+	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
+
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
 
