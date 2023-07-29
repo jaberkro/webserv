@@ -5,6 +5,7 @@
 #include <fstream>
 #include <unistd.h>
 #include "Webserver.hpp"
+#include "PostCGI.hpp"
 #include <cstdio>
 #include <unistd.h>
 
@@ -67,6 +68,25 @@ Response &	Response::operator=(Response & r)
 	return (*this);
 }
 
+void	Response::prepareResponsePOST(Server const & server)
+{
+	
+	Server tmp(server);
+
+	//Hier info klaarzetten die mee moet naar constructor van PostCGI
+	PostCGI	cgi(this->_req);
+	cgi.run(this->_req);
+
+	uint8_t	response[MAXLINE + 1];
+	
+	std::memset(response, 0, MAXLINE);
+	snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), cgi.getResponse().c_str());
+	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
+	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+}
+
+
+
 /**
  * @brief Prepares the response to a GET method request. It contains a loop, in which 
  * (i) the relevant location is identified, 
@@ -87,6 +107,8 @@ void	Response::prepareResponseGET(Server const & server)
 	
 	if (this->_req.getMethod() == "")
 		close(this->_req.getConnFD());
+	// else if (this->_req.getMethod() == "POST")
+	// 	prepareResponsePOST(server);
 	else if (this->_req.getMethod() != "GET")
 		std::cout << "I cannot handle the \"" << this->_req.getMethod() \
 		<< "\" method just yet, sorry!" << std::endl;
@@ -265,7 +287,10 @@ std::string	Response::findIndexPage(std::vector<Location>::const_iterator itLoc)
 
 	for (auto itIdx = indexes.begin(); itIdx != indexes.end(); itIdx++)
 	{
+		std::cout<< "itIdx: [" << *itIdx << "]" << std::endl;
 		filePath = itLoc->getRoot() + *itIdx;
+		std::cout<< "Filepath: [" << filePath << "]" << std::endl;
+
 		if (access(filePath.c_str(), F_OK) == 0)
 			return (*itIdx);
 	}
@@ -285,7 +310,7 @@ void	Response::retrieveFile(std::string const & root)
 	if (access(this->_filePath.c_str(), F_OK | R_OK) < 0)
 	{
 		this->_statusCode = NOT_FOUND;
-		throw std::ios_base::failure("File not found");
+		throw std::ios_base::failure("File not found: " + this->_filePath);
 	}
 	sendFirstLine();
 	sendHeaders(root);
@@ -307,6 +332,8 @@ void	Response::sendFirstLine(void)
 	snprintf((char *)response, MAXLINE, \
 	"%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, \
 	this->_responseCodes.at(this->_statusCode).c_str());
+	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
+
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
 
@@ -328,6 +355,8 @@ void	Response::sendHeaders(std::string const & root)
 	std::memset(response, 0, MAXLINE);
 	snprintf((char *)response, MAXLINE, \
 	"Content-Type: %s\r\nContent-Length: %zu\r\n\r\n", contentType.c_str(), this->_fileLength);
+	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
+
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
 

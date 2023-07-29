@@ -1,4 +1,5 @@
 #include "parse.hpp"
+#include <string>
 #include <iostream>
 
 /**
@@ -10,11 +11,14 @@
  */
 t_values	parseAutoindex(std::string line, t_values values)
 {
+	std::string reason = "needs one argument: autoindex <on/off>;";
 	line = protectedSubstr(line, 9);
 	line = ltrim(line);
-	if (findFirstWhitespace(line) != line.size())
+	checkEmptyString(line, "autoindex", reason);
+	if (firstWhitespace(line) != line.size())
 	{
-		std::cout << "Error: can't parse autoindex: too much arguments: [" << line << "]" << std::endl;
+		std::cout << "Error: can't parse autoindex: too many arguments: ";
+		std::cout << "[" << line << "]" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	if (line.size() == 2 && line == "on")
@@ -23,7 +27,9 @@ t_values	parseAutoindex(std::string line, t_values values)
 		values.autoindex = false;
 	else
 	{
-		std::cout << "Error: can't parse autoindex: value should be 'on' or 'off': [" << line << "]" << std::endl;
+		std::cout << "Error: can't parse autoindex: ";
+		std::cout << "value should be 'on' or 'off': ";
+		std::cout << "[" << line << "]" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	return (values);

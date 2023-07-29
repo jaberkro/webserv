@@ -8,7 +8,8 @@ static bool validExtension(std::string configFile, std::string extension)
 {
 	for(size_t i = 0; i < extension.size(); i++)
 	{
-		if (configFile.at(configFile.size() - 1 - i) != extension.at(extension.size() - 1 - i))
+		if (configFile.at(configFile.size() - 1 - i) != \
+			extension.at(extension.size() - 1 - i))
 			return (0);
 	}
 	return (1);
@@ -46,7 +47,6 @@ void parse(std::vector<Server> &servers, char *configFile)
 {
 	std::fstream	file;
 	std::string		line;
-	t_values		values;
 
 	file = openFile(configFile);
 	while (getValidLine(file, line))
@@ -54,19 +54,16 @@ void parse(std::vector<Server> &servers, char *configFile)
 		if (line == "")
 			continue ;
 		else if (line == "http {")
+			parseHTTP(servers, file);
+		else if (line == "server {" || line.find("location") == 0 || \
+			hasDirective(line) != -1)
 		{
-			parseHTTP(servers, file, values);
-		}
-		else if (line == "server {" || line.find("location") == 0 || hasInheritanceDirective(line) != -1)
-		{
-			std::cout << "Error: http block missing: \nhttp {\n\n}" << std::endl;
+			std::cout << "Error: [" << line << "]: should be inside ";
+			std::cout << "http block: \nhttp {\n\n}" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 		else
-		{
-			std::cout << "Error: can't parse [" << line << "]" << std::endl;
-			exit(EXIT_FAILURE);
-		}
+			notRecognizedError(line, "");
 	}
 	if (servers.size() == 0)
 	{

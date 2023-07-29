@@ -10,11 +10,16 @@ SRC = 	main.cpp \
 		Webserver.cpp \
 		requestProcessing/Request.cpp \
 		requestProcessing/Response.cpp \
+		requestProcessing/PostCGI.cpp \
 		Socket.cpp \
 		classes/Server.cpp \
 		classes/Location.cpp \
 		parser/parse.cpp \
-		parser/utils.cpp \
+		parser/utils/utils.cpp \
+		parser/utils/trimUtils.cpp \
+		parser/utils/checkExit.cpp \
+		parser/utils/errorExit.cpp \
+		parser/utils/print.cpp \
 		parser/blocks/http.cpp \
 		parser/blocks/server.cpp \
 		parser/blocks/location.cpp \
@@ -28,7 +33,8 @@ SRC = 	main.cpp \
 		parser/blocks/directives/errorPage.cpp \
 		parser/blocks/directives/allow.cpp \
 		parser/blocks/directives/deny.cpp \
-		parser/blocks/directives/return.cpp
+		parser/blocks/directives/return.cpp \
+		parser/blocks/directives/uploadDir.cpp
 
 OBJ := $(addprefix $(BUILD_DIR)/, $(SRC:.cpp=.o))
 SRC := $(addprefix $(SRC_DIR)/, $(SRC))

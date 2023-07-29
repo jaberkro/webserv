@@ -9,17 +9,58 @@ CYAN="\033[0;36m"
 RESET="\033[0m"
 BRIGHT="\033[1m"
 
-echo "Testing webserv..."
+OUTPUT=""
 
-for directory in $(ls error_tests/testfiles/);
+let ERRORS=0
+
+echo -e "${PINK}${BRIGHT}Testing webserv configuration files that should give an error...${RESET}"
+
+chmod 000 error_tests/invalid/00_open/01_no_access.conf
+
+for directory in $(ls error_tests/invalid/);
 	do
-		echo ""
-		echo -e "${GREEN}${BRIGHT}$directory:${RESET}"
-		for file in $(ls error_tests/testfiles/$directory);
+	echo ""
+	echo -e "${BRIGHT}$directory:${RESET}"
+	for file in $(ls error_tests/invalid/$directory);
 		do
-		echo -e "${YELLOW}${file}:${RESET}"
-		./webserv "error_tests/testfiles/${directory}/${file}"
+		echo -en "${YELLOW}${file}:${RESET} "
+		OUTPUT=$(./webserv "error_tests/invalid/${directory}/${file}") 
+		if grep -q "Error: " <<< $OUTPUT; then
+			echo -e "$OUTPUT ${GREEN}${BRIGHT}OK${RESET}"
+		else
+			echo -e "$OUTPUT ${RED}${BRIGHT}KO${RESET}"
+			let "ERRORS+=1"
+		fi
 	done
 done
 
 echo ""
+
+echo -e "${PINK}${BRIGHT}Testing webserv configuration files that should not give an error...${RESET}"
+
+for directory in $(ls error_tests/valid/);
+	do
+	echo ""
+	echo -e "${BRIGHT}$directory:${RESET}"
+	for file in $(ls error_tests/valid/$directory);
+		do
+		echo -en "${YELLOW}${file}:${RESET} "
+		OUTPUT=$(./webserv "error_tests/valid/${directory}/${file}") 
+		if grep -q "Hello World!" <<< $OUTPUT; then
+			echo -e "$OUTPUT ${GREEN}${BRIGHT}OK${RESET}"
+		else
+			echo -e "$OUTPUT ${RED}${BRIGHT}KO${RESET}"
+			let "ERRORS+=1"
+		fi
+	done
+done
+
+echo ""
+
+if (($ERRORS > 0)); then
+	echo -e "${RED}${BRIGHT}Amount of tests not passed: $ERRORS${RESET}"
+else
+	echo -e "${GREEN}${BRIGHT}All tests passed! $ERRORS errors${RESET}"
+fi
+
+chmod 755 error_tests/invalid/00_open/01_no_access.conf

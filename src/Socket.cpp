@@ -7,19 +7,24 @@ int Socket::getListenfd()
     return(this->listenfd);
 }
 
-Socket::Socket(std::string address, unsigned short newport, int kq, struct kevent evSet) : port(newport)
+/**
+ * @brief Sets up address, port, and host the socket needs to listen to.
+ * - AF_INET is an address family used to designate the type of address the socket
+ *   will listen to (which is in our case, IPv4)
+ * 
+ * @param address the address to listen to
+ */
+
+void	Socket::setAddressHostPort(std::string address)
 {
-	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) //AF_INET = internet socket, SOCK_STREAM = tcp stream
-		throw Socket::SocketError();
-	int reuse; //this and setsockopt avoids the bind error and allows to reuse the address
-	if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1)
-		throw Socket::SetsockoptError();
-	//setting up address you're listening on
 	std::memset(&servAddr, '\0', sizeof(servAddr));
-	servAddr.sin_family		= AF_INET;//AF_INET is an address family that is used to designate the type of addresses that your socket can communicate with (in this case, IPv4 addresses)
-	servAddr.sin_port		= htons(port); //port you're listening on
+	servAddr.sin_family		= AF_INET;
+	servAddr.sin_port		= htons(port);
 	printf("port: [%d] address: [%s]\n", this->port, address.c_str());
 	// servAddr.sin_addr.s_addr = htonl(INADDR_ANY); // will respond to anything
+	///Checken met curl --resolve of onderstaande code nodig is, of bovenstaande regel genoeg is!////
+	// Als onderstaande niet nodg is, dan ook std::string address niet meer doorsturen naar deze func!
+	/////begin/////
 	struct addrinfo hints, *res;
 	std::memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
@@ -35,26 +40,46 @@ Socket::Socket(std::string address, unsigned short newport, int kq, struct keven
 	}
 	else
 		throw Socket::AddressConversionError();
-	if ((bind(listenfd, (SA *) &servAddr, sizeof(servAddr))) < 0)//bind listening socket to address
+	////////end////////
+
+}
+
+/**
+ * @brief Construct a new Socket:: Socket object, and bind it, make it listen and add it to the kqueue
+ * Small notes: - AF_INET = internet socket, SOCK_STREAM = tcp stream
+ * 				- the setsockopt function avoids in this case a bind error and allows to reuse the address
+ * 				- SOMAXCONN is the max. possible connections on your system (usually 128)
+ * 
+ * @param address the address to listen on
+ * @param newport the port to listen on
+ * @param kq the fd of the kqueue
+ * @param evSet the kevent struct used to add information to the kqueue
+ */
+
+Socket::Socket(std::string address, unsigned short newport, int kq, struct kevent evSet) : port(newport)
+{
+	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		throw Socket::SocketError();
+	int reuse = 1;
+	if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1)
+		throw Socket::SetsockoptError();
+	setAddressHostPort(address);
+	if ((bind(listenfd, (SA *) &servAddr, sizeof(servAddr))) < 0)
 	{
 		int error_code = errno;
 		if (error_code == EADDRINUSE)
-			std::cout << "(Above mentioned address is already in use, scoket is not initialized)" << std::endl;
+			std::cout <<
+			"(Above mentioned address is already in use, socket will not be initialized)"
+			<< std::endl;
 		else
 			throw BindError();
 	}
-	// {
-	// 	perror("bind:");
-	// 	return ;
-	// }
-	if ((listen(listenfd, 10)) < 0)
+	if ((listen(listenfd, SOMAXCONN)) < 0)
 		throw Socket::ListenError();
-    // if (fcntl(listenfd, F_SETFL, O_NONBLOCK) < 0) //Fcntl maakt het altijd kapot!! HOE DAN!?
-	// {
-	// 	perror("fnctl");
-	// 	return ;
-	// }
-	EV_SET(&evSet, listenfd, EVFILT_READ, EV_ADD, 0, 0, NULL);//EV_SET is a macro that fills the kevent struct
+    // if (fcntl(listenfd, F_SETFL, O_NONBLOCK) < 0)
+   	// 	return (write_exit("fcntl error"));
+	// added EV-ENABLE
+	EV_SET(&evSet, listenfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 		throw Socket::KeventError();
 	struct timespec timeout;
@@ -64,4 +89,3 @@ Socket::Socket(std::string address, unsigned short newport, int kq, struct keven
 	if (kevent(kq, &evSet, 1, NULL, 0, &timeout) == -1)
 		throw Socket::KeventError();
 }
-

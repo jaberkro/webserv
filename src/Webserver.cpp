@@ -22,28 +22,17 @@ int		Webserver::comparefd(int eventfd)
 	}
 	return (0);
 }
+/**
+ * @brief Starts and runs the loop of the webserver that checks for events
+ * 
+ * @param evSet 
+ * @param servers 
+ */
 
-void	print_info(struct kevent evList1, struct kevent evList2, int nev, struct kevent evSet, int fd)
+void	Webserver::runWebserver(std::vector<Server> servers)
 {
-	std::cout << "= evList[1] | evList[2] =" << std::endl;
-	std::cout << "-------------------------"<< std::endl;
-	std::cout << "ident: " << evList1.ident << "    |  " << evList2.ident << std::endl;
-	std::cout << "filter: " << evList1.filter << "  |  " << evList2.filter << std::endl;
-	std::cout << "flags: " << evList1.flags << "   |  " << evList2.flags << std::endl;
-	std::cout << std::endl;
-	std::cout << "nev: " << nev << std::endl << std::endl;
-	std::cout << "     = evSet =" << std::endl;
-	std::cout << "ident: " << evSet.ident << std::endl;
-	std::cout << "filter: " << evSet.filter << std::endl;
-	std::cout << "flags: " << evSet.flags << std::endl;
-	std::cout << std::endl;
-	std::cout << "fd: " << fd << std::endl;
-}
-
-void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
-{
-	int fd = 0, nev = 0, i;
-	struct kevent evList[2];
+	int fd, nev, i;
+	struct kevent evList;
 	Request		*newReq;
 	Response	*newResp;
 	struct sockaddr_storage addr;
@@ -53,58 +42,70 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 	while (1)
 	{
 		running = true;
-		if ((nev = kevent(kq, NULL, 0, evList, 2, NULL)) < 1) //<1 because the return value is the num of events place in queue
+		if ((nev = kevent(kq, NULL, 0, &evList, 2, NULL)) < 1) //<1 because the return value is the num of events place in queue
 			throw Webserver::KeventError();
 		for (i = 0; i<nev; i++)
 		{
-			print_info(evList[0], evList[1], nev, evSet, fd);
-			if (evList[i].flags & EV_EOF)
+			if (evList.flags & EV_EOF)
 			{
 				printf("Disconnect\n");
-				fd = evList[i].ident;
-				EV_SET(&evSet, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-				EV_SET(&evSet, fd, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);//see gphilipp Slack
-				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+				fd = evList.ident;
+				EV_SET(&evList, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);//was evSet
+				if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
 					throw Webserver::KeventError();
 				close(fd);
 			}
-			else if (comparefd((int)evList[i].ident) == 1)
+			else if (comparefd((int)evList.ident) == 1)
 			{
 				printf("Here1\n");
 
-				if ((fd = accept(evList[i].ident, (struct sockaddr *)&addr, &socklen)) < 0)
+				if ((fd = accept(evList.ident, (struct sockaddr *)&addr, &socklen)) < 0)
 					throw Webserver::AcceptError();
 				// if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
 				// {
 				// 	perror("fctnl");
 				// 	return ;
 				// }
-				EV_SET(&evSet, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+				EV_SET(&evList, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);//was evSet
+				if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
 					throw Webserver::KeventError();
-				newReq = new Request(fd);
-				newReq->processReq();
-				newReq->printRequest();
-				Server const &	handler = newReq->identifyServer(servers);
-				std::cout << "Responsible server is " << \
-				handler.getServerName(0) << std::endl;
-				newResp = new Response(*newReq);
-				delete newReq;
-				newResp->prepareResponseGET(handler);
-				delete newResp;
-				EV_SET(&evSet, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
-					throw Webserver::KeventError();
+				try
+					{
+						newReq = new Request(fd);
+						newReq->processReq();
+						newReq->printRequest();
+						Server const &	handler = newReq->identifyServer(servers);
+						std::cout << "Responsible server is " << \
+						handler.getServerName(0) << std::endl;
+						newResp = new Response(*newReq);
+						if (newReq->getMethod() == "POST")
+						{
+								std::cout << "\n\nFULLREQUEST: [" << newReq->getFullRequest() << "]" << std::endl;
+							//Hier werkt request value nog
+							newResp->prepareResponsePOST(handler);
+							delete newReq;
+						}
+						else
+						{
+							delete newReq;
+							newResp->prepareResponseGET(handler);
+						}
+						delete newResp;
+					}
+					catch(const std::exception& e)
+					{
+						std::cerr << "!!! " << e.what() << '\n';
+					}
 				if ((close(fd)) < 0)
 					throw Webserver::CloseError();
 			}
-			else if (evList[i].filter == EVFILT_READ) //Hier request readen!! Voor pending content
+			else if (evList.filter == EVFILT_READ)
 			{
 				//At each call ofthis event, add a oneshot event for the timeout event (EVFILT_TIMER)!
 				char buf[256];//[evList[i].data]; //eventList.data returns size of pending content
 				size_t bytes_read;
 
-				bytes_read = recv(evList[i].ident, buf, sizeof(buf), 0);
+				bytes_read = recv(evList.ident, buf, sizeof(buf), 0);
 				printf("=================%d BYTESSSSSSSS===============\n", (int)bytes_read);
 				if ((int)bytes_read < 0)
 					printf("%d bytes read\n", (int)bytes_read);
@@ -126,10 +127,17 @@ void	Webserver::startLoop(struct kevent evSet, std::vector<Server> servers)
 	running = false;
 }
 
+/**
+ * @brief Construct a new Webserver:: Webserver object.
+ * I) the kqueue will be initialized
+ * II) the sockets will be initialized
+ * II) the loop to check the connections and events is started with runWebserver()
+ * 
+ * @param servers a vector of Server instances with information about every server
+ */
+
 Webserver::Webserver(std::vector<Server> servers)
 {
-	if (this->running)
-		return ;
 	if ((kq = kqueue()) < 0)
 		throw Webserver::KeventError();
 	struct kevent evSet;
@@ -141,6 +149,22 @@ Webserver::Webserver(std::vector<Server> servers)
 			sckts.push_back(sock);
 		}
 	}
-	startLoop(evSet, servers);
+	runWebserver(servers);
 }
 
+// Webserver::Webserver(const Webserver &src)
+// {
+
+// }
+
+// Webserver::Webserver& operator=(const Webserver &src)
+// {
+// 	running = src.running;
+
+// }
+
+
+Webserver::~Webserver()
+{
+	//Hier nog correcte fd's sluiten!
+}
