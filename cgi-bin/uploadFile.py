@@ -6,6 +6,7 @@ import cgitb # for debugging messages
 
 # # required environment variables: UPLOAD_DIR and PROTOCOL_VERSION
 
+
 cgitb.enable()
 
 
@@ -65,3 +66,4 @@ else:
 
 sys.stdin.close()
 sys.stdout.close()
+
