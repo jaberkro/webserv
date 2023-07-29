@@ -6,6 +6,8 @@
 #include <vector>
 #include "Socket.hpp"
 #include "Server.hpp"
+#include "Response.hpp"
+#include "Request.hpp"
 
 class Socket;
 
@@ -16,10 +18,16 @@ class Webserver
 {
 	private:
 		bool		running;
+		Request		*newReq;
+		Response	*newResp;
+
 		std::vector<Socket> sckts;
 		int			kq;
 		int			comparefd(int fd);
+		void		setSignal();
 		void		runWebserver(std::vector<Server> servers);
+		void		eofEvent(int connfd, int ident);
+		void		handleRequestAndResponse(int connfd, std::vector<Server> servers);
 		Webserver(const Webserver &src); //private because shouldn't be instantiated!
 		Webserver& operator=(const Webserver &src); //idem
 	public:

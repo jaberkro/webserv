@@ -86,7 +86,7 @@ void	PostCGI::run(Request const & _req)//misschien vectorpair laten returnen met
 		{
 			close(scriptToWebserv[W]);
 			close(webservToScript[R]);
-			std::cout << "FULLBODY IN CGI.RUN FUNC: [" << _req.getBody() << "]" << std::endl;
+			// std::cout << "FULLBODY IN CGI.RUN FUNC: [" << _req.getBody() << "]" << std::endl;
 			write(webservToScript[W], _req.getBody().c_str(), _req.getBody().size());// static_cast<const void *>(msg), strlen(msg));
 			// write(webservToScript[W], req.getBody().c_str(), req.getBody().size());// static_cast<const void *>(msg), strlen(msg));
 			close(webservToScript[W]);

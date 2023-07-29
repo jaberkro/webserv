@@ -8,10 +8,18 @@
 #include <sys/event.h>
 #include <fstream>
 #include <fcntl.h>
+#include <csignal>
 
 #include "Request.hpp"
 #include "Response.hpp"
 #include <vector>
+
+/**
+ * @brief Checks if the fd that an event took place on matches any socket fd's
+ * 
+ * @param eventfd the fd the event took place on
+ * @return int 
+ */
 
 int		Webserver::comparefd(int eventfd)
 {
@@ -22,109 +30,151 @@ int		Webserver::comparefd(int eventfd)
 	}
 	return (0);
 }
+
+/**
+ * @brief Handles and eof event, where the client disconnects from the server
+ * 
+ * @param connfd 
+ * @param ident 
+ */
+
+void	Webserver::eofEvent(int connfd, int ident)
+{
+	std::cout << "Disconnect" << std::endl;
+	connfd = ident;
+	// EV_SET(&evList, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);//was evSet
+	// if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
+	// 	throw Webserver::KeventError();
+	//Commented out the above, because calling close() will automatically remove
+	//the fd from the kqueue
+	if ((close(connfd)) < 0)
+		throw Webserver::CloseError();
+}
+
+void	Webserver::handleRequestAndResponse(int connfd, std::vector<Server> servers)
+{
+	// Request		*newReq;
+	// Response	*newResp; //moved to class Webserver
+
+	try
+	{
+		newReq = new Request(connfd);
+		newReq->processReq();
+		newReq->printRequest();
+		Server const &	handler = newReq->identifyServer(servers);
+		std::cout << "Handler info: host: [" << handler.getPort(0) << "], port: [" << handler.getHost(0) << "]" << std::endl;
+		std::cout << "Responsible server is " << \
+		handler.getServerName(0) << std::endl;
+		newResp = new Response(*newReq);
+		if (newReq->getMethod() == "POST")
+		{
+			//std::cout << "\n\nFULLREQUEST: [" << newReq->getFullRequest() << "]" << std::endl;
+			//Hier werkt request value nog
+			newResp->prepareResponsePOST(handler);
+			delete newReq;
+		}
+		else
+		{
+			delete newReq;
+			newResp->prepareResponseGET(handler);
+		}
+		delete newResp;
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << "!!! " << e.what() << '\n';
+	}
+}
+
 /**
  * @brief Starts and runs the loop of the webserver that checks for events
  * 
- * @param evSet 
  * @param servers 
  */
 
 void	Webserver::runWebserver(std::vector<Server> servers)
 {
-	int fd, nev, i;
+	int connfd, nev;
 	struct kevent evList;
-	Request		*newReq;
-	Response	*newResp;
 	struct sockaddr_storage addr;
 	socklen_t socklen = sizeof(addr);
-
 
 	while (1)
 	{
 		running = true;
-		if ((nev = kevent(kq, NULL, 0, &evList, 2, NULL)) < 1) //<1 because the return value is the num of events place in queue
+		if ((nev = kevent(kq, NULL, 0, &evList, 1, NULL)) < 1) //<1 because the return value is the num of events place in queue
 			throw Webserver::KeventError();
-		for (i = 0; i<nev; i++)
+		if (evList.flags & EV_EOF)
+			eofEvent(connfd, evList.ident);
+		else if (comparefd((int)evList.ident) == 1)
 		{
-			if (evList.flags & EV_EOF)
-			{
-				printf("Disconnect\n");
-				fd = evList.ident;
-				EV_SET(&evList, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);//was evSet
-				if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
-					throw Webserver::KeventError();
-				close(fd);
-			}
-			else if (comparefd((int)evList.ident) == 1)
-			{
-				printf("Here1\n");
-
-				if ((fd = accept(evList.ident, (struct sockaddr *)&addr, &socklen)) < 0)
-					throw Webserver::AcceptError();
-				// if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
-				// {
-				// 	perror("fctnl");
-				// 	return ;
-				// }
-				EV_SET(&evList, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);//was evSet
-				if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
-					throw Webserver::KeventError();
-				try
-					{
-						newReq = new Request(fd);
-						newReq->processReq();
-						newReq->printRequest();
-						Server const &	handler = newReq->identifyServer(servers);
-						std::cout << "Responsible server is " << \
-						handler.getServerName(0) << std::endl;
-						newResp = new Response(*newReq);
-						if (newReq->getMethod() == "POST")
-						{
-								std::cout << "\n\nFULLREQUEST: [" << newReq->getFullRequest() << "]" << std::endl;
-							//Hier werkt request value nog
-							newResp->prepareResponsePOST(handler);
-							delete newReq;
-						}
-						else
-						{
-							delete newReq;
-							newResp->prepareResponseGET(handler);
-						}
-						delete newResp;
-					}
-					catch(const std::exception& e)
-					{
-						std::cerr << "!!! " << e.what() << '\n';
-					}
-				if ((close(fd)) < 0)
-					throw Webserver::CloseError();
-			}
-			else if (evList.filter == EVFILT_READ)
-			{
-				//At each call ofthis event, add a oneshot event for the timeout event (EVFILT_TIMER)!
-				char buf[256];//[evList[i].data]; //eventList.data returns size of pending content
-				size_t bytes_read;
-
-				bytes_read = recv(evList.ident, buf, sizeof(buf), 0);
-				printf("=================%d BYTESSSSSSSS===============\n", (int)bytes_read);
-				if ((int)bytes_read < 0)
-					printf("%d bytes read\n", (int)bytes_read);
-			}
-			else if (evList[i].filter == EVFILT_WRITE)//Hier response senden!
-			{
-				//send response content that you bind to your request class. When all data is sent, delete TIMEOUT events and close conn
-				send(evList[i].ident, "Write Event", 11, 0);//This obviously should be smth else
-			}
-			else if (evList[i].filter == EVFILT_TIMER)
-			{
-				std::cout << "Time-out!!" << std::endl;
-				//Hier Timeout handlen: bind current request to a 408 response Error, delete read ev and add write ev
-			}
-			else if (fd != 0)
-				close(fd);
+			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~Connection accepted~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
+			if ((connfd = accept(evList.ident, (struct sockaddr *)&addr, &socklen)) < 0)
+				throw Webserver::AcceptError();
+			// if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
+			// {
+			// 	perror("fctnl");
+			// 	return ;
+			// }
+			EV_SET(&evList, connfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);//was evSet
+			if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
+				throw Webserver::KeventError();
+			// if ((close(connfd)) < 0)
+			// 	throw Webserver::CloseError(); //Advice Swaan
+			//Als ik dit if-statement uitcomment: pagina blijft laden na "Uploaden succesvol"
 		}
+		else if (evList.filter == EVFILT_READ)
+		{
+			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
+
+			//At each call ofthis event, add a oneshot event for the timeout event (EVFILT_TIMER)!
+			// char buf[256];//[evList[i].data]; //eventList.data returns size of pending content
+			// size_t bytes_read;
+			// bytes_read = recv(evList.ident, buf, sizeof(buf), 0);
+			// printf("=================%d BYTESSSSSSSS===============\n", (int)bytes_read);
+			// if ((int)bytes_read < 0)
+			// 	printf("%d bytes read\n", (int)bytes_read);
+			handleRequestAndResponse(connfd, servers);
+			EV_SET(&evList, connfd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);//was evSet
+			if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
+				throw Webserver::KeventError();
+
+		}
+		else if (evList.filter == EVFILT_WRITE)//Hier response senden!
+		{
+			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~WRITE EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
+			//send response content that you bind to your request class. When all data is sent, delete TIMEOUT events and close conn
+			handleRequestAndResponse(connfd, servers); //of moet connfd hier wel evList.ident zijn?
+			// send(evList.ident, "Write Event", 11, 0);//This obviously should be smth else
+		}
+		// else if (evList.filter == EVFILT_TIMER)
+		// {
+		// 	std::cout << "Time-out!!" << std::endl;
+		// 	//Hier Timeout handlen: bind current request to a 408 response Error, delete read ev and add write ev
+		// }
+		// else if (connfd != 0)
+		// 	close(connfd);
+		
 	}
 	running = false;
+}
+
+void	sighandler(int sig)
+{
+	if (sig == SIGINT)
+	{
+		std::cout << "\nWebserver will be stopped now, adieu!" << std::endl;
+		exit(0); //(Is this correct exit code)
+	}
+}
+
+/**
+ * @brief Sets custom behaviour for signals SIGINT and SiGQUIT
+ * 
+ */
+void	Webserver::setSignal()
+{
+	std::signal(SIGINT, sighandler); //handle potential error!
 }
 
 /**
@@ -138,6 +188,7 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 
 Webserver::Webserver(std::vector<Server> servers)
 {
+	setSignal();
 	if ((kq = kqueue()) < 0)
 		throw Webserver::KeventError();
 	struct kevent evSet;

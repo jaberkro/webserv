@@ -71,9 +71,8 @@ Response &	Response::operator=(Response & r)
 void	Response::prepareResponsePOST(Server const & server)
 {
 	
-	Server tmp(server);
+	Server tmp(server); //BS: dit is temporary, om compiler error over unused var. te silencen
 
-	//Hier info klaarzetten die mee moet naar constructor van PostCGI
 	PostCGI	cgi(this->_req);
 	cgi.run(this->_req);
 
@@ -81,8 +80,9 @@ void	Response::prepareResponsePOST(Server const & server)
 	
 	std::memset(response, 0, MAXLINE);
 	snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), cgi.getResponse().c_str());
-	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
+	printf("\n\nRESPONSE for POST: [%s]\n\n", (char*)response);
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+	//BS: Above is hardcoded, but needs to be a proper reponse with a html page focourse
 }
 
 
@@ -355,7 +355,7 @@ void	Response::sendHeaders(std::string const & root)
 	std::memset(response, 0, MAXLINE);
 	snprintf((char *)response, MAXLINE, \
 	"Content-Type: %s\r\nContent-Length: %zu\r\n\r\n", contentType.c_str(), this->_fileLength);
-	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
+	printf("\n\nRESPONSE for GET: [%s]\n\n", (char*)response);
 
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }

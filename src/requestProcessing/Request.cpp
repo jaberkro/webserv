@@ -175,21 +175,20 @@ void	Request::processReq(void)
 	// std::cout << "Processing buffer: [" << processingBuffer << "]" << std::endl;
 	std::string contentLengthStr = _headers["Content-Length"];
 	int contentLength = atoi(contentLengthStr.c_str());
-	setenv("CONTENT-LENGTH", contentLengthStr.c_str(), 0);
-	std::cout << "Contentlen: " << contentLength << std::endl;
+	setenv("CONTENT-LENGTH", contentLengthStr.c_str(), 0); //deze weghalen/verplaatsen!!
 	try
 	{
 		if (headersComplete && contentLength > 0) //means there is a body to read
 		{
 			size_t	sizeToRead = MAXLINE - 1;
-			size_t	counter = 1;
+			// size_t	counter = 1;
 			while (totalBytesRead < static_cast<size_t>(contentLength))
 			{
 				sizeToRead = std::min(contentLength - totalBytesRead, static_cast<size_t>(MAXLINE - 1));
-				std::cout << "Round " << counter++ << ": total read: " << totalBytesRead << ", content length: " << contentLength << ", size to read: " << sizeToRead << std::endl;
+				// std::cout << "Round " << counter++ << ": total read: " << totalBytesRead << ", content length: " << contentLength << ", size to read: " << sizeToRead << std::endl;
 				bytesRead = recv(this->_connFD, &socketBuffer, sizeToRead, 0);
 				// std::cout << "socketBuffer: [" << socketBuffer << "], bytesread: " << bytesRead << std::endl;
-				std::cout << "Just read " << bytesRead << " bytes" << std::endl;
+				// std::cout << "Just read " << bytesRead << " bytes" << std::endl;
 				if (bytesRead < 0)
 					perror("RECV ERROR: ");
 				if (bytesRead <= 0)
@@ -199,11 +198,11 @@ void	Request::processReq(void)
 				fullRequest.append(socketBuffer);
 				totalBytesRead += bytesRead;
 				std::memset(socketBuffer, 0, MAXLINE);
-				std::cout << "End of loop. Total read is " << totalBytesRead << std::endl;
+				// std::cout << "End of loop. Total read is " << totalBytesRead << std::endl;
 			}
 		// delete[] socketBuf;
 		}
-		std::cout << "Body now: ->" << this->_body << "<-" << std::endl;
+		// std::cout << "Body now: ->" << this->_body << "<-" << std::endl;
 	}
 	catch (const std::length_error& e)
 	{
