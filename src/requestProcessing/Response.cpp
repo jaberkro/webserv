@@ -85,8 +85,6 @@ void	Response::prepareResponsePOST(Server const & server)
 	//BS: Above is hardcoded, but needs to be a proper reponse with a html page focourse
 }
 
-
-
 /**
  * @brief Prepares the response to a GET method request. It contains a loop, in which 
  * (i) the relevant location is identified, 

@@ -196,7 +196,7 @@ Webserver::Webserver(std::vector<Server> servers)
 	{
 		for (size_t j = 0; j < servers.at(i).getListens().size(); j++)
 		{
-			Socket sock(servers.at(i).getListens().at(j).first, servers.at(i).getListens().at(j).second, kq, evSet);
+			Socket sock(servers.at(i).getListens().at(j).first, servers.at(i).getListens().at(j).second, kq, evSet); // JMA: Can be written slightly shorter: Socket sock(servers.at(i).getHost(j), servers.at(i).getPort(j), kq, evSet);
 			sckts.push_back(sock);
 		}
 	}
