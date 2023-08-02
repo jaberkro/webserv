@@ -85,8 +85,6 @@ void	Response::prepareResponsePOST(Server const & server)
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
 
-
-
 /**
  * @brief Prepares the response to a GET method request. It contains a loop, in which 
  * (i) the relevant location is identified, 

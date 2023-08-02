@@ -112,7 +112,6 @@ void	PostCGI::run(Request const & _req)//misschien vectorpair laten returnen met
 		std::cerr << re.what() << std::endl;
 	}
 	
-	//jma: one of those deletes is too much
 	// for (size_t i = 0; i < NUM_OF_ARGS; i++)
 	// 	delete arg[i]; //causes error
 	delete[] arg;

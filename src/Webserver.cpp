@@ -69,6 +69,15 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 				if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
 					throw Webserver::KeventError();
 				try
+				{
+					newReq = new Request(fd);
+					newReq->processReq();
+					newReq->printRequest();
+					Server const &	handler = newReq->identifyServer(servers);
+					std::cout << "Responsible server is " << \
+					handler.getServerName(0) << std::endl;
+					newResp = new Response(*newReq);
+					if (newReq->getMethod() == "POST")
 					{
 						newReq = new Request(fd);
 						newReq->processReq();
@@ -91,10 +100,23 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 						}
 						delete newResp;
 					}
-					catch(const std::exception& e)
+					// else if (newReq->getMethod() == "DELETE")
+					// {
+					// 	std::cout << "Let's gooooooo delete!!" << std::endl;
+					// 	newResp->prepareResponseDELETE(handler, newReq->getFullRequest());
+					// 	delete newReq;
+					// }
+					else
 					{
-						std::cerr << "!!! " << e.what() << '\n';
+						delete newReq;
+						newResp->prepareResponseGET(handler);
 					}
+					delete newResp;
+				}
+				catch(const std::exception& e)
+				{
+					std::cerr << "!!! " << e.what() << '\n';
+				}
 				if ((close(fd)) < 0)
 					throw Webserver::CloseError();
 			}
@@ -131,7 +153,7 @@ Webserver::Webserver(std::vector<Server> servers)
 	{
 		for (size_t j = 0; j < servers.at(i).getListens().size(); j++)
 		{
-			Socket sock(servers.at(i).getListens().at(j).first, servers.at(i).getListens().at(j).second, kq, evSet);
+			Socket sock(servers.at(i).getListens().at(j).first, servers.at(i).getListens().at(j).second, kq, evSet); // JMA: Can be written slightly shorter: Socket sock(servers.at(i).getHost(j), servers.at(i).getPort(j), kq, evSet);
 			sckts.push_back(sock);
 		}
 	}
