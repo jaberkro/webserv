@@ -21,16 +21,11 @@ class Request
 		void		processReq(void);
 		bool		parseStartLine(std::string &line);
 		void		parseFieldLine(std::string &line);
-		std::string	extractKey(std::string line);
-		std::string	extractValue(std::string line);
 
 
 		Server const &	identifyServer(std::vector<Server> const & servers);
 		void			findHostMatch(std::vector<Server> const & servers, std::vector<int> & matches, int *zero);
 		int				findServerNameMatch(std::vector<Server> const & servers, std::vector<int>	& matches);
-		void			splitServerName(std::string const & name, std::vector<std::string> & chunks);
-		size_t			countOverlapLeading(std::vector<std::string> & hostSplit, std::vector<std::string> & nameSplit);
-		size_t			countOverlapTrailing(std::vector<std::string> & hostSplit, std::vector<std::string> & nameSplit);
 
 
 
@@ -48,20 +43,15 @@ class Request
 		std::string	const &					getBody() const;
 		int									getConnFD() const;
 		std::map<std::string, std::string>	&getHeaders();
-
-		std::string	const &						getFullRequest() const;
+		std::string	const &					getFullRequest() const;
 
 		bool	isLocalhost(std::string const & address);
-		void	makeLowercase(std::string & str);
-
-		void								printRequest();	// for debugging purposes, to be deleted
+		void	printRequest();	// for debugging purposes, to be deleted
 		void	printServer(Server const & server); // for debugging purposes, to be deleted
 
 
 	private:
 
-		void	extractStr(std::string &buffer, std::string &line, size_t pos);
-		void	removeTrailingSpaces(std::string &line);
 		std::string					_method;
 		std::string					_target;
 		std::string					_protocolVersion;
@@ -75,5 +65,13 @@ class Request
 		std::string					fullRequest;
 };
 
+void			removeTrailingSpaces(std::string &line);
+std::string		extractKey(std::string line);
+std::string		extractValue(std::string line);
+void			extractStr(std::string &buffer, std::string &line, size_t pos);
+size_t			countOverlapLeading(std::vector<std::string> & hostSplit, std::vector<std::string> & nameSplit);
+size_t			countOverlapTrailing(std::vector<std::string> & hostSplit, std::vector<std::string> & nameSplit);
+void			makeLowercase(std::string & str);
+void			splitServerName(std::string const & name, std::vector<std::string> & chunks);
 
 #endif

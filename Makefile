@@ -11,6 +11,7 @@ SRC = 	main.cpp \
 		requestProcessing/Request.cpp \
 		requestProcessing/Response.cpp \
 		requestProcessing/PostCGI.cpp \
+		requestProcessing/utils.cpp \
 		Socket.cpp \
 		classes/Server.cpp \
 		classes/Location.cpp \
