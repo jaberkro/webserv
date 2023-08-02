@@ -1,5 +1,40 @@
 #include "Location.hpp"
 
+Location::Location()
+{
+	// std::cout << "Default constructor called on Location" << std::endl;
+}
+
+Location::Location(const Location &src)
+{
+	*this = src;
+	// std::cout << "Copy constructor called on Location" << std::endl;
+}
+
+Location& Location::operator=(const Location &src)
+{
+	this->_allowed = src._allowed;
+	this->_autoindex = src._autoindex;
+	this->_denied = src._denied;
+	this->_errorPages = src._errorPages;
+	this->_indexes = src._indexes;
+	this->_locationDirectives = src._locationDirectives;
+	this->_locationMatch = src._locationMatch;
+	this->_locationModifier = src._locationModifier;
+	this->_maxBodySize = src._maxBodySize;
+	this->_return = src._return;
+	this->_root = src._root;
+	this->_uploadDir = src._uploadDir;
+	// std::cout << "Copy assignment operator called on Location" << std::endl;
+	return (*this);
+}
+
+Location::~Location(void)
+{
+	// std::cout << "Destructor called on Location" << std::endl;
+}
+
+
 void    Location::setModifier(std::string modifier)
 {
 	this->_locationModifier = modifier;
