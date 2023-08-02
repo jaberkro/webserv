@@ -35,94 +35,6 @@ Request &	Request::operator=(Request &r)
 	return (*this);
 }
 
-
-/**
- * @brief parses the start line of a request and saves the data in the 
-	corresponding member variables
- * 
- * @param line 
- * @return true, which means that the start line has been parsed
- */
-bool	Request::parseStartLine(std::string &line)
-{
-	size_t	end;
-
-	end = line.find_first_not_of(UPPERCASE);
-	setMethod(line.substr(0, end));
-	line.erase(0, end + 1);
-	end = line.find_first_of(" ");
-	setTarget(line.substr(0, end));	// WATCH OUT: TARGET CAN BE AN ABSOLUTE PATH
-	line.erase(0, end + 1);
-	if (this->_target.find("/..") < std::string::npos)
-		setStatusCode(BAD_REQUEST);
-	setProtocolVersion(line.substr(0, std::string::npos));
-	line.erase(0, std::string::npos);
-	return (true);
-}
-
-/**
- * @brief parses each line of a request's header and saves the data in the 
-	corresponding member variables
- * 
- * @param line 
- */
-void	Request::parseFieldLine(std::string &line) 
-{
-	std::string	key, value;
-	std::map<std::string,std::string>::iterator	it;
-
-	// trim spaces incl \r -> maybe not necessary
-
-	key = extractKey(line);
-	value = extractValue(line);
-	if (key == "Host")
-		setHost(value);
-	try
-	{
-		this->_headers.at(key) += ", " + value;
-	}
-	catch(const std::out_of_range & oor)
-	{
-		this->_headers.insert(std::pair<std::string,std::string>(key, value));
-	}
-	line.erase(0, std::string::npos);
-}
-
-/**
- * @brief extracts and returns the string preceding the first ':' character in 
- * the string given as an argument
- * 
- * @param line the string from which the string preceding the first ':' is to be
- * extracted
- * @return std::string - the extracted string
- */
-std::string	Request::extractKey(std::string line)
-{
-	size_t	colon = line.find_first_of(":");
-	
-	return (line.substr(0, colon));
-}
-
-/**
- * @brief extracts and returns the string immediately following the first ':' 
- * character in the string given as an argument. The function removes trailing
- * spaces.
- * 
- * @param line the string from which the string following the first ':' is to be
- * extracted
- * @return std::string - the extracted string
- */
-std::string	Request::extractValue(std::string line)
-{
-	size_t		colon = line.find_first_of(":");
-	std::string	value;
-	
-	value = colon == std::string::npos ? "80" : line.substr(colon + 1, std::string::npos);
-	this->removeTrailingSpaces(value);
-	return (value);
-	// RETURNS 80 IF EMPTY -> COULD BE MOVED TO A SEPARATE FUNCTION
-}
-
 /**
  * @brief reads a request from the socket, splits it into separate lines 
 	and sends each line to the corresponding parsing function for further processing
@@ -148,7 +60,7 @@ void	Request::processReq(void)
 		std::memset(socketBuffer, 0, MAXLINE);
 		while (!firstLineComplete)
 		{
-			this->extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
+			extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
 			firstLineComplete = this->parseStartLine(line);
 		}
 		if (this->_statusCode != OK)
@@ -157,7 +69,7 @@ void	Request::processReq(void)
 		{
 			if (nlPos > processingBuffer.find(HEADER_END))
 				headersComplete = true;
-			this->extractStr(processingBuffer, line, nlPos);
+			extractStr(processingBuffer, line, nlPos);
 			this->parseFieldLine(line);
 		}
 		// CODE TO BE ADDED FOR READING THE BODY
@@ -221,6 +133,59 @@ void	Request::processReq(void)
 	// }
 }
 
+
+/**
+ * @brief parses the start line of a request and saves the data in the 
+	corresponding member variables
+ * 
+ * @param line 
+ * @return true, which means that the start line has been parsed
+ */
+bool	Request::parseStartLine(std::string &line)
+{
+	size_t	end;
+
+	end = line.find_first_not_of(UPPERCASE);
+	setMethod(line.substr(0, end));
+	line.erase(0, end + 1);
+	end = line.find_first_of(" ");
+	setTarget(line.substr(0, end));	// WATCH OUT: TARGET CAN BE AN ABSOLUTE PATH
+	line.erase(0, end + 1);
+	if (this->_target.find("/..") < std::string::npos)
+		setStatusCode(BAD_REQUEST);
+	setProtocolVersion(line.substr(0, std::string::npos));
+	line.erase(0, std::string::npos);
+	return (true);
+}
+
+/**
+ * @brief parses each line of a request's header and saves the data in the 
+	corresponding member variables
+ * 
+ * @param line 
+ */
+void	Request::parseFieldLine(std::string &line) 
+{
+	std::string	key, value;
+	std::map<std::string,std::string>::iterator	it;
+
+	// trim spaces incl \r -> maybe not necessary
+
+	key = extractKey(line);
+	value = extractValue(line);
+	if (key == "Host")
+		setHost(value);
+	try
+	{
+		this->_headers.at(key) += ", " + value;
+	}
+	catch(const std::out_of_range & oor)
+	{
+		this->_headers.insert(std::pair<std::string,std::string>(key, value));
+	}
+	line.erase(0, std::string::npos);
+}
+
 /**
  * @brief identifies the server that should handle the request and returns a 
  * reference to it
@@ -282,7 +247,7 @@ std::vector<int> & matches, int *zero)
 		{
 			std::string const & reqAddress = servers[idx].getHost(i);
 			if (servers[idx].getPort(i) == this->_port && \
-			(reqAddress == this->_address || isLocalhost(reqAddress)))
+			(reqAddress == this->_address || this->isLocalhost(reqAddress)))
 				matches.push_back(idx);
 			if (servers[idx].getHost(i) == "0.0.0.0" && *zero < 0)
 				*zero = idx;
@@ -352,115 +317,6 @@ std::vector<int>	& matches)
 		return (*matches.begin());
 }
 
-/**
- * @brief counts the overlapping elements in hostnames starting with a leading
- * asterisk
- * 
- * @param hostSplit hostname in the request, split by element ('.' or string)
- * @param nameSplit server_name, split by element ('.' or string)
- * @return size_t index of the server with longest overlap
- */
-size_t	Request::countOverlapLeading(std::vector<std::string> & hostSplit, \
-std::vector<std::string> & nameSplit)
-{
-	size_t	revIdxN = nameSplit.size() - 1;
-	size_t	revIdxH = hostSplit.size() - 1;
-
-	for (size_t idx = 0; idx < hostSplit.size(); idx++)
-	{
-		if (nameSplit[revIdxN - idx] == "*")
-			return (idx);
-		if (nameSplit[revIdxN - idx] != hostSplit[revIdxH - idx])
-			break;
-	}
-	return (0);
-}
-
-/**
- * @brief counts the overlapping elements in hostnames starting with a trailing
- * asterisk
- * 
- * @param hostSplit hostname in the request, split by element ('.' or string)
- * @param nameSplit server_name, split by element ('.' or string)
- * @return size_t index of the server with longest overlap
- */
-size_t	Request::countOverlapTrailing(std::vector<std::string> & hostSplit, \
-std::vector<std::string> & nameSplit)
-{
-	for (size_t idx = 0; idx < hostSplit.size(); idx++)
-	{
-		if (nameSplit[idx] == "*")
-			return (idx);
-		if (nameSplit[idx] != hostSplit[idx])
-			break;
-	}
-	return (0);		
-}
-
-/**
- * @brief splits a string (server name) into elements of '.' and strings of other
- * characters
- * 
- * @param name domain name to be split
- * @param chunks vector in which the elements are saved
- */
-void	Request::splitServerName(std::string const & name, std::vector<std::string> & chunks)
-{
-	size_t	begin = 0;
-	size_t	end;
-
-	while (begin < name.length())
-	{
-		end = name[begin] == '.' ? name.find_first_of('.', begin) + 1 : name.find_first_of('.', begin);
-		chunks.push_back(name.substr(begin, end - begin));
-		begin = end;
-	}
-}
-
-// FOR DEBUGGING ONLY
-void	Request::printServer(Server const & server)
-{
-	std::cout << "--- SERVER ---" << std::endl;
-	std::cout << "Listens:\t\t";
-	for (size_t i = 0; i < server.getListens().size(); i++)
-		std::cout << server.getHost(i) << ":" << server.getPort(i) << "; ";
-	std::cout << std::endl;
-	std::cout << "Server names:\t";
-	for (size_t i = 0; i < server.getServerNames().size(); i++)
-		std::cout << server.getServerName(i) << "; ";
-	std::cout << std::endl;
-	std::cout << "Locations:\t";
-	for (size_t i = 0; i < server.getLocations().size(); i++)
-		std::cout << server.getLocation(i).getMatch() << "; ";
-	std::cout << std::endl << std::endl;
-}
-
-/**
- * @brief extracts a substring from beginning of a buffer until the following
- * new line (at the index of nlPos), deletes it from the buffer and moves it 
- * into the line. The new line character is discarded in the process.
- * 
- * @param buffer source of the to be extracted string; the string will be removed
- * from the buffer
- * @param line destination in which the extracted string is placed
- * @param nlPos denotes the position of the closest new line character
- */
-void	Request::extractStr(std::string &buffer, std::string &line, size_t nlPos)
-{
-	line = buffer.substr(0, nlPos - 1);
-	buffer.erase(0, nlPos + 1);
-}
-
-/**
- * @brief removes the trailing spaces from the beginning and end of a string
- * 
- * @param line string, from which trailing spaces should be removed
- */
-void	Request::removeTrailingSpaces(std::string &line)
-{
-	line.erase(0, line.find_first_not_of(SPACES));
-	line.erase(line.find_last_not_of(SPACES) + 1, std::string::npos);
-}
 
 /**
  * @brief verifies whether the host indication in the request and the host 
@@ -483,31 +339,7 @@ bool	Request::isLocalhost(std::string const &address)
 	return (count == 2 ? true : false);
 }
 
-/**
- * @brief transforms a string into lowercase
- * 
- * @param str reference to a string to be transformed into lowercase
- */
-void	Request::makeLowercase(std::string & str)
-{
-	for (size_t idx = 0; idx < str.length(); idx++)
-		str[idx] = tolower(str[idx]);
-}
 
-/**
- * @brief prints the content of the request instance; useful for debugging, 
- * can be deleted before submitting the project
- */
-void	Request::printRequest()
-{
-	std::cout << "\n\t***" << std::endl;
-	std::cout << "\t" << this->_method << " " << this->_target << std::endl;
-	for (std::map<std::string,std::string>::iterator it = this->_headers.begin(); \
-	it != this->_headers.end(); it++)
-		std::cout << "\t" << it->first << ": " << it->second << std::endl;
-	std::cout << "Body: [" << this->getBody() << "]" << std::endl;
-	std::cout << "\t***\n" << std::endl;
-}
 
 
 /* GETTERS & SETTERS */
@@ -567,9 +399,9 @@ unsigned short	Request::getPort() const
 
 void	Request::setHost(std::string host)
 {
-	this->_address = this->extractKey(host);
+	this->_address = extractKey(host);
 	makeLowercase(this->_address);
-	this->_port = stoi(this->extractValue(host)); // what if exception?
+	this->_port = stoi(extractValue(host)); // what if exception?
 }
 
 std::string	const & Request::getBody() const
@@ -591,4 +423,38 @@ std::map<std::string, std::string> &	Request::getHeaders()
 std::string	const & Request::getFullRequest() const
 {
 	return(this->fullRequest);
+}
+
+
+// FOR DEBUGGING ONLY
+void	Request::printServer(Server const & server)
+{
+	std::cout << "--- SERVER ---" << std::endl;
+	std::cout << "Listens:\t\t";
+	for (size_t i = 0; i < server.getListens().size(); i++)
+		std::cout << server.getHost(i) << ":" << server.getPort(i) << "; ";
+	std::cout << std::endl;
+	std::cout << "Server names:\t";
+	for (size_t i = 0; i < server.getServerNames().size(); i++)
+		std::cout << server.getServerName(i) << "; ";
+	std::cout << std::endl;
+	std::cout << "Locations:\t";
+	for (size_t i = 0; i < server.getLocations().size(); i++)
+		std::cout << server.getLocation(i).getMatch() << "; ";
+	std::cout << std::endl << std::endl;
+}
+
+/**
+ * @brief prints the content of the request instance; useful for debugging, 
+ * can be deleted before submitting the project
+ */
+void	Request::printRequest()
+{
+	std::cout << "\n\t***" << std::endl;
+	std::cout << "\t" << this->_method << " " << this->_target << std::endl;
+	for (std::map<std::string,std::string>::iterator it = this->_headers.begin(); \
+	it != this->_headers.end(); it++)
+		std::cout << "\t" << it->first << ": " << it->second << std::endl;
+	std::cout << "Body: [" << this->getBody() << "]" << std::endl;
+	std::cout << "\t***\n" << std::endl;
 }
