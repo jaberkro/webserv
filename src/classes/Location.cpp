@@ -34,7 +34,6 @@ Location::~Location(void)
 	// std::cout << "Destructor called on Location" << std::endl;
 }
 
-
 void    Location::setModifier(std::string modifier)
 {
 	this->_locationModifier = modifier;
