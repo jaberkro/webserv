@@ -88,7 +88,7 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 						newResp = new Response(*newReq);
 						if (newReq->getMethod() == "POST")
 						{
-								std::cout << "\n\nFULLREQUEST: [" << newReq->getFullRequest() << "]" << std::endl;
+								// std::cout << "\n\nFULLREQUEST: [" << newReq->getFullRequest() << "]" << std::endl;
 							//Hier werkt request value nog
 							newResp->prepareResponsePOST(handler);
 							delete newReq;

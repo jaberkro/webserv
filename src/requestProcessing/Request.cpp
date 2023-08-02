@@ -22,16 +22,24 @@ _target (r.getTarget()), \
 _protocolVersion (r.getProtocolVersion()), \
 _headers (r.getHeaders()), \
 _body (r.getBody()), \
-_connFD (r.getConnFD())  {}
+_connFD (r.getConnFD()), \
+_statusCode (r.getStatusCode()), \
+_address (r.getAddress()), \
+_port (r.getPort()), \
+_hostname (r.getHostname()) {}
 
 Request &	Request::operator=(Request &r)
 {
-	this->_connFD = r.getConnFD();
 	this->_method = r.getMethod();
 	this->_target = r.getTarget();
-	this->_protocolVersion = r.getProtocolVersion();
 	this->_headers = r.getHeaders();
+	this->_protocolVersion = r.getProtocolVersion();
 	this->_body = r.getBody();
+	this->_connFD = r.getConnFD();
+	this->_statusCode = r.getStatusCode();
+	this->_address = r.getAddress();
+	this->_port = r.getPort();
+	this->_hostname = r.getHostname();
 	return (*this);
 }
 
@@ -55,7 +63,7 @@ void	Request::processReq(void)
 	while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE - 1, 0)) > 0) 
 	{
 		processingBuffer += socketBuffer;
-		fullRequest += socketBuffer;
+		// fullRequest += socketBuffer;
 		totalBytesRead += bytesRead;
 		std::memset(socketBuffer, 0, MAXLINE);
 		while (!firstLineComplete)
@@ -108,7 +116,7 @@ void	Request::processReq(void)
 					break;
 
 				_body.append(socketBuffer);
-				fullRequest.append(socketBuffer);
+				// fullRequest.append(socketBuffer);
 				totalBytesRead += bytesRead;
 				std::memset(socketBuffer, 0, MAXLINE);
 				std::cout << "End of loop. Total read is " << totalBytesRead << std::endl;
@@ -273,22 +281,23 @@ std::vector<int>	& matches)
 	size_t						overlapTrailing = 0;
 	std::vector<std::string>	hostSplit;
 	
-	splitServerName(this->_headers.at("Host"), hostSplit);
+	std::cout << "find server name - matching servers: " << matches.size() << std::endl;
+	splitServerName(this->_hostname, hostSplit);
 	for (auto it = matches.begin(); it != matches.end(); it++)
 	{
 		std::vector<std::string> const &	names = servers[*it].getServerNames();
 		for (auto itName = names.begin(); itName != names.end(); itName++)
 		{
-			if (this->_headers.at("Host") == *itName)
+			if (this->_hostname == *itName)
 				return (*it);
 			
 			std::vector<std::string>	nameSplit;
 			splitServerName(*itName, nameSplit);
 			if ((*itName)[0] == '*' && (*itName)[1] == '.')
 			{
-				// std::cout << "[leading *] ";
+				std::cout << "[leading *] ";
 				size_t	overlap = countOverlapLeading(hostSplit, nameSplit);
-				// std::cout << this->_headers.at("Host") << " and " << *itName << " overlap: " << overlap << std::endl;
+				std::cout << this->_hostname << " and " << *itName << " overlap: " << overlap << std::endl;
 				if (overlap > overlapLeading)
 				{
 					overlapLeading = overlap;
@@ -298,9 +307,9 @@ std::vector<int>	& matches)
 			else if ((*itName)[(*itName).length() - 1] == '*' && \
 			(*itName)[(*itName).length() - 2] == '.')
 			{
-				// std::cout << "[trailing *] ";
+				std::cout << "[trailing *] ";
 				size_t	overlap = countOverlapTrailing(hostSplit, nameSplit);
-				// std::cout << this->_headers.at("Host") << " and " << *itName << " overlap: " << overlap << std::endl;
+				std::cout << this->_hostname << " and " << *itName << " overlap: " << overlap << std::endl;
 				if (overlap > overlapTrailing)
 				{
 					overlapTrailing = overlap;
@@ -309,6 +318,7 @@ std::vector<int>	& matches)
 			}
 		}
 	}
+	std::cout << "about to return: leading is " << longestLeading << ", trailing is " << longestTrailing << std::endl;
 	if (overlapLeading > 0)
 		return (longestLeading);
 	else if (overlapTrailing > 0)
@@ -387,6 +397,11 @@ void	Request::setStatusCode(int code)
 	this->_statusCode = code;
 }
 
+std::string const &	Request::getHostname() const
+{
+	return (this->_hostname);
+}
+
 std::string const &	Request::getAddress() const
 {
 	return (this->_address);
@@ -399,7 +414,11 @@ unsigned short	Request::getPort() const
 
 void	Request::setHost(std::string host)
 {
-	this->_address = extractKey(host);
+	std::string	tmpHost = extractKey(host);
+	if (!isLocalhost(tmpHost))
+		this->_hostname = tmpHost;
+	else
+		this->_address = tmpHost;
 	makeLowercase(this->_address);
 	this->_port = stoi(extractValue(host)); // what if exception?
 }
@@ -420,10 +439,10 @@ std::map<std::string, std::string> &	Request::getHeaders()
 }
 
 
-std::string	const & Request::getFullRequest() const
-{
-	return(this->fullRequest);
-}
+// std::string	const & Request::getFullRequest() const
+// {
+// 	return(this->fullRequest);
+// }
 
 
 // FOR DEBUGGING ONLY
