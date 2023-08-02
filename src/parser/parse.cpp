@@ -12,6 +12,7 @@ static bool validExtension(std::string configFile, std::string extension)
 			extension.at(extension.size() - 1 - i))
 			return (0);
 	}
+	// check if not ..conf
 	return (1);
 }
 
@@ -31,9 +32,9 @@ static std::fstream openFile(char *configFile)
 		exit(EXIT_FAILURE);
 	}
 	file.open(configFile, std::fstream::in);
-	if (file.is_open())
-		return (file);
-	std::cout << "Error: not possible to open configuration file" << std::endl;
+	if (file.is_open()) // if not open, then error
+		return (file); 
+	std::cout << "Error: not possible to open configuration file" << std::endl; //std::cerr
 	exit(EXIT_FAILURE);
 }
 
@@ -56,7 +57,7 @@ void parse(std::vector<Server> &servers, char *configFile)
 		else if (line == "http {")
 			parseHTTP(servers, file);
 		else if (line == "server {" || line.find("location") == 0 || \
-			hasDirective(line) != -1)
+			hasDirective(line) != -1) // location msut have this error message? // and allow?
 		{
 			std::cout << "Error: [" << line << "]: should be inside ";
 			std::cout << "http block: \nhttp {\n\n}" << std::endl;
@@ -65,7 +66,8 @@ void parse(std::vector<Server> &servers, char *configFile)
 		else
 			notRecognizedError(line, "");
 	}
-	if (servers.size() == 0)
+	//what if 2 http under each other
+	if (servers.size() == 0) //  beter checken, noserveerrpr in http
 	{
 		std::cout << "Error: http block missing: \nhttp {\n\n}" << std::endl; // if you open a directory, you get this error as well. How to catch directories before even opening it?
 		exit(EXIT_FAILURE);

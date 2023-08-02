@@ -65,8 +65,8 @@ void	PostCGI::run(Request const & _req)//misschien vectorpair laten returnen met
 		if (pipe(webservToScript) < 0 || pipe(scriptToWebserv) < 0)
 			throw std::runtime_error("Pipe failed");
 		arg[0] = strdup("cgi-bin/uploadFile.py"); //Need this as arg with constructor!
-		arg[1] = strdup(std::to_string(webservToScript[R]).c_str());
-		arg[2] = strdup(std::to_string(scriptToWebserv[W]).c_str());
+		arg[1] = strdup(std::to_string(webservToScript[R]).c_str()); //kan weg
+		arg[2] = strdup(std::to_string(scriptToWebserv[W]).c_str()); // kan weg
 		id = fork();
 		if (id < 0)
 			throw std::runtime_error("Fork failed");

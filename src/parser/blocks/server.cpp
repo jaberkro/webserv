@@ -2,13 +2,13 @@
 #include "parse.hpp"
 #include <iostream>
 
-static void storeValuesInServer(Server &newServer, t_values values)
+static void storeValuesInServer(Server &newServer, t_values values) // only error pages and missing listen
 {
 	if (newServer.getLocations().size() == 0)
 	{
 		std::cout << "Error: can't parse server block without location block ";
-		std::cout << "inside of it: \nserver {\n\tlocation <optional";
-		std::cout << " modifier> <match>{\n\n\t}\n}" << std::endl;
+		std::cout << "inside of it: \nserver {\n\tlocation [optional";
+		std::cout << " modifier] <match>{\n\n\t}\n}" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	if (newServer.getListens().size() == 0)

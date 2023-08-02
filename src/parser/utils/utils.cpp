@@ -22,7 +22,7 @@ int	getValidLine(std::fstream &file, std::string &line)
 		return (1);
 	if (line.back() != ';' && line.back() != '{' && line.back() != '}')
 	{
-		std::cout << "Error: missing ';', '{' or '}' in configuration file" << std::endl;
+		std::cout << "Error: missing ';', '{' or '}' in configuration file" << std::endl; // near line
 		exit(EXIT_FAILURE);
 	}
 	if (line.back() == ';')
@@ -39,7 +39,7 @@ int	getValidLine(std::fstream &file, std::string &line)
  * @return size_t the index of the first space or horizontal tab found, 
  * size of string if no tab or space was found, 0 if line is empty
  */
-size_t	firstWhitespace(std::string line)
+size_t	firstWhitespace(std::string line) // is this really needed?
 {
 	if (line == "")
 		return (0);
@@ -89,7 +89,7 @@ int	parseErrorCode(std::string code, std::string directive)
 	return (newCode);
 }
 
-std::string convertToLower(std::string str)
+std::string convertToLower(std::string str) // misschien niet nodig?
 {
 	for (size_t i = 0; i < str.size(); i++)
 	{

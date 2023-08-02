@@ -103,15 +103,19 @@ void	Response::prepareResponseGET(Server const & server)
 	this->_req.getTarget().substr(0, this->_req.getTarget().find_first_of('?'));
 	int	rounds = 0;
 	
-	if (this->_req.getMethod() == "")
-		close(this->_req.getConnFD());
+
+		std::cout << "Responsible SERVER is " << \
+		server.getServerName(0) << std::endl;
+
+	// if (this->_req.getMethod() == "")
+	// 	close(this->_req.getConnFD());
 	// else if (this->_req.getMethod() == "POST")
 	// 	prepareResponsePOST(server);
-	else if (this->_req.getMethod() != "GET")
+	if (this->_req.getMethod() != "GET")
 		std::cout << "I cannot handle the \"" << this->_req.getMethod() \
 		<< "\" method just yet, sorry!" << std::endl;
 	else
-		while (!this->_isReady && rounds++ < 6)
+		while (!this->_isReady && rounds++ < 6) // rounds moeten weg (is voor debugging)
 		{
 			// std::cout << "Target Uri is " << targetUri << std::endl;
 			try 
@@ -145,7 +149,7 @@ void	Response::prepareResponseGET(Server const & server)
 				// TO BE ADDED: try to find a corresponding error page in the SERVER block;
 				targetUri = "data/www/defaultError.html";
 			}
-			if (rounds == 6)
+			if (rounds == 6)	// moet straks weg
 				std::cout << "--> loop ended after 6 rounds <--" << std::endl;
 		}
 }
@@ -395,6 +399,7 @@ void	Response::sendContentInChunks(void)
 	std::memset(response, 0, CHUNK_SIZE);
 	send(this->_req.getConnFD(), (char*)response, 0, 0);
 	file.close();
+	std::cout << "End of the sendContentInChunks function" << std::endl;
 }
 
 /* UTILS */

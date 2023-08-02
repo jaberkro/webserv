@@ -67,7 +67,7 @@ Socket::Socket(std::string address, unsigned short newport, int kq, struct keven
 	if ((bind(listenfd, (SA *) &servAddr, sizeof(servAddr))) < 0)
 	{
 		int error_code = errno;
-		if (error_code == EADDRINUSE)
+		if (error_code == EADDRINUSE) //deze error niet tonen, iet catchen bij EADDRINUSE
 			std::cout <<
 			"(Above mentioned address is already in use, socket will not be initialized)"
 			<< std::endl;

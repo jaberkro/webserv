@@ -3,6 +3,6 @@
 # include "Server.hpp"
 # include <vector>
 
-void	parse(std::vector<Server> &servers, char *configFile);
+void	parse(std::vector<Server> &servers, char *configFile); // to parse.hpp
 
 #endif

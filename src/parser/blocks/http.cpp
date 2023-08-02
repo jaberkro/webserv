@@ -49,7 +49,7 @@ void parseHTTP(std::vector<Server> &servers, std::fstream &file)
 			continue ;
 		else if (line == "}")
 			break ;
-		else if (!parsedImplementedHTTPOnly(servers, line, file, values))
+		else if (!parsedImplementedHTTPOnly(servers, line, file, values)) // line == "server {"
 		{
 			checkNotImplementedHTTP(line);
 			if (hasDirective(line) == -1)

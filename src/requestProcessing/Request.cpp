@@ -72,7 +72,6 @@ void	Request::processReq(void)
 			extractStr(processingBuffer, line, nlPos);
 			this->parseFieldLine(line);
 		}
-		// CODE TO BE ADDED FOR READING THE BODY
 	
 		if (headersComplete)
 		{
@@ -87,7 +86,6 @@ void	Request::processReq(void)
 	// std::cout << "Processing buffer: [" << processingBuffer << "]" << std::endl;
 	std::string contentLengthStr = _headers["Content-Length"];
 	int contentLength = atoi(contentLengthStr.c_str());
-	setenv("CONTENT-LENGTH", contentLengthStr.c_str(), 0); //deze weghalen/verplaatsen!!
 	try
 	{
 		if (headersComplete && contentLength > 0) //means there is a body to read
@@ -107,7 +105,7 @@ void	Request::processReq(void)
 					break;
 
 				_body.append(socketBuffer);
-				fullRequest.append(socketBuffer);
+				fullRequest.append(socketBuffer);		// moet full req weg?
 				totalBytesRead += bytesRead;
 				std::memset(socketBuffer, 0, MAXLINE);
 				// std::cout << "End of loop. Total read is " << totalBytesRead << std::endl;
@@ -152,7 +150,7 @@ bool	Request::parseStartLine(std::string &line)
 	line.erase(0, end + 1);
 	if (this->_target.find("/..") < std::string::npos)
 		setStatusCode(BAD_REQUEST);
-	setProtocolVersion(line.substr(0, std::string::npos));
+	setProtocolVersion(line.substr(0, std::string::npos)); // that's the whole line
 	line.erase(0, std::string::npos);
 	return (true);
 }
@@ -248,7 +246,7 @@ std::vector<int> & matches, int *zero)
 			if (servers[idx].getPort(i) == this->_port && \
 			(reqAddress == this->_address || this->isLocalhost(reqAddress)))
 				matches.push_back(idx);
-			if (servers[idx].getHost(i) == "0.0.0.0" && *zero < 0)
+			if (servers[idx].getHost(i) == "0.0.0.0" && *zero < 0)	// ook port vergelijken
 				*zero = idx;
 		}
 	}
@@ -283,7 +281,7 @@ std::vector<int>	& matches)
 			
 			std::vector<std::string>	nameSplit;
 			splitServerName(*itName, nameSplit);
-			if ((*itName)[0] == '*' && (*itName)[1] == '.')
+			if ((*itName)[0] == '*' && (*itName)[1] == '.') // als server name only a "*" is --> segfault
 			{
 				// std::cout << "[leading *] ";
 				size_t	overlap = countOverlapLeading(hostSplit, nameSplit);

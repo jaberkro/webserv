@@ -27,6 +27,7 @@ static void checkNotImplementedLocation(std::string line)
 		notImplementedError(line, "location", "server block");
 	else if (line.find("server_name") == 0)
 		notImplementedError(line, "location", "server block");
+	//server
 }
 
 void parseModifierAndMatch(Location &location, std::string &line)
@@ -36,7 +37,7 @@ void parseModifierAndMatch(Location &location, std::string &line)
 	line.pop_back();
 	line = rtrim(line);
 	checkEmptyString(line, "location", "not enough arguments");
-	if (line.find("= ") == 0)
+	if (line.find("= ") == 0) // line.at(0) == '=' && line.at(1) == whitespace
 		location.setModifier("=");
 	else
 		location.setModifier("(none)");

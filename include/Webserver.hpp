@@ -20,6 +20,7 @@ class Webserver
 		bool		running;
 		Request		*newReq;
 		Response	*newResp;
+		Server		*handler;
 
 		std::vector<Socket> sckts;
 		int			kq;
@@ -27,7 +28,8 @@ class Webserver
 		void		setSignal();
 		void		runWebserver(std::vector<Server> servers);
 		void		eofEvent(int connfd, int ident);
-		void		handleRequestAndResponse(int connfd, std::vector<Server> servers);
+		void		handleRequest(int connfd, std::vector<Server> servers);
+		void		handleResponse();
 		Webserver(const Webserver &src); //private because shouldn't be instantiated!
 		Webserver& operator=(const Webserver &src); //idem
 	public:

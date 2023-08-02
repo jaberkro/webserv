@@ -51,7 +51,7 @@ void	Webserver::eofEvent(int connfd, int ident)
 		throw Webserver::CloseError();
 }
 
-void	Webserver::handleRequestAndResponse(int connfd, std::vector<Server> servers)
+void	Webserver::handleRequest(int connfd, std::vector<Server> servers)
 {
 	// Request		*newReq;
 	// Response	*newResp; //moved to class Webserver
@@ -61,24 +61,53 @@ void	Webserver::handleRequestAndResponse(int connfd, std::vector<Server> servers
 		newReq = new Request(connfd);
 		newReq->processReq();
 		newReq->printRequest();
-		Server const &	handler = newReq->identifyServer(servers);
-		std::cout << "Handler info: host: [" << handler.getPort(0) << "], port: [" << handler.getHost(0) << "]" << std::endl;
+		handler = const_cast<Server*>(&newReq->identifyServer(servers)); // moet in de webserver class
+		std::cout << "Handler info: host: [" << handler->getPort(0) << "], port: [" << handler->getHost(0) << "]" << std::endl;
 		std::cout << "Responsible server is " << \
-		handler.getServerName(0) << std::endl;
+		handler->getServerName(0) << std::endl;
+		// newResp = new Response(*newReq);
+		// if (newReq->getMethod() == "POST")
+		// {
+		// 	//std::cout << "\n\nFULLREQUEST: [" << newReq->getFullRequest() << "]" << std::endl;
+		// 	//Hier werkt request value nog
+		// 	newResp->prepareResponsePOST(handler);
+		// 	delete newReq;
+		// }
+		// else
+		// {
+		// 	delete newReq;
+		// 	newResp->prepareResponseGET(handler);
+		// }
+		// delete newResp;
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << "!!! " << e.what() << '\n';
+	}
+}
+
+void	Webserver::handleResponse()//int connfd, std::vector<Server> servers)
+{
+	// Request		*newReq;
+	// Response	*newResp; //moved to class Webserver
+
+	try
+	{
 		newResp = new Response(*newReq);
 		if (newReq->getMethod() == "POST")
 		{
 			//std::cout << "\n\nFULLREQUEST: [" << newReq->getFullRequest() << "]" << std::endl;
 			//Hier werkt request value nog
-			newResp->prepareResponsePOST(handler);
+			newResp->prepareResponsePOST(*handler);
 			delete newReq;
 		}
 		else
 		{
 			delete newReq;
-			newResp->prepareResponseGET(handler);
+			newResp->prepareResponseGET(*handler);
 		}
 		delete newResp;
+		delete handler;
 	}
 	catch(const std::exception& e)
 	{
@@ -101,8 +130,8 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 
 	while (1)
 	{
-		running = true;
-		if ((nev = kevent(kq, NULL, 0, &evList, 1, NULL)) < 1) //<1 because the return value is the num of events place in queue
+		running = true;//weg?
+		if ((nev = kevent(kq, NULL, 0, &evList, 1, NULL)) < 1) //<0 [WAS 1] because the return value is the num of events place in queue
 			throw Webserver::KeventError();
 		if (evList.flags & EV_EOF)
 			eofEvent(connfd, evList.ident);
@@ -134,8 +163,8 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 			// printf("=================%d BYTESSSSSSSS===============\n", (int)bytes_read);
 			// if ((int)bytes_read < 0)
 			// 	printf("%d bytes read\n", (int)bytes_read);
-			handleRequestAndResponse(connfd, servers);
-			EV_SET(&evList, connfd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);//was evSet
+			handleRequest(connfd, servers);
+			EV_SET(&evList, connfd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, 0, 0, NULL);//was evSet
 			if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
 				throw Webserver::KeventError();
 
@@ -144,8 +173,12 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 		{
 			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~WRITE EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
 			//send response content that you bind to your request class. When all data is sent, delete TIMEOUT events and close conn
-			handleRequestAndResponse(connfd, servers); //of moet connfd hier wel evList.ident zijn?
+			handleResponse();//;connfd, servers); //of moet connfd hier wel evList.ident zijn?
 			// send(evList.ident, "Write Event", 11, 0);//This obviously should be smth else
+			// EV_SET(&evList, connfd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);//was evSet
+			// if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
+			// 	throw Webserver::KeventError();
+
 		}
 		// else if (evList.filter == EVFILT_TIMER)
 		// {
