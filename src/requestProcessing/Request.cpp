@@ -22,16 +22,24 @@ _target (r.getTarget()), \
 _protocolVersion (r.getProtocolVersion()), \
 _headers (r.getHeaders()), \
 _body (r.getBody()), \
-_connFD (r.getConnFD())  {}
+_connFD (r.getConnFD()), \
+_statusCode (r.getStatusCode()), \
+_address (r.getAddress()), \
+_port (r.getPort()) {}
+// _hostname (r.getHostname()) {}
 
 Request &	Request::operator=(Request &r)
 {
-	this->_connFD = r.getConnFD();
 	this->_method = r.getMethod();
 	this->_target = r.getTarget();
-	this->_protocolVersion = r.getProtocolVersion();
 	this->_headers = r.getHeaders();
+	this->_protocolVersion = r.getProtocolVersion();
 	this->_body = r.getBody();
+	this->_connFD = r.getConnFD();
+	this->_statusCode = r.getStatusCode();
+	this->_address = r.getAddress();
+	this->_port = r.getPort();
+	// this->_hostname = r.getHostname();
 	return (*this);
 }
 

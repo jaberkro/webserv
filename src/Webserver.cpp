@@ -51,7 +51,7 @@ void	Webserver::eofEvent(int connfd, int ident)
 		throw Webserver::CloseError();
 }
 
-void	Webserver::handleRequest(int connfd, std::vector<Server> servers, Server *handler, Request *newReq)
+void	Webserver::handleRequest(int connfd, std::vector<Server> servers, Server *& handler, Request *& newReq)
 {
 	// Request		*newReq;
 	// Response	*newResp; //moved to class Webserver
@@ -61,7 +61,7 @@ void	Webserver::handleRequest(int connfd, std::vector<Server> servers, Server *h
 		newReq = new Request(connfd);
 		newReq->processReq();
 		newReq->printRequest();
-		handler = const_cast<Server*>(&newReq->identifyServer(servers)); // moet in de webserver class
+		handler = new Server(newReq->identifyServer(servers)); // moet in de webserver class
 		std::cout << "Handler info: host: [" << handler->getPort(0) << "], port: [" << handler->getHost(0) << "]" << std::endl;
 		std::cout << "Responsible server is " << \
 		handler->getServerName(0) << std::endl;
@@ -86,7 +86,7 @@ void	Webserver::handleRequest(int connfd, std::vector<Server> servers, Server *h
 	}
 }
 
-void	Webserver::handleResponse(Request *newReq, Response *newResp, Server *handler)//int connfd, std::vector<Server> servers)
+void	Webserver::handleResponse(Request *& newReq, Response *& newResp, Server *& handler)//int connfd, std::vector<Server> servers)
 {
 	// Request		*newReq;
 	// Response	*newResp; //moved to class Webserver
