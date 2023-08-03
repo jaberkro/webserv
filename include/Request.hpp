@@ -33,6 +33,8 @@ class Request
 		void								setMethod(std::string method);
 		std::string	const &					getTarget() const;
 		void								setTarget(std::string target);
+		std::string	const &					getQueryString() const;
+		void								setQueryString(std::string target);
 		std::string	const &					getProtocolVersion() const;
 		void								setProtocolVersion(std::string protocol);
 		int									getStatusCode() const;
@@ -55,6 +57,7 @@ class Request
 
 		std::string					_method;
 		std::string					_target;
+		std::string					_queryString;
 		std::string					_protocolVersion;
 		std::map<std::string, std::string>	_headers;
 		// std::map<std::string, std::string>	_trailers;

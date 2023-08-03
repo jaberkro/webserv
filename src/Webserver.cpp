@@ -116,6 +116,7 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 				catch(const std::exception& e)
 				{
 					std::cerr << "!!! " << e.what() << '\n';
+					
 				}
 				if ((close(fd)) < 0)
 					throw Webserver::CloseError();
