@@ -21,7 +21,7 @@ std::string protectedSubstr(std::string s, size_t start)
 	catch(const std::exception& e)
 	{
 		std::cerr << e.what() << '\n';
-		std::cout << s << std::endl;
+		std::cerr << s << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	return (newString);
@@ -48,7 +48,7 @@ std::string protectedSubstr(std::string s, size_t start, size_t size)
 	catch(const std::exception& e)
 	{
 		std::cerr << e.what() << '\n';
-		std::cout << s << std::endl;
+		std::cerr << s << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	return (newString);
