@@ -17,7 +17,7 @@ void notClosedError(std::string block)
 
 void notRecognizedError(std::string line, std::string here)
 {
-	std::cerr << "Error: can't parse " << here << " block near ";
+	std::cerr << "Error: can't parse " << here << " near ";
 	std::cerr << "[" << line << "]: not recognized" << std::endl;
 	exit(EXIT_FAILURE);
 }
@@ -38,8 +38,8 @@ void portError(std::string notPort)
 
 void hostError(std::string notHost)
 {
-	std::cerr << "Error: can't parse listen directive: invalid host: " << \
-		notHost << ": invalid IP address" << std::endl;
+	std::cerr << "Error: can't parse listen directive: invalid host: [" << \
+		notHost << "]: invalid IP address" << std::endl;
 	exit(EXIT_FAILURE);
 }
 

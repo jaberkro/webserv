@@ -87,7 +87,7 @@ void parse(std::vector<Server> &servers, char *configFile)
 			exit(EXIT_FAILURE);
 		}
 		else
-			notRecognizedError(line, "");
+			notRecognizedError(line, "configuration file");
 	}
 	if (servers.size() == 0)
 	{

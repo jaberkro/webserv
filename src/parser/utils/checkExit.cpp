@@ -49,7 +49,7 @@ void checkHasDot(std::string line, std::string directive)
 	if (line.find(".") == std::string::npos || \
 		line.find(".") == line.size() - 1)
 	{
-		std::cerr << "Error: " << directive << "argument needs to have: ";
+		std::cerr << "Error: " << directive << " argument needs to have: ";
 		std::cerr << "a name and extension seperated by '.': ";
 		std::cerr << directive << " <fileName>.<extension>;" << std::endl;
 		exit(EXIT_FAILURE);
