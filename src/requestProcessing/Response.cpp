@@ -103,21 +103,19 @@ void	Response::prepareResponseGET(Server const & server)
 	this->_req.getTarget().substr(0, this->_req.getTarget().find_first_of('?'));
 	int	rounds = 0;
 	
-	if (this->_req.getMethod() == "")
+	if (this->_statusCode == INTERNAL_SERVER_ERROR)
+		this->sendFirstLine();
+	else if (this->_req.getMethod() == "")
 		close(this->_req.getConnFD());
-	// else if (this->_req.getMethod() == "POST")
-	// 	prepareResponsePOST(server);
 	else if (this->_req.getMethod() != "GET")
 		std::cout << "I cannot handle the \"" << this->_req.getMethod() \
 		<< "\" method just yet, sorry!" << std::endl;
 	else
 		while (!this->_isReady && rounds++ < 6)
 		{
-			// std::cout << "Target Uri is " << targetUri << std::endl;
 			try 
 			{
 				itLoc = findMatch(targetUri, server.getLocations());
-				// std::cout << "Matching location found: " << itLoc->getMatch() << std::endl;
 				if (targetUri[targetUri.length() - 1] == '/' && !itLoc->getIndexes().empty())
 				{
 					targetUri = findIndexPage(itLoc);
@@ -126,24 +124,23 @@ void	Response::prepareResponseGET(Server const & server)
 				else
 				{
 					this->_filePath = itLoc->getRoot() + targetUri;
-					// std::cout << "File path is " << this->_filePath << std::endl;
 					this->retrieveFile(itLoc->getRoot());
 					this->_isReady = true;
 				}
 			}
 			catch(const std::ios_base::failure & f)
 			{
-				std::cerr << "IOS exception caught: ";
+				std::cerr << "IOS exception caught (something went wrong with opening the file " << this->_filePath << "): ";
 				std::cerr << f.what() << std::endl;
 				targetUri = identifyErrorPage(itLoc);
 			}
 			catch(const std::range_error &re)
 			{
-				std::cerr << "Range exception caught: ";
+				std::cerr << "Range exception caught (no location match found for target " << this->_req.getTarget() << "): ";
 				std::cerr << re.what() << std::endl;
 				
-				// TO BE ADDED: try to find a corresponding error page in the SERVER block;
-				targetUri = "data/www/defaultError.html";
+				// TO BE ADDED: try to find a corresponding error page (BAD REQUEST) in the SERVER block;
+				targetUri = "/defaultError.html";
 			}
 			if (rounds == 6)
 				std::cout << "--> loop ended after 6 rounds <--" << std::endl;
@@ -167,7 +164,7 @@ std::string	Response::identifyErrorPage(std::vector<Location>::const_iterator it
 	}
 	catch(const std::out_of_range& oor)
 	{
-		// std::cerr << "No custom error page found" << std::endl;
+		std::cerr << "No custom error page provided for status code " << this->_statusCode << ")";
 		return("/defaultError.html");
 	}
 }
