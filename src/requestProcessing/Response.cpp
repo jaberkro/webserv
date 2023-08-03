@@ -104,8 +104,8 @@ void	Response::prepareResponseGET(Server const & server)
 	int	rounds = 0;
 	
 
-		std::cout << "Responsible SERVER is " << \
-		server.getServerName(0) << std::endl;
+		std::cout << "Responsible SERVER size is " << \
+		server.getServerNames().size() << std::endl;
 
 	// if (this->_req.getMethod() == "")
 	// 	close(this->_req.getConnFD());

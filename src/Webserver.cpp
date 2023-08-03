@@ -51,7 +51,7 @@ void	Webserver::eofEvent(int connfd, int ident)
 		throw Webserver::CloseError();
 }
 
-void	Webserver::handleRequest(int connfd, std::vector<Server> servers)
+void	Webserver::handleRequest(int connfd, std::vector<Server> servers, Server *handler, Request *newReq)
 {
 	// Request		*newReq;
 	// Response	*newResp; //moved to class Webserver
@@ -86,10 +86,12 @@ void	Webserver::handleRequest(int connfd, std::vector<Server> servers)
 	}
 }
 
-void	Webserver::handleResponse()//int connfd, std::vector<Server> servers)
+void	Webserver::handleResponse(Request *newReq, Response *newResp, Server *handler)//int connfd, std::vector<Server> servers)
 {
 	// Request		*newReq;
 	// Response	*newResp; //moved to class Webserver
+			std::cout << "Responsible SERVER size in handleResponse is " << \
+			handler->getServerNames().size() << std::endl;
 
 	try
 	{
@@ -103,8 +105,11 @@ void	Webserver::handleResponse()//int connfd, std::vector<Server> servers)
 		}
 		else
 		{
-			delete newReq;
+			std::cout << "Responsible SERVER size in handleResponse is " << \
+			handler->getServerNames().size() << std::endl;
+
 			newResp->prepareResponseGET(*handler);
+			delete newReq;
 		}
 		delete newResp;
 		delete handler;
@@ -127,11 +132,14 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 	struct kevent evList;
 	struct sockaddr_storage addr;
 	socklen_t socklen = sizeof(addr);
+		Request		*newReq = nullptr;
+		Response	*newResp = nullptr;
+		Server		*handler = nullptr;
 
 	while (1)
 	{
 		running = true;//weg?
-		if ((nev = kevent(kq, NULL, 0, &evList, 1, NULL)) < 1) //<0 [WAS 1] because the return value is the num of events place in queue
+		if ((nev = kevent(kq, NULL, 0, &evList, 1, NULL)) < 0) //<0 [WAS 1] because the return value is the num of events place in queue
 			throw Webserver::KeventError();
 		if (evList.flags & EV_EOF)
 			eofEvent(connfd, evList.ident);
@@ -163,7 +171,7 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 			// printf("=================%d BYTESSSSSSSS===============\n", (int)bytes_read);
 			// if ((int)bytes_read < 0)
 			// 	printf("%d bytes read\n", (int)bytes_read);
-			handleRequest(connfd, servers);
+			handleRequest(connfd, servers, handler, newReq);
 			EV_SET(&evList, connfd, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_ONESHOT, 0, 0, NULL);//was evSet
 			if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
 				throw Webserver::KeventError();
@@ -173,7 +181,7 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 		{
 			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~WRITE EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
 			//send response content that you bind to your request class. When all data is sent, delete TIMEOUT events and close conn
-			handleResponse();//;connfd, servers); //of moet connfd hier wel evList.ident zijn?
+			handleResponse(newReq, newResp, handler);//;connfd, servers); //of moet connfd hier wel evList.ident zijn?
 			// send(evList.ident, "Write Event", 11, 0);//This obviously should be smth else
 			// EV_SET(&evList, connfd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);//was evSet
 			// if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
