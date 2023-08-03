@@ -7,6 +7,7 @@
 Request::Request(int connfd) : \
 _method (""), \
 _target (""), \
+_queryString (""), \
 _protocolVersion (""), \
 _body (""), \
 _connFD (connfd), \
@@ -19,6 +20,7 @@ Request::~Request(void) {}
 Request::Request(Request &r) : \
 _method (r.getMethod()), \
 _target (r.getTarget()), \
+_queryString (r.getQueryString()), \
 _protocolVersion (r.getProtocolVersion()), \
 _headers (r.getHeaders()), \
 _body (r.getBody()), \
@@ -32,6 +34,7 @@ Request &	Request::operator=(Request &r)
 {
 	this->_method = r.getMethod();
 	this->_target = r.getTarget();
+	this->_queryString = r.getQueryString();
 	this->_headers = r.getHeaders();
 	this->_protocolVersion = r.getProtocolVersion();
 	this->_body = r.getBody();
