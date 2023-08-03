@@ -33,12 +33,11 @@ static void checkNotImplementedLocation(std::string line)
 
 void parseModifierAndMatch(Location &location, std::string &line)
 {
-	line = protectedSubstr(line, 8);
+	line = protectedSubstr(line, 8, line.size() - 9);
 	line = ltrim(line);
-	line.pop_back();
 	line = rtrim(line);
 	checkEmptyString(line, "location", "not enough arguments");
-	if (line.find("=") == 0 && firstWhitespace(line) == 1)
+	if (line.at(0) == '=' && firstWhitespace(line) == 1)
 	{
 		location.setModifier("=");
 		line = protectedSubstr(line, firstWhitespace(line));
@@ -66,7 +65,7 @@ Location parseLocation(std::fstream &file, std::string line, t_values values)
 		{
 			checkNotImplementedLocation(line);
 			if (hasDirective(line) == -1 && hasLocDirective(line) == -1)
-				notRecognizedError(line, "location");
+				notRecognizedError(line, "location block");
 			else if (hasDirective(line) == -1)
 				values = parseLocDirective(hasLocDirective(line), line, values);
 			else

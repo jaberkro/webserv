@@ -62,7 +62,7 @@ Server parseServer(std::fstream &file, t_values values)
 		{
 			checkNotImplementedServer(line);
 			if (hasDirective(line) == -1)
-				notRecognizedError(line, "server");
+				notRecognizedError(line, "server block");
 			values = parseDirective(hasDirective(line), line, values);
 		}
 	}
