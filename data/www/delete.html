@@ -5,26 +5,29 @@
 		<link href="styles.css" rel="stylesheet">
 	</head>
 	<body>
-		<div class="topnav">
-			<a href="/index.html">Home</a>
-			<a href="/about.html">About</a>
-			<a href="/contact.html">Contact</a>
-			<a href="/upload.html">Upload</a>
-			<a class="active" href="/delete/html">Delete</a>
+		<div class="container">
+			<div class="topnav">
+				<a href="/index.html">Home</a>
+				<a href="/about.html">About</a>
+				<a href="/contact.html">Contact</a>
+				<a href="/upload.html">Upload</a>
+				<a class="active" href="/delete.html">Delete</a>
+			</div>
+			<h1>Delete a picture?</h1>
+			<img src="images/sad.jpeg" alt="Sad cat">
+			<p>Click here to delete a picture from our database:</p>
+	
+			<form method="DELETE" enctype="multipart/form-data" action="deleted.html">
+				<label for="myfile">Choose a cat picture to delete:</label>
+				<input type="file" id="myfile" name="file" accept=".jpg,.jpeg,.png" required>
+	
+				<input type="submit" value="Delete" id="button">
+			</form>
+	
+			<br><a href="/index.html" target="_blank">Home</a>
+			<a href="/about.html" target="_blank">About</a>
+			<a href="/upload.html" target="_blank">Upload</a>
+			<a href="/contact.html" target="_blank">Contact</a>
 		</div>
-		<h1>Delete a picture?</h1>
-		<img src="images/sad.jpeg" alt="Sad cat">
-		<p>Click here to delete a picture from our database:</p>
-
-		<form method="DELETE" enctype="multipart/form-data" action="deleteFile.py">
-			<label for="myfile">Choose a cat picture to delete:</label>
-			<input type="file" id="myfile" name="file" accept=".jpg,.jpeg,.png" required>
-			<input type="submit" value="Delete">
-		</form>
-
-		<br><a href="/index.html" target="_blank">Home</a>
-		<a href="/about.html" target="_blank">About</a>
-		<a href="/upload.html" target="_blank">Upload</a>
-		<a href="/contact.html" target="_blank">Contact</a>
 	</body>
 </html>
