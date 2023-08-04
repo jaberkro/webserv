@@ -2,10 +2,22 @@
 #include "../include/Webserver.hpp"
 #include <fcntl.h>
 
-int Socket::getListenfd()
+int Socket::getListenfd() const
 {
     return(this->listenfd);
 }
+
+unsigned short Socket::getPort() const
+{
+	return (this->port);
+}
+
+std::string Socket::getAddress() const
+{
+	return (this->_address);
+}
+
+
 
 /**
  * @brief Sets up address, port, and host the socket needs to listen to.
@@ -56,7 +68,7 @@ void	Socket::setAddressHostPort(std::string address)
  * @param evSet the kevent struct used to add information to the kqueue
  */
 
-Socket::Socket(std::string address, unsigned short newport, int kq, struct kevent evSet) : port(newport)
+Socket::Socket(std::string address, unsigned short newport, int kq, struct kevent evSet) : port(newport), _address(address)
 {
 	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		throw Socket::SocketError();
@@ -85,7 +97,7 @@ Socket::Socket(std::string address, unsigned short newport, int kq, struct keven
 	struct timespec timeout;
 	timeout.tv_sec = 10; //Timeout after 10 sec
 	timeout.tv_nsec = 0;//this is nanosecs
-	EV_SET(&evSet, 0, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 0, NULL);
-	if (kevent(kq, &evSet, 1, NULL, 0, &timeout) == -1)
-		throw Socket::KeventError();
+	// EV_SET(&evSet, 0, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+	// if (kevent(kq, &evSet, 1, NULL, 0, &timeout) == -1)
+	// 	throw Socket::KeventError();
 }

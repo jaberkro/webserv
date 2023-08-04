@@ -350,6 +350,7 @@ void	Response::sendFirstLine(void)
 void	Response::sendHeaders(std::string const & root)
 {
 	uint8_t	response[MAXLINE + 1];
+
 	std::string		contentType = root == "data" ? \
 	"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
 	std::string::npos) : "text/html";

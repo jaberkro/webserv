@@ -14,11 +14,14 @@ class Socket
 	private:
 		unsigned short port;
 		int	listenfd;
+		std::string	_address;
 		struct	sockaddr_in	servAddr;
 		void	setAddressHostPort(std::string address);
 	public:
 		Socket(std::string address, unsigned short newport, int kq, struct kevent evSet);
-		int		getListenfd();
+		int		getListenfd() const;
+		std::string	getAddress() const;
+		unsigned short	getPort() const;
 		void	watchLoop(); //deze weer implementeren en private maken!
 		
 	class SocketError : public std::exception {

@@ -73,12 +73,16 @@ void	Request::processReq(void)
 		}
 		if (this->_statusCode != OK)
 			break;
+		// std::cout << "na statuscode check" << std::endl;
+		//BS Ergens tussen hier en het volgende comment blijftie hangen bij POST!
 		while (!headersComplete && (nlPos = processingBuffer.find_first_of('\n')) < std::string::npos) 
 		{
 			if (nlPos > processingBuffer.find(HEADER_END))
 				headersComplete = true;
 			extractStr(processingBuffer, line, nlPos);
 			this->parseFieldLine(line);
+			// std::cout << "in headerscompletecomplete loop" << std::endl;
+
 		}
 	
 		if (headersComplete)
@@ -91,6 +95,7 @@ void	Request::processReq(void)
 			break; //Silenced to be able to get the body!
 		}
 	}
+
 	// std::cout << "Processing buffer: [" << processingBuffer << "]" << std::endl;
 	std::string contentLengthStr = _headers["Content-Length"];
 	int contentLength = atoi(contentLengthStr.c_str());
