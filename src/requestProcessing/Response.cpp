@@ -343,14 +343,26 @@ void	Response::sendFirstLine(void)
 void	Response::sendHeaders(std::string const & root)
 {
 	uint8_t	response[MAXLINE + 1];
-	std::string		contentType = root == "data" ? \
-	"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
-	std::string::npos) : "text/html";
-
+	std::string		contentType;
+	if (this->_filePath.find(".css") == this->_filePath.find_last_of("."))
+	{
+		contentType = root == "data" ? \
+		"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
+		std::string::npos) : "text/css"; // JMA: THIS IS HARDCODED BUT SOMETIMES IT MUST BE text/css
+	}
+	else
+	{
+		contentType = root == "data" ? \
+		"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
+		std::string::npos) : "text/html"; // JMA: THIS IS HARDCODED BUT SOMETIMES IT MUST BE text/html
+	}
 	std::memset(response, 0, MAXLINE);
 	snprintf((char *)response, MAXLINE, \
 	"Content-Type: %s\r\nContent-Length: %zu\r\n\r\n", contentType.c_str(), this->_fileLength);
+	printf("\n\nFILEPATH: [%s]\n\n", this->_filePath.c_str());
 	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
+	printf("\n\nCONTENT TYPE: [%s]\n\n", contentType.c_str());
+
 
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
