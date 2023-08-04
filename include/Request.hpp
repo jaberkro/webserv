@@ -33,17 +33,20 @@ class Request
 		void								setMethod(std::string method);
 		std::string	const &					getTarget() const;
 		void								setTarget(std::string target);
+		std::string	const &					getQueryString() const;
+		void								setQueryString(std::string target);
 		std::string	const &					getProtocolVersion() const;
 		void								setProtocolVersion(std::string protocol);
 		int									getStatusCode() const;
 		void								setStatusCode(int code);
+		std::string const &					getHostname() const;
 		std::string const &					getAddress() const;
 		unsigned short						getPort() const;
 		void								setHost(std::string host);
 		std::string	const &					getBody() const;
 		int									getConnFD() const;
 		std::map<std::string, std::string>	&getHeaders();
-		std::string	const &					getFullRequest() const;
+		// std::string	const &					getFullRequest() const;
 
 		bool	isLocalhost(std::string const & address);
 		void	printRequest();	// for debugging purposes, to be deleted
@@ -54,15 +57,17 @@ class Request
 
 		std::string					_method;
 		std::string					_target;
+		std::string					_queryString;
 		std::string					_protocolVersion;
 		std::map<std::string, std::string>	_headers;
 		// std::map<std::string, std::string>	_trailers;
 		std::string					_body;
 		int							_connFD;
 		int							_statusCode;
-		std::string					_address;
+		std::string					_address = "127.0.0.1";
 		unsigned short				_port;
-		std::string					fullRequest;
+		std::string					_hostname;
+		// std::string					fullRequest;
 };
 
 void			removeTrailingSpaces(std::string &line);

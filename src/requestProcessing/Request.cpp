@@ -7,6 +7,7 @@
 Request::Request(int connfd) : \
 _method (""), \
 _target (""), \
+_queryString (""), \
 _protocolVersion (""), \
 _body (""), \
 _connFD (connfd), \
@@ -19,19 +20,29 @@ Request::~Request(void) {}
 Request::Request(Request &r) : \
 _method (r.getMethod()), \
 _target (r.getTarget()), \
+_queryString (r.getQueryString()), \
 _protocolVersion (r.getProtocolVersion()), \
 _headers (r.getHeaders()), \
 _body (r.getBody()), \
-_connFD (r.getConnFD())  {}
+_connFD (r.getConnFD()), \
+_statusCode (r.getStatusCode()), \
+_address (r.getAddress()), \
+_port (r.getPort()), \
+_hostname (r.getHostname()) {}
 
 Request &	Request::operator=(Request &r)
 {
-	this->_connFD = r.getConnFD();
 	this->_method = r.getMethod();
 	this->_target = r.getTarget();
-	this->_protocolVersion = r.getProtocolVersion();
+	this->_queryString = r.getQueryString();
 	this->_headers = r.getHeaders();
+	this->_protocolVersion = r.getProtocolVersion();
 	this->_body = r.getBody();
+	this->_connFD = r.getConnFD();
+	this->_statusCode = r.getStatusCode();
+	this->_address = r.getAddress();
+	this->_port = r.getPort();
+	this->_hostname = r.getHostname();
 	return (*this);
 }
 
@@ -55,7 +66,6 @@ void	Request::processReq(void)
 	while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE - 1, 0)) > 0) 
 	{
 		processingBuffer += socketBuffer;
-		fullRequest += socketBuffer;
 		totalBytesRead += bytesRead;
 		std::memset(socketBuffer, 0, MAXLINE);
 		while (!firstLineComplete)
@@ -72,19 +82,14 @@ void	Request::processReq(void)
 			extractStr(processingBuffer, line, nlPos);
 			this->parseFieldLine(line);
 		}
-		// CODE TO BE ADDED FOR READING THE BODY
-	
 		if (headersComplete)
 		{
-			// std::cout << "Before erasing: >" << processingBuffer << "<" << std::endl;
 			processingBuffer.erase(0, 2);
-			// std::cout << "After erasing: >" << processingBuffer << "<" << std::endl;
 			this->_body.append(processingBuffer);
 			processingBuffer.clear();
 			break; //Silenced to be able to get the body!
 		}
 	}
-	// std::cout << "Processing buffer: [" << processingBuffer << "]" << std::endl;
 	std::string contentLengthStr = _headers["Content-Length"];
 	int contentLength = atoi(contentLengthStr.c_str());
 	setenv("CONTENT-LENGTH", contentLengthStr.c_str(), 0);
@@ -100,7 +105,6 @@ void	Request::processReq(void)
 				sizeToRead = std::min(contentLength - totalBytesRead, static_cast<size_t>(MAXLINE - 1));
 				std::cout << "Round " << counter++ << ": total read: " << totalBytesRead << ", content length: " << contentLength << ", size to read: " << sizeToRead << std::endl;
 				bytesRead = recv(this->_connFD, &socketBuffer, sizeToRead, 0);
-				// std::cout << "socketBuffer: [" << socketBuffer << "], bytesread: " << bytesRead << std::endl;
 				std::cout << "Just read " << bytesRead << " bytes" << std::endl;
 				if (bytesRead < 0)
 					perror("RECV ERROR: ");
@@ -108,12 +112,10 @@ void	Request::processReq(void)
 					break;
 
 				_body.append(socketBuffer);
-				fullRequest.append(socketBuffer);
 				totalBytesRead += bytesRead;
 				std::memset(socketBuffer, 0, MAXLINE);
 				std::cout << "End of loop. Total read is " << totalBytesRead << std::endl;
 			}
-		// delete[] socketBuf;
 		}
 		std::cout << "Body now: ->" << this->_body << "<-" << std::endl;
 	}
@@ -121,16 +123,6 @@ void	Request::processReq(void)
 	{
 		std::cerr << e.what() << '\n';
 	}
-
-	// if Content-Length specified (while received <= Content-Length)
-	// while (firstLineComplete & headersComplete)
-	// {
-	// 	bodyRead += processingBuffer.length();
-	// 	extractStr(processingBuffer, this->_body, processingBuffer.length());
-	// 	std::cout << "now in the body part" << std::endl;
-	// 	if (bodyRead == 0) // replace 0 with content-length
-	// 		return;
-	// }
 }
 
 
@@ -143,7 +135,7 @@ void	Request::processReq(void)
  */
 bool	Request::parseStartLine(std::string &line)
 {
-	size_t	end;
+	size_t	end, questionMark;
 
 	end = line.find_first_not_of(UPPERCASE);
 	setMethod(line.substr(0, end));
@@ -151,6 +143,12 @@ bool	Request::parseStartLine(std::string &line)
 	end = line.find_first_of(" ");
 	setTarget(line.substr(0, end));	// WATCH OUT: TARGET CAN BE AN ABSOLUTE PATH
 	line.erase(0, end + 1);
+	questionMark = this->_target.find_first_of("?");
+	if (questionMark < this->_target.length() - 1)
+	{
+		setQueryString(this->_target.substr(questionMark + 1, std::string::npos));
+		this->_target.erase(questionMark, std::string::npos);
+	}
 	if (this->_target.find("/..") < std::string::npos)
 		setStatusCode(BAD_REQUEST);
 	setProtocolVersion(line.substr(0, std::string::npos));
@@ -168,8 +166,6 @@ void	Request::parseFieldLine(std::string &line)
 {
 	std::string	key, value;
 	std::map<std::string,std::string>::iterator	it;
-
-	// trim spaces incl \r -> maybe not necessary
 
 	key = extractKey(line);
 	value = extractValue(line);
@@ -199,29 +195,15 @@ Server const &	Request::identifyServer(std::vector<Server> const & servers)
 	int					bestMatch = -1;
 	int					zero = -1;
 	
-	// for (auto printIt = servers.begin(); printIt != servers.end(); printIt++)
-	// {
-	// 	printServer(*printIt);
-	// }
 	findHostMatch(servers, matches, &zero);
-	/* begin debug code */
-	// std::cout << "Found " << matches.size() << " matching servers" << std::endl; 
-	// for (auto printIt = matches.begin(); printIt != matches.end(); printIt++)
-	// {
-	// 	// printServer(*(*printIt));
-	// 	std::cout << servers[*printIt].getServerName(0) << "; ";
-	// }
-	// std::cout << std::endl;
-	// if (zero >= 0)
-	// 	std::cout << "Zero is " << servers[zero].getServerName(0) << std::endl;
-	// else
-	// 	std::cout << "Zero is NOT there" << std::endl;
-	/* end debug code */
 	switch (matches.size())
 	{
 		case 0:
 			if (zero < 0)
+			{
+				this->_statusCode = INTERNAL_SERVER_ERROR;
 				throw std::runtime_error("ERROR: No matching server, not even a default 0.0.0.0 found");
+			}
 			return (servers[zero]);
 		case 1:
 			return (servers[matches[0]]);
@@ -273,22 +255,20 @@ std::vector<int>	& matches)
 	size_t						overlapTrailing = 0;
 	std::vector<std::string>	hostSplit;
 	
-	splitServerName(this->_headers.at("Host"), hostSplit);
+	splitServerName(this->_hostname, hostSplit);
 	for (auto it = matches.begin(); it != matches.end(); it++)
 	{
 		std::vector<std::string> const &	names = servers[*it].getServerNames();
 		for (auto itName = names.begin(); itName != names.end(); itName++)
 		{
-			if (this->_headers.at("Host") == *itName)
+			if (this->_hostname == *itName)
 				return (*it);
 			
 			std::vector<std::string>	nameSplit;
 			splitServerName(*itName, nameSplit);
 			if ((*itName)[0] == '*' && (*itName)[1] == '.')
 			{
-				// std::cout << "[leading *] ";
 				size_t	overlap = countOverlapLeading(hostSplit, nameSplit);
-				// std::cout << this->_headers.at("Host") << " and " << *itName << " overlap: " << overlap << std::endl;
 				if (overlap > overlapLeading)
 				{
 					overlapLeading = overlap;
@@ -298,9 +278,7 @@ std::vector<int>	& matches)
 			else if ((*itName)[(*itName).length() - 1] == '*' && \
 			(*itName)[(*itName).length() - 2] == '.')
 			{
-				// std::cout << "[trailing *] ";
 				size_t	overlap = countOverlapTrailing(hostSplit, nameSplit);
-				// std::cout << this->_headers.at("Host") << " and " << *itName << " overlap: " << overlap << std::endl;
 				if (overlap > overlapTrailing)
 				{
 					overlapTrailing = overlap;
@@ -365,6 +343,17 @@ void	Request::setTarget(std::string target)
 	this->_target = target;
 }
 
+std::string const &	Request::getQueryString() const
+{
+	return (this->_queryString);
+
+}
+
+void	Request::setQueryString(std::string queryString)
+{
+	this->_queryString = queryString;
+}
+
 std::string const &	Request::getProtocolVersion() const
 {
 	return (this->_protocolVersion);
@@ -387,6 +376,11 @@ void	Request::setStatusCode(int code)
 	this->_statusCode = code;
 }
 
+std::string const &	Request::getHostname() const
+{
+	return (this->_hostname);
+}
+
 std::string const &	Request::getAddress() const
 {
 	return (this->_address);
@@ -399,7 +393,11 @@ unsigned short	Request::getPort() const
 
 void	Request::setHost(std::string host)
 {
-	this->_address = extractKey(host);
+	std::string	tmpHost = extractKey(host);
+	if (!isLocalhost(tmpHost))
+		this->_hostname = tmpHost;
+	else
+		this->_address = tmpHost;
 	makeLowercase(this->_address);
 	this->_port = stoi(extractValue(host)); // what if exception?
 }
@@ -420,10 +418,10 @@ std::map<std::string, std::string> &	Request::getHeaders()
 }
 
 
-std::string	const & Request::getFullRequest() const
-{
-	return(this->fullRequest);
-}
+// std::string	const & Request::getFullRequest() const
+// {
+// 	return(this->fullRequest);
+// }
 
 
 // FOR DEBUGGING ONLY
@@ -451,7 +449,8 @@ void	Request::printServer(Server const & server)
 void	Request::printRequest()
 {
 	std::cout << "\n\t***" << std::endl;
-	std::cout << "\t" << this->_method << " " << this->_target << std::endl;
+	std::cout << "\t" << this->_method << " " << this->_target << " " << this->_protocolVersion << std::endl;
+	std::cout << "\tQuery string:" << this->_queryString << std::endl;
 	for (std::map<std::string,std::string>::iterator it = this->_headers.begin(); \
 	it != this->_headers.end(); it++)
 		std::cout << "\t" << it->first << ": " << it->second << std::endl;
