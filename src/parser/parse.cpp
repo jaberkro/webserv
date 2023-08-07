@@ -80,7 +80,7 @@ void parse(std::vector<Server> &servers, char *configFile)
 			exit(EXIT_FAILURE);
 		}
 		else if (line == "server {" || line.find("location") == 0 || \
-			hasDirective(line) != -1)
+			hasDirective(line) != -1) // location msut have this error message? // and allow?
 		{
 			std::cerr << "Error: [" << line << "]: should be inside ";
 			std::cerr << "http block: \nhttp {\n\n}" << std::endl;
@@ -89,7 +89,8 @@ void parse(std::vector<Server> &servers, char *configFile)
 		else
 			notRecognizedError(line, "configuration file");
 	}
-	if (servers.size() == 0)
+	//what if 2 http under each other
+	if (servers.size() == 0) //  beter checken, noserveerrpr in http
 	{
 		std::cerr << "Error: http block missing: \nhttp {\n\n}" << std::endl; // if you open a directory, you get this error as well. How to catch directories before even opening it?
 		exit(EXIT_FAILURE);

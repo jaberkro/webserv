@@ -104,9 +104,8 @@ void	Response::prepareResponseDELETE(Server const & server)
 void	Response::prepareResponsePOST(Server const & server)
 {
 	
-	Server tmp(server);
+	Server tmp(server); //BS: dit is temporary, om compiler error over unused var. te silencen
 
-	//Hier info klaarzetten die mee moet naar constructor van PostCGI
 	PostCGI	cgi(this->_req);
 	cgi.run(this->_req);
 
@@ -114,8 +113,9 @@ void	Response::prepareResponsePOST(Server const & server)
 	
 	std::memset(response, 0, MAXLINE);
 	snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), cgi.getResponse().c_str());
-	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
+	printf("\n\nRESPONSE for POST: [%s]\n\n", (char*)response);
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+	//BS: Above is hardcoded, but needs to be a proper reponse with a html page focourse
 }
 
 /**
@@ -136,16 +136,20 @@ void	Response::prepareResponseGET(Server const & server)
 	this->_req.getTarget().substr(0, this->_req.getTarget().find_first_of('?'));
 	int	rounds = 0;
 	
-	if (this->_statusCode == INTERNAL_SERVER_ERROR)
-		this->sendFirstLine();
-	else if (this->_req.getMethod() == "")
-		close(this->_req.getConnFD()); // JMA: is this why the connection gets closed that often?
-	else if (this->_req.getMethod() != "GET")
+
+		std::cout << "Responsible SERVER size is " << \
+		server.getServerNames().size() << std::endl;
+
+	// if (this->_req.getMethod() == "")
+	// 	close(this->_req.getConnFD());
+	// else if (this->_req.getMethod() == "POST")
+	// 	prepareResponsePOST(server);
+	if (this->_req.getMethod() != "GET")
 		std::cout << "I cannot handle the \"" << this->_req.getMethod() \
 		<< "\" method just yet, sorry!" << std::endl;
 	else
 	{
-		while (!this->_isReady && rounds++ < 6)
+		while (!this->_isReady && rounds++ < 6) // rounds moeten weg (is voor debugging)
 		{
 			try 
 			{
@@ -176,7 +180,7 @@ void	Response::prepareResponseGET(Server const & server)
 				// TO BE ADDED: try to find a corresponding error page (BAD REQUEST) in the SERVER block;
 				targetUri = "/defaultError.html";
 			}
-			if (rounds == 6)
+			if (rounds == 6)	// moet straks weg
 				std::cout << "--> loop ended after 6 rounds <--" << std::endl;
 		}
 			//JMA: this is a check if it actually is DELETE request from browser, with a filename to be deleted in it
@@ -442,6 +446,7 @@ void	Response::sendContentInChunks(void)
 	std::memset(response, 0, CHUNK_SIZE);
 	send(this->_req.getConnFD(), (char*)response, 0, 0);
 	file.close();
+	std::cout << "End of the sendContentInChunks function" << std::endl;
 }
 
 /* UTILS */

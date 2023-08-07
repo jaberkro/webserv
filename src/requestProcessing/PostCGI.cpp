@@ -65,8 +65,8 @@ void	PostCGI::run(Request const & _req)//misschien vectorpair laten returnen met
 		if (pipe(webservToScript) < 0 || pipe(scriptToWebserv) < 0)
 			throw std::runtime_error("Pipe failed");
 		arg[0] = strdup("cgi-bin/uploadFile.py"); //Need this as arg with constructor!
-		arg[1] = strdup(std::to_string(webservToScript[R]).c_str());
-		arg[2] = strdup(std::to_string(scriptToWebserv[W]).c_str());
+		arg[1] = strdup(std::to_string(webservToScript[R]).c_str()); //kan weg
+		arg[2] = strdup(std::to_string(scriptToWebserv[W]).c_str()); // kan weg
 		id = fork();
 		if (id < 0)
 			throw std::runtime_error("Fork failed");
@@ -86,7 +86,7 @@ void	PostCGI::run(Request const & _req)//misschien vectorpair laten returnen met
 		{
 			close(scriptToWebserv[W]);
 			close(webservToScript[R]);
-			std::cout << "FULLBODY IN CGI.RUN FUNC: [" << _req.getBody() << "]" << std::endl;
+			// std::cout << "FULLBODY IN CGI.RUN FUNC: [" << _req.getBody() << "]" << std::endl;
 			write(webservToScript[W], _req.getBody().c_str(), _req.getBody().size());// static_cast<const void *>(msg), strlen(msg));
 			// write(webservToScript[W], req.getBody().c_str(), req.getBody().size());// static_cast<const void *>(msg), strlen(msg));
 			close(webservToScript[W]);

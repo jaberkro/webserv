@@ -16,7 +16,7 @@ class Response {
 		Response &	operator=(Response &);
 		
 		/* functions */
-		void									prepareResponseGET(Server const & );
+		void									prepareResponseGET(Server const &);
 		void									prepareResponsePOST(Server const & server);
 		void									prepareResponseDELETE(Server const & server);
 		std::string								identifyErrorPage(std::vector<Location>::const_iterator itLoc);

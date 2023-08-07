@@ -27,8 +27,8 @@ _body (r.getBody()), \
 _connFD (r.getConnFD()), \
 _statusCode (r.getStatusCode()), \
 _address (r.getAddress()), \
-_port (r.getPort()), \
-_hostname (r.getHostname()) {}
+_port (r.getPort()) {}
+// _hostname (r.getHostname()) {}
 
 Request &	Request::operator=(Request &r)
 {
@@ -42,7 +42,7 @@ Request &	Request::operator=(Request &r)
 	this->_statusCode = r.getStatusCode();
 	this->_address = r.getAddress();
 	this->_port = r.getPort();
-	this->_hostname = r.getHostname();
+	// this->_hostname = r.getHostname();
 	return (*this);
 }
 
@@ -75,12 +75,16 @@ void	Request::processReq(void)
 		}
 		if (this->_statusCode != OK)
 			break;
+		// std::cout << "na statuscode check" << std::endl;
+		//BS Ergens tussen hier en het volgende comment blijftie hangen bij POST!
 		while (!headersComplete && (nlPos = processingBuffer.find_first_of('\n')) < std::string::npos) 
 		{
 			if (nlPos > processingBuffer.find(HEADER_END))
 				headersComplete = true;
 			extractStr(processingBuffer, line, nlPos);
 			this->parseFieldLine(line);
+			// std::cout << "in headerscompletecomplete loop" << std::endl;
+
 		}
 		if (headersComplete)
 		{
@@ -90,34 +94,36 @@ void	Request::processReq(void)
 			break; //Silenced to be able to get the body!
 		}
 	}
+
+	// std::cout << "Processing buffer: [" << processingBuffer << "]" << std::endl;
 	std::string contentLengthStr = _headers["Content-Length"];
 	int contentLength = atoi(contentLengthStr.c_str());
-	setenv("CONTENT-LENGTH", contentLengthStr.c_str(), 0);
-	std::cout << "Contentlen: " << contentLength << std::endl;
 	try
 	{
 		if (headersComplete && contentLength > 0) //means there is a body to read
 		{
 			size_t	sizeToRead = MAXLINE - 1;
-			size_t	counter = 1;
+			// size_t	counter = 1;
 			while (totalBytesRead < static_cast<size_t>(contentLength))
 			{
 				sizeToRead = std::min(contentLength - totalBytesRead, static_cast<size_t>(MAXLINE - 1));
-				std::cout << "Round " << counter++ << ": total read: " << totalBytesRead << ", content length: " << contentLength << ", size to read: " << sizeToRead << std::endl;
+				// std::cout << "Round " << counter++ << ": total read: " << totalBytesRead << ", content length: " << contentLength << ", size to read: " << sizeToRead << std::endl;
 				bytesRead = recv(this->_connFD, &socketBuffer, sizeToRead, 0);
-				std::cout << "Just read " << bytesRead << " bytes" << std::endl;
+				// std::cout << "socketBuffer: [" << socketBuffer << "], bytesread: " << bytesRead << std::endl;
+				// std::cout << "Just read " << bytesRead << " bytes" << std::endl;
 				if (bytesRead < 0)
 					perror("RECV ERROR: ");
 				if (bytesRead <= 0)
 					break;
 
 				_body.append(socketBuffer);
+				// fullRequest.append(socketBuffer);		// moet full req weg?
 				totalBytesRead += bytesRead;
 				std::memset(socketBuffer, 0, MAXLINE);
-				std::cout << "End of loop. Total read is " << totalBytesRead << std::endl;
+				// std::cout << "End of loop. Total read is " << totalBytesRead << std::endl;
 			}
 		}
-		std::cout << "Body now: ->" << this->_body << "<-" << std::endl;
+		// std::cout << "Body now: ->" << this->_body << "<-" << std::endl;
 	}
 	catch (const std::length_error& e)
 	{
@@ -152,7 +158,7 @@ bool	Request::parseStartLine(std::string &line)
 	}
 	if (this->_target.find("/..") < std::string::npos)
 		setStatusCode(BAD_REQUEST);
-	setProtocolVersion(line.substr(0, std::string::npos));
+	setProtocolVersion(line.substr(0, std::string::npos)); // that's the whole line
 	line.erase(0, std::string::npos);
 	return (true);
 }
@@ -232,7 +238,7 @@ std::vector<int> & matches, int *zero)
 			if (servers[idx].getPort(i) == this->_port && \
 			(reqAddress == this->_address || this->isLocalhost(reqAddress)))
 				matches.push_back(idx);
-			if (servers[idx].getHost(i) == "0.0.0.0" && *zero < 0)
+			if (servers[idx].getHost(i) == "0.0.0.0" && *zero < 0)	// ook port vergelijken
 				*zero = idx;
 		}
 	}
@@ -267,7 +273,7 @@ std::vector<int>	& matches)
 			
 			std::vector<std::string>	nameSplit;
 			splitServerName(*itName, nameSplit);
-			if ((*itName)[0] == '*' && (*itName)[1] == '.')
+			if ((*itName)[0] == '*' && (*itName)[1] == '.') // als server name only a "*" is --> segfault
 			{
 				size_t	overlap = countOverlapLeading(hostSplit, nameSplit);
 				if (overlap > overlapLeading)

@@ -32,6 +32,7 @@ static void checkNotImplementedLocation(std::string line)
 		notImplementedError(line, "location", "server block");
 	else if (line.find("server_name") == 0)
 		notImplementedError(line, "location", "server block");
+	//server
 }
 
 void parseModifierAndMatch(Location &location, std::string &line)
