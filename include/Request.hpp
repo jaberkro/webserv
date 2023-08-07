@@ -13,7 +13,7 @@ class Request
 {
 	public:
 
-		Request(int connfd);
+		Request(int connfd, std::string address);
 		~Request(void);
 		Request(Request &);
 		Request &	operator=(Request &);
@@ -33,10 +33,17 @@ class Request
 		void								setMethod(std::string method);
 		std::string	const &					getTarget() const;
 		void								setTarget(std::string target);
+		std::string	const &					getQueryString() const;
+		void								setQueryString(std::string target);
 		std::string	const &					getProtocolVersion() const;
 		void								setProtocolVersion(std::string protocol);
 		int									getStatusCode() const;
 		void								setStatusCode(int code);
+		size_t								getContentLength() const;
+		void								setContentLength(std::string contentLength);
+		size_t								getTotalBytesRead() const;
+		void								addBytesRead(size_t bytesRead);
+		std::string const &					getHostname() const;
 		std::string const &					getAddress() const;
 		unsigned short						getPort() const;
 		void								setHost(std::string host);
@@ -54,6 +61,7 @@ class Request
 
 		std::string					_method;
 		std::string					_target;
+		std::string					_queryString;
 		std::string					_protocolVersion;
 		std::map<std::string, std::string>	_headers;
 		// std::map<std::string, std::string>	_trailers;
@@ -62,7 +70,9 @@ class Request
 		int							_statusCode;
 		std::string					_address;
 		unsigned short				_port;
-		std::string					fullRequest;
+		std::string					_hostname;
+		size_t						_contentLength;
+		size_t						_totalBytesRead;
 };
 
 void			removeTrailingSpaces(std::string &line);

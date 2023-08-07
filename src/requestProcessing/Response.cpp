@@ -353,7 +353,7 @@ void	Response::sendHeaders(std::string const & root)
 
 	std::string		contentType = root == "data" ? \
 	"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
-	std::string::npos) : "text/html";
+	std::string::npos) : "text/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, std::string::npos);
 
 	std::memset(response, 0, MAXLINE);
 	snprintf((char *)response, MAXLINE, \
