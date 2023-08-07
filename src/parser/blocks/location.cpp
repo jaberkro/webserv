@@ -14,7 +14,10 @@ void	storeValuesInLocation(t_values values, Location &location)
 	location.setAllowed(values.allowed);
 	location.setDenied(values.denied);
 	location.setReturn(values.returnCode, values.returnText);
-	location.setUploadDir(values.uploadDir);
+	if (values.uploadDir != "")
+		location.setUploadDir(values.uploadDir);
+	else
+		location.setUploadDir("data/uploads");
 }
 
 static void checkNotImplementedLocation(std::string line)

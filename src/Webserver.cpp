@@ -93,6 +93,11 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 							newResp->prepareResponsePOST(handler);
 							delete newReq;
 						}
+						else if (newReq->getMethod() == "DELETE")
+						{
+							newResp->prepareResponseDELETE(handler);
+							delete newReq;
+						}
 						else
 						{
 							delete newReq;

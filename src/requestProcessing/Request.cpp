@@ -123,6 +123,7 @@ void	Request::processReq(void)
 	{
 		std::cerr << e.what() << '\n';
 	}
+
 }
 
 

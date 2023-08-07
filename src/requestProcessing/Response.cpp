@@ -8,6 +8,7 @@
 #include "PostCGI.hpp"
 #include <cstdio>
 #include <unistd.h>
+#include <stdio.h>
 
 #include <vector>
 
@@ -68,6 +69,38 @@ Response &	Response::operator=(Response & r)
 	return (*this);
 }
 
+static void	deleteFile(Request request, std::vector<Location>::const_iterator const & location)
+{
+	std::string	toRemove;
+	std::cout << "\nATTEMPT TO DELETE RIGHT NOW!!!\n" << std::endl;
+	if (request.getMethod() == "GET")
+	{
+		toRemove = "/" + request.getQueryString().substr(request.getQueryString().find_last_of("=") + 1);
+	}
+	else
+	{
+		toRemove = request.getTarget();
+	}
+	std::cout << "DELETE path: " << location->getUploadDir() << toRemove << std::endl;
+
+	if (remove((location->getUploadDir() + toRemove).c_str()) != 0)
+		std::cout << "DELETE FAILED!!!\n" << std::endl;
+	else
+		std::cout << "DELETE SUCCESSFUL!!!\n" << std::endl;
+
+}
+
+void	Response::prepareResponseDELETE(Server const & server)
+{
+	uint8_t	response[MAXLINE + 1];
+	
+	deleteFile(this->_req, findMatch(this->_req.getTarget(), server.getLocations())); // second argumente should change
+	std::memset(response, 0, MAXLINE);
+	snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), "204 Deleted\r\nContent-Type: text/html\r\n\r\nResource deleted succesfully");
+	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
+	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+}
+
 void	Response::prepareResponsePOST(Server const & server)
 {
 	
@@ -106,11 +139,12 @@ void	Response::prepareResponseGET(Server const & server)
 	if (this->_statusCode == INTERNAL_SERVER_ERROR)
 		this->sendFirstLine();
 	else if (this->_req.getMethod() == "")
-		close(this->_req.getConnFD());
+		close(this->_req.getConnFD()); // JMA: is this why the connection gets closed that often?
 	else if (this->_req.getMethod() != "GET")
 		std::cout << "I cannot handle the \"" << this->_req.getMethod() \
 		<< "\" method just yet, sorry!" << std::endl;
 	else
+	{
 		while (!this->_isReady && rounds++ < 6)
 		{
 			try 
@@ -145,6 +179,10 @@ void	Response::prepareResponseGET(Server const & server)
 			if (rounds == 6)
 				std::cout << "--> loop ended after 6 rounds <--" << std::endl;
 		}
+			//JMA: this is a check if it actually is DELETE request from browser, with a filename to be deleted in it
+		if (this->_req.getTarget() == "/deleted.html" && this->_req.getQueryString() != "")
+			deleteFile(this->_req, itLoc);
+	}
 }
 
 /**
