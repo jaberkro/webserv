@@ -69,7 +69,7 @@ Response &	Response::operator=(Response & r)
 	return (*this);
 }
 
-static void	deleteFile(Request request, std::vector<Location>::const_iterator const & location)
+static bool	deleteFile(Request request, std::vector<Location>::const_iterator const & location)
 {
 	std::string	toRemove;
 	std::cout << "\nATTEMPT TO DELETE RIGHT NOW!!!\n" << std::endl;
@@ -84,19 +84,23 @@ static void	deleteFile(Request request, std::vector<Location>::const_iterator co
 	std::cout << "DELETE path: " << location->getUploadDir() << toRemove << std::endl;
 
 	if (remove((location->getUploadDir() + toRemove).c_str()) != 0)
+	{
 		std::cout << "DELETE FAILED!!!\n" << std::endl;
-	else
-		std::cout << "DELETE SUCCESSFUL!!!\n" << std::endl;
-
+		return (0);
+	}
+	std::cout << "DELETE SUCCESSFUL!!!\n" << std::endl;
+	return (1);
 }
 
 void	Response::prepareResponseDELETE(Server const & server)
 {
 	uint8_t	response[MAXLINE + 1];
 	
-	deleteFile(this->_req, findMatch(this->_req.getTarget(), server.getLocations())); // second argumente should change
 	std::memset(response, 0, MAXLINE);
-	snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), "204 Deleted\r\nContent-Type: text/html\r\n\r\nResource deleted succesfully");
+	if (deleteFile(this->_req, findMatch(this->_req.getTarget(), server.getLocations())) == 1) // second argumente should change
+		snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), "204 Deleted\r\nContent-Type: text/html\r\n\r\nResource deleted succesfully");
+	else
+		snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), "400 Deleted\r\nContent-Type: text/html\r\n\r\nBad request");
 	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
