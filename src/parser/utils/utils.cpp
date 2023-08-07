@@ -22,7 +22,8 @@ int	getValidLine(std::fstream &file, std::string &line)
 		return (1);
 	if (line.back() != ';' && line.back() != '{' && line.back() != '}')
 	{
-		std::cout << "Error: missing ';', '{' or '}' in configuration file" << std::endl;
+		std::cerr << "Error: [" << line << "]: lines in the configuration";
+		std::cerr << " file should end with ';', '{' or '}'" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	if (line.back() == ';')
@@ -76,8 +77,8 @@ int	parseErrorCode(std::string code, std::string directive)
 		newCode = stoi(code);
 		if (newCode < 200 || newCode > 600) // this needs to be fine tuned
 		{
-			std::cout << "Error: can't parse " << directive;
-			std::cout << ": invalid code: [" << code << "]" << std::endl;
+			std::cerr << "Error: can't parse " << directive;
+			std::cerr << ": invalid code: [" << code << "]" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 	}

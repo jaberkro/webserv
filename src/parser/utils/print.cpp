@@ -8,7 +8,8 @@ void	printLocation(Location location)
 {
 	std::cout << "\n\tlocation ";
 	if (location.getModifier() != "(none)")
-		std::cout << location.getModifier() << " " << location.getMatch() << ":";
+		std::cout << location.getModifier() << " ";
+	std::cout << location.getMatch() << ":";
 	if (location.getRoot().size())
 		std::cout << "\n\t\troot: [" << location.getRoot() << "]";
 	if (location.getIndexes().size())
@@ -56,13 +57,10 @@ void	printServers(std::vector<Server> servers)
 	for (size_t i = 0; i < servers.size(); i++)
 	{
 		std::cout << "server " << i << ":";
-		if (!(servers.at(i).getHost(0) == "0.0.0.0" && servers.at(i).getPort(0) == 80))
+		for (size_t j = 0; j < servers.at(i).getListens().size(); j++)
 		{
-			for (size_t j = 0; j < servers.at(i).getListens().size(); j++)
-			{
-				std::cout << "\n\thost: [" << servers.at(i).getHost(j) << "]\t";
-				std::cout << "port: [" << servers.at(i).getPort(j) << "]";
-			}
+			std::cout << "\n\thost: [" << servers.at(i).getHost(j) << "]\t";
+			std::cout << "port: [" << servers.at(i).getPort(j) << "]";
 		}
 		if (servers.at(i).getServerNames().size() > 0)
 			std::cout << "\n\tserver_name:";

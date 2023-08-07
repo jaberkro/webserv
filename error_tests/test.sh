@@ -15,7 +15,17 @@ let ERRORS=0
 
 echo -e "${PINK}${BRIGHT}Testing webserv configuration files that should give an error...${RESET}"
 
-chmod 000 error_tests/invalid/00_open/01_no_access.conf
+chmod 000 error_tests/invalid/00_open/03_no_access.conf
+
+echo -e "${BRIGHT}"non-existent file:"${RESET}"
+echo -en "${YELLOW}non_existent.conf:${RESET} "
+OUTPUT=$(./webserv "error_tests/invalid/non_existent.conf" 2>&1) 
+if grep -q "Error: " <<< $OUTPUT; then
+	echo -e "$OUTPUT ${GREEN}${BRIGHT}OK${RESET}"
+else
+	echo -e "$OUTPUT ${RED}${BRIGHT}KO${RESET}"
+	let "ERRORS+=1"
+fi
 
 for directory in $(ls error_tests/invalid/);
 	do
@@ -24,7 +34,7 @@ for directory in $(ls error_tests/invalid/);
 	for file in $(ls error_tests/invalid/$directory);
 		do
 		echo -en "${YELLOW}${file}:${RESET} "
-		OUTPUT=$(./webserv "error_tests/invalid/${directory}/${file}") 
+		OUTPUT=$(./webserv "error_tests/invalid/${directory}/${file}" 2>&1) 
 		if grep -q "Error: " <<< $OUTPUT; then
 			echo -e "$OUTPUT ${GREEN}${BRIGHT}OK${RESET}"
 		else
@@ -33,6 +43,7 @@ for directory in $(ls error_tests/invalid/);
 		fi
 	done
 done
+
 
 echo ""
 
@@ -45,12 +56,12 @@ for directory in $(ls error_tests/valid/);
 	for file in $(ls error_tests/valid/$directory);
 		do
 		echo -en "${YELLOW}${file}:${RESET} "
-		OUTPUT=$(./webserv "error_tests/valid/${directory}/${file}") 
-		if grep -q "Hello World!" <<< $OUTPUT; then
-			echo -e "$OUTPUT ${GREEN}${BRIGHT}OK${RESET}"
-		else
+		OUTPUT=$(./webserv "error_tests/valid/${directory}/${file}" 2>&1) 
+		if grep -q "Error: " <<< $OUTPUT; then
 			echo -e "$OUTPUT ${RED}${BRIGHT}KO${RESET}"
 			let "ERRORS+=1"
+		else
+			echo -e "$OUTPUT ${GREEN}${BRIGHT}OK${RESET}"
 		fi
 	done
 done
@@ -63,4 +74,4 @@ else
 	echo -e "${GREEN}${BRIGHT}All tests passed! $ERRORS errors${RESET}"
 fi
 
-chmod 755 error_tests/invalid/00_open/01_no_access.conf
+chmod 755 error_tests/invalid/00_open/03_no_access.conf

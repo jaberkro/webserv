@@ -10,12 +10,13 @@
 			<a href="/about.html">About</a>
 			<a href="/contact.html">Contact</a>
 			<a class="active" href="/upload.html">Upload</a>
+			<a href="/delete.html">Delete</a>
 		</div>
 		<h1>Show me yours!</h1>
 		<p>Here you can share your cat images with us:</p>
 		<img src="images/mailbox.jpeg" alt="Cat in mailbox">
 
-		<form method="POST" enctype="multipart/form-data" action="cgi-bin/uploadFile.py">
+		<form method="POST" enctype="multipart/form-data" action="uploaded.html">
 			<label for="file">Choose a cat picture:</label>
 			<input type="file" id="file" name="file" accept=".jpg,.jpeg,.png" required>
 			<input type="submit" value="Upload">

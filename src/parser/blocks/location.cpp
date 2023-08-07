@@ -21,8 +21,10 @@ static void checkNotImplementedLocation(std::string line)
 {
 	if (line.find("location") == 0)
 		notImplementedError(line, "location", "server block");
-	else if (line.find("http") == 0)
-		notImplementedError(line, "location", "begin of configuration file");
+	else if (line == "http {")
+		notImplementedError(line, "location", "top of configuration file");
+	else if (line == "server {")
+		notImplementedError(line, "location", "http block");
 	else if (line.find("listen") == 0)
 		notImplementedError(line, "location", "server block");
 	else if (line.find("server_name") == 0)
@@ -31,20 +33,18 @@ static void checkNotImplementedLocation(std::string line)
 
 void parseModifierAndMatch(Location &location, std::string &line)
 {
-	line = protectedSubstr(line, 8);
+	line = protectedSubstr(line, 8, line.size() - 9);
 	line = ltrim(line);
-	line.pop_back();
 	line = rtrim(line);
 	checkEmptyString(line, "location", "not enough arguments");
-	if (line.find("= ") == 0)
-		location.setModifier("=");
-	else
-		location.setModifier("(none)");
-	if (location.getModifier() != "(none)")
+	if (line.at(0) == '=' && firstWhitespace(line) == 1)
 	{
+		location.setModifier("=");
 		line = protectedSubstr(line, firstWhitespace(line));
 		line = ltrim(line);
 	}
+	else
+		location.setModifier("(none)");
 	checkEmptyString(line, "location", "not enough arguments");
 	location.setMatch(protectedSubstr(line, 0, firstWhitespace(line)));
 }
@@ -65,7 +65,7 @@ Location parseLocation(std::fstream &file, std::string line, t_values values)
 		{
 			checkNotImplementedLocation(line);
 			if (hasDirective(line) == -1 && hasLocDirective(line) == -1)
-				notRecognizedError(line, "location");
+				notRecognizedError(line, "location block");
 			else if (hasDirective(line) == -1)
 				values = parseLocDirective(hasLocDirective(line), line, values);
 			else

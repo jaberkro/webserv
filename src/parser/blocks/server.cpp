@@ -6,9 +6,9 @@ static void storeValuesInServer(Server &newServer, t_values values)
 {
 	if (newServer.getLocations().size() == 0)
 	{
-		std::cout << "Error: can't parse server block without location block ";
-		std::cout << "inside of it: \nserver {\n\tlocation <optional";
-		std::cout << " modifier> <match>{\n\n\t}\n}" << std::endl;
+		std::cerr << "Error: can't parse server block without location block ";
+		std::cerr << "inside of it: \nserver {\n\tlocation <optional";
+		std::cerr << " modifier> <match>{\n\n\t}\n}" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	if (newServer.getListens().size() == 0)
@@ -62,7 +62,7 @@ Server parseServer(std::fstream &file, t_values values)
 		{
 			checkNotImplementedServer(line);
 			if (hasDirective(line) == -1)
-				notRecognizedError(line, "server");
+				notRecognizedError(line, "server block");
 			values = parseDirective(hasDirective(line), line, values);
 		}
 	}
