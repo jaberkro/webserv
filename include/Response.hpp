@@ -55,6 +55,8 @@ class Response {
 
 };
 
+bool	deleteFile(Request request, std::vector<Location>::const_iterator const & location);
+
 # define CHUNK_SIZE 100
 
 /* 
