@@ -44,7 +44,7 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)//, Serve
 
 	try
 	{
-		_newReq = new Request(connfd);
+		_newReq = new Request(connfd, this->_address);
 		std::cout << "After Request constructor" << std::endl;
 		_newReq->processReq();
 		_newReq->printRequest();

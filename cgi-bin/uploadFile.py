@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3
+# !/usr/local/bin/python3
 
 import cgi, sys, os
 import cgitb # for debugging messages
@@ -6,6 +6,8 @@ import cgitb # for debugging messages
 
 # # required environment variables: UPLOAD_DIR and PROTOCOL_VERSION
 
+# the top line on Darina's laptop needs to be
+#!/usr/bin/python3
 
 cgitb.enable()
 
@@ -52,7 +54,10 @@ if 'file' in form:
 		while True:
 			data = sys.stdin.buffer.read(1024)  # Read data in chunks of 1024 bytes
 			if not data:
+				print("PYTHON SCRIPT didn't get any data", file=sys.stderr)
 				break
+			else:
+				print("PYTHON SCRIPT read something", file=sys.stderr)
 			f.write(data)
 	# open(uploadDir + fileName, 'wb').write(fileToUpload.file.read())
 	# response = "{} 201 Created\r\nContent-Type: text/html\r\n\r\nUpload successful.".format(os.environ["PROTOCOL_VERSION"])

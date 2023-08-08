@@ -87,14 +87,14 @@ void	Request::processReq(void)
 		std::cout << "[outer loop first & headers] just read " << bytesRead << " bytes." << std::endl;
 		this->addBytesRead(bytesRead);
 		processingBuffer += socketBuffer;
-		std::cout << "[PROCESSING BUFFER IS NOW] >" << processingBuffer << "<" << std::endl;
+		// std::cout << "[PROCESSING BUFFER IS NOW] >" << processingBuffer << "<" << std::endl;
 		std::memset(socketBuffer, 0, MAXLINE);
 		while (!headersComplete && processingBuffer.find('\n') < std::string::npos) // if a whole (first) line is in the buffer
 		{
 			extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
 			if (!firstLineComplete)
 			{
-				std::cout << "[parsing start line:] " << line << std::endl;
+				// std::cout << "[parsing start line:] " << line << std::endl;
 				firstLineComplete = this->parseStartLine(line);
 			}
 			else if (!headersComplete)
@@ -103,23 +103,27 @@ void	Request::processReq(void)
 				if (processingBuffer.find("\r\n") == 0)
 					headersComplete = true;
 			}
-			else
-				std::cout << "[processReq - FL and headers complete but I'm stuck in the loop]" << std::endl;
+			// else
+			// 	std::cout << "[processReq - FL and headers complete but I'm stuck in the loop]" << std::endl;
 		}
-		std::cout << "[processReq] Out of the inner loop, headersComplete is " << headersComplete << ", totalBytesRead is " << this->_totalBytesRead << ", Content Length is ";
+		std::cout << "[processReq] Out of the inner loop, headersComplete is " << headersComplete << ", bytesRead is " << bytesRead << ", totalBytesRead is " << this->_totalBytesRead << ", Content Length is ";
 		std::cout << this->_contentLength << std::endl;
 		if (headersComplete || this->_totalBytesRead == this->_contentLength)
 			break;
 	}
 	if (bytesRead < 0)
 		std::cerr << "[processReq] READING FROM SOCKET WENT WRONG" << std::endl;
-	std::cout << "[after processing headers] buffer is >" << processingBuffer << "<" << std::endl;
+	else
+		std::cout << "I'M HERE" << std::endl;
+	// std::cout << "[after processing headers] buffer is >" << processingBuffer << "<" << std::endl;
 	if (this->_contentLength > 0)
 	{
 		this->_body.append(processingBuffer.substr(2, std::string::npos));
-		this->_totalBytesRead = this->_body.length();
-		std::cout << "\tJust rewrote the totalBytesRead to " << this->_totalBytesRead << std::endl;
+		// this->_totalBytesRead = this->_body.length();
+		// std::cout << "\tJust rewrote the totalBytesRead to " << this->_totalBytesRead << std::endl;
 	}
+	else
+		this->_body.append(processingBuffer);
 	processingBuffer.clear();
 
 /* OLD CODE - READING FIRST LINE AND HEADERS
@@ -294,10 +298,10 @@ Server const &	Request::identifyServer(std::vector<Server> const & servers)
 	int					bestMatch = -1;
 	int					zero = -1;
 	
-	for (auto printIt = servers.begin(); printIt != servers.end(); printIt++)
-	{
-		printServer(*printIt);
-	}
+	// for (auto printIt = servers.begin(); printIt != servers.end(); printIt++)
+	// {
+	// 	printServer(*printIt);
+	// }
 	findHostMatch(servers, matches, &zero);
 	/* begin debug code */
 	// std::cout << "Found " << matches.size() << " matching servers" << std::endl; 
@@ -342,11 +346,11 @@ std::vector<int> & matches, int *zero)
 		for (size_t i = 0; i < servers[idx].getListens().size(); i++)
 		{
 			std::string const & serverAddress = servers[idx].getHost(i);
-			std::cout << "[FINDHOSTMATCH] COMPARING " << servers[idx].getPort(i) << " with " << this->_port << " and " << serverAddress << " with " << this->_address << std::endl;
+			// std::cout << "[FINDHOSTMATCH] COMPARING " << servers[idx].getPort(i) << " with " << this->_port << " and " << serverAddress << " with " << this->_address << std::endl;
 			if (servers[idx].getPort(i) == this->_port && \
 			(serverAddress == this->_address || this->isLocalhost(serverAddress)))
 			{
-				std::cout << "[FINDHOSTMATCH] matches: adding " << servers[idx].getServerName(0) << std::endl;
+				// std::cout << "[FINDHOSTMATCH] matches: adding " << servers[idx].getServerName(0) << std::endl;
 				matches.push_back(idx);
 			}
 			else if (servers[idx].getHost(i) == "0.0.0.0" && *zero < 0)	// ook port vergelijken
@@ -373,7 +377,7 @@ std::vector<int>	& matches)
 	size_t						overlapTrailing = 0;
 	std::vector<std::string>	hostSplit;
 	
-	std::cout << "[FINDSERVERMATCH] about to split " << this->_hostname << std::endl;
+	// std::cout << "[FINDSERVERMATCH] about to split " << this->_hostname << std::endl;
 	splitServerName(this->_hostname, hostSplit);
 	for (auto it = matches.begin(); it != matches.end(); it++)
 	{
