@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <sys/stat.h>
 
 static bool forbiddenFileOrFolder(std::string toRemove)
 {
@@ -41,33 +42,28 @@ static bool allowedToDelete(std::string toRemove, std::vector<Location>::const_i
 	for (size_t i = 0; i < location->getDenied().size(); i++)
 	{
 		if (location->getDeny(i) == "DELETE" || (allowCount == 0 && location->getDeny(i) == "all"))
-		{
-			std::cout << "DELETE is not part of the allowed methods in this location" << std::endl;
 			return (0);
-		}
 	}
 	return (1);
 }
 
-bool	deleteFile(Request request, std::vector<Location>::const_iterator const & location)
+std::string	deleteFile(Request request, std::vector<Location>::const_iterator const & location)
 {
 	std::string	toRemove;
-	std::cout << "\nATTEMPT TO DELETE RIGHT NOW!!!\n" << std::endl;
+	struct stat fileInfo;
+
+	std::cout << "\nATTEMPT TO DELETE RIGHT NOW!!!" << std::endl;
 	if (request.getMethod() == "GET")
 		toRemove = location->getUploadDir() + "/" + request.getQueryString().substr(request.getQueryString().find_last_of("=") + 1);
 	else
-		toRemove = "data" + request.getTarget();
+		toRemove = location->getRoot() + request.getTarget();
 	std::cout << "DELETE path: " << toRemove << std::endl;
 	if (!allowedToDelete(toRemove, location))
-	{
-		std::cout << "DELETE FAILED! NOT ALLOWED!!\n" << std::endl; // here for debug purposes, remove in the end
-		return (0);
-	}
-	if (remove(toRemove.c_str()) != 0)
-	{
-		std::cout << "DELETE FAILED!!!\n" << std::endl; // here for debug purposes, remove in the end
-		return (0);
-	}
-	std::cout << "DELETE SUCCESSFUL!!!\n" << std::endl; // here for debug purposes, remove in the end
-	return (1);
+		return ("403 Not allowed\r\nContent-Type: text/html\r\nContent-Length: 12\r\n\r\nNot allowed\n");
+	if (stat(toRemove.c_str(), &fileInfo) != 0)
+		return ("404 Not Found\r\nContent-Type: text/html\r\nContent-Length: 10\r\n\r\nNot found\n");
+	if (fileInfo.st_mode & S_IFDIR || remove(toRemove.c_str()) != 0)
+		return ("400 Bad Request\r\nContent-Type: text/html\r\nContent-Length: 12\r\n\r\nBad request\n");
+	std::cout << "DELETE SUCCESSFUL!\n" << std::endl;
+	return ("204 Deleted\r\n");
 }

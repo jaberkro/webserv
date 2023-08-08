@@ -72,13 +72,11 @@ Response &	Response::operator=(Response & r)
 void	Response::prepareResponseDELETE(Server const & server)
 {
 	uint8_t	response[MAXLINE + 1];
+	std::string message;
 
 	std::memset(response, 0, MAXLINE);
-	if (deleteFile(this->_req, findMatch(this->_req.getTarget(), server.getLocations())) == 1) // second argument should change
-		snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), "204 Deleted\r\nContent-Type: text/html\r\nContent-Length: 29\r\n\r\nResource deleted succesfully\n");
-	else
-		snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), "403 Not allowed\r\nContent-Type: text/html\r\nContent-Length: 12\r\n\r\nNot allowed\n"); // do we want to give more error messages?
-	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
+	message = deleteFile(this->_req, findMatch(this->_req.getTarget(), server.getLocations()));
+	snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), message.c_str());
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
 
@@ -142,7 +140,18 @@ void	Response::prepareResponseGET(Server const & server)
 				}
 				else
 				{
-					this->_filePath = itLoc->getRoot() + targetUri;
+					//JMA: this is a check if it actually is DELETE request from browser, with a filename to be deleted in it
+					if (this->_req.getTarget() == "/deleted.html" && this->_req.getQueryString() != "")
+					{
+						std::string message;
+						message = deleteFile(this->_req, itLoc);
+						if (message.find("204") == std::string::npos)
+							this->_filePath = "data/www/deleteFailed.html";
+						else
+							this->_filePath = itLoc->getRoot() + targetUri;
+					}
+					else
+						this->_filePath = itLoc->getRoot() + targetUri;
 					this->retrieveFile(itLoc->getRoot());
 					this->_isReady = true;
 				}
@@ -164,9 +173,7 @@ void	Response::prepareResponseGET(Server const & server)
 			if (rounds == 6)	// moet straks weg
 				std::cout << "--> loop ended after 6 rounds <--" << std::endl;
 		}
-			//JMA: this is a check if it actually is DELETE request from browser, with a filename to be deleted in it
-		if (this->_req.getTarget() == "/deleted.html" && this->_req.getQueryString() != "")
-			deleteFile(this->_req, itLoc);
+		
 	}
 }
 
