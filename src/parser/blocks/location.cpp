@@ -6,7 +6,10 @@
 
 void	storeValuesInLocation(t_values values, Location &location)
 {
-	location.setRoot(values.root);
+	if (values.root != "")
+		location.setRoot(values.root);
+	else
+		location.setRoot("data/www");
 	location.setIndexes(values.indexes);
 	location.setAutoindex(values.autoindex);
 	location.setMaxBodySize(values.maxBodySize);
@@ -17,7 +20,7 @@ void	storeValuesInLocation(t_values values, Location &location)
 	if (values.uploadDir != "")
 		location.setUploadDir(values.uploadDir);
 	else
-		location.setUploadDir("data/uploads");
+		location.setUploadDir("uploads");
 }
 
 static void checkNotImplementedLocation(std::string line)
@@ -32,7 +35,6 @@ static void checkNotImplementedLocation(std::string line)
 		notImplementedError(line, "location", "server block");
 	else if (line.find("server_name") == 0)
 		notImplementedError(line, "location", "server block");
-	//server
 }
 
 void parseModifierAndMatch(Location &location, std::string &line)
