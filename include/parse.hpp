@@ -7,7 +7,7 @@
 
 typedef struct s_values
 {
-	std::string					root = "";
+	std::string					root = ""; // is this allowed?
 	std::vector<std::string>	indexes;
 	bool						autoindex = false;
 	unsigned int				maxBodySize = 1000000;
@@ -21,6 +21,7 @@ typedef struct s_values
 
 //parsing
 void		parse(std::vector<Server> &servers, char *configFile);
+t_values	fillDefaultErrorPages(t_values values);
 
 //parsing blocks
 void		parseHTTP(std::vector<Server> &servers, std::fstream &file);

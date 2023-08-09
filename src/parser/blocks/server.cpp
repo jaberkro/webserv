@@ -2,7 +2,7 @@
 #include "parse.hpp"
 #include <iostream>
 
-static void storeValuesInServer(Server &newServer, t_values values)
+static void storeValuesInServer(Server &newServer, t_values values) // only error pages and missing listen
 {
 	if (newServer.getLocations().size() == 0)
 	{

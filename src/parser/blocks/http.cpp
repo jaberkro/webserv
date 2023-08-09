@@ -43,13 +43,14 @@ void parseHTTP(std::vector<Server> &servers, std::fstream &file)
 	std::string line;
 	t_values	values;
 
+	values = fillDefaultErrorPages(values);
 	while (getValidLine(file, line))
 	{
 		if (line == "")
 			continue ;
 		else if (line == "}")
 			break ;
-		else if (!parsedImplementedHTTPOnly(servers, line, file, values))
+		else if (!parsedImplementedHTTPOnly(servers, line, file, values)) // line == "server {"
 		{
 			checkNotImplementedHTTP(line);
 			if (hasDirective(line) == -1)

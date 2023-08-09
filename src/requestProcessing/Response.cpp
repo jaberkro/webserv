@@ -8,6 +8,7 @@
 #include "PostCGI.hpp"
 #include <cstdio>
 #include <unistd.h>
+#include <stdio.h>
 
 #include <vector>
 
@@ -68,12 +69,22 @@ Response &	Response::operator=(Response & r)
 	return (*this);
 }
 
+void	Response::prepareResponseDELETE(Server const & server)
+{
+	uint8_t	response[MAXLINE + 1];
+	std::string message;
+
+	std::memset(response, 0, MAXLINE);
+	message = deleteFile(this->_req, findMatch(this->_req.getTarget(), server.getLocations()));
+	snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), message.c_str());
+	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+}
+
 void	Response::prepareResponsePOST(Server const & server)
 {
 	
-	Server tmp(server);
+	Server tmp(server); //BS: dit is temporary, om compiler error over unused var. te silencen
 
-	//Hier info klaarzetten die mee moet naar constructor van PostCGI
 	PostCGI	cgi(this->_req);
 	cgi.run(this->_req);
 
@@ -81,8 +92,9 @@ void	Response::prepareResponsePOST(Server const & server)
 	
 	std::memset(response, 0, MAXLINE);
 	snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), cgi.getResponse().c_str());
-	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
+	printf("\n\nRESPONSE for POST: [%s]\n\n", (char*)response);
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+	//BS: Above is hardcoded, but needs to be a proper reponse with a html page focourse
 }
 
 /**
@@ -103,15 +115,20 @@ void	Response::prepareResponseGET(Server const & server)
 	this->_req.getTarget().substr(0, this->_req.getTarget().find_first_of('?'));
 	int	rounds = 0;
 	
-	if (this->_statusCode == INTERNAL_SERVER_ERROR)
-		this->sendFirstLine();
-	else if (this->_req.getMethod() == "")
-		close(this->_req.getConnFD());
-	else if (this->_req.getMethod() != "GET")
+
+		std::cout << "Responsible SERVER size is " << \
+		server.getServerNames().size() << std::endl;
+
+	// if (this->_req.getMethod() == "")
+	// 	close(this->_req.getConnFD());
+	// else if (this->_req.getMethod() == "POST")
+	// 	prepareResponsePOST(server);
+	if (this->_req.getMethod() != "GET")
 		std::cout << "I cannot handle the \"" << this->_req.getMethod() \
 		<< "\" method just yet, sorry!" << std::endl;
 	else
-		while (!this->_isReady && rounds++ < 6)
+	{
+		while (!this->_isReady && rounds++ < 6) // rounds moeten weg (is voor debugging)
 		{
 			try 
 			{
@@ -123,7 +140,18 @@ void	Response::prepareResponseGET(Server const & server)
 				}
 				else
 				{
-					this->_filePath = itLoc->getRoot() + targetUri;
+					//JMA: this is a check if it actually is DELETE request from browser, with a filename to be deleted in it
+					if (this->_req.getTarget() == "/deleted.html" && this->_req.getQueryString() != "")
+					{
+						std::string message;
+						message = deleteFile(this->_req, itLoc);
+						if (message.find("204") == 0)
+							this->_filePath = itLoc->getRoot() + targetUri;
+						else
+							this->_filePath = "data/www/deleteFailed.html";
+					}
+					else
+						this->_filePath = itLoc->getRoot() + targetUri;
 					this->retrieveFile(itLoc->getRoot());
 					this->_isReady = true;
 				}
@@ -142,9 +170,11 @@ void	Response::prepareResponseGET(Server const & server)
 				// TO BE ADDED: try to find a corresponding error page (BAD REQUEST) in the SERVER block;
 				targetUri = "/defaultError.html";
 			}
-			if (rounds == 6)
+			if (rounds == 6)	// moet straks weg
 				std::cout << "--> loop ended after 6 rounds <--" << std::endl;
 		}
+		
+	}
 }
 
 /**
@@ -344,25 +374,16 @@ void	Response::sendHeaders(std::string const & root)
 {
 	uint8_t	response[MAXLINE + 1];
 	std::string		contentType;
-	if (this->_filePath.find(".css") == this->_filePath.find_last_of("."))
-	{
-		contentType = root == "data" ? \
-		"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
-		std::string::npos) : "text/css"; // JMA: THIS IS HARDCODED BUT SOMETIMES IT MUST BE text/css
-	}
-	else
-	{
-		contentType = root == "data" ? \
-		"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
-		std::string::npos) : "text/html"; // JMA: THIS IS HARDCODED BUT SOMETIMES IT MUST BE text/html
-	}
+
+	contentType = root == "data" ? \
+	"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
+	std::string::npos) : "text/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1);
 	std::memset(response, 0, MAXLINE);
 	snprintf((char *)response, MAXLINE, \
 	"Content-Type: %s\r\nContent-Length: %zu\r\n\r\n", contentType.c_str(), this->_fileLength);
 	printf("\n\nFILEPATH: [%s]\n\n", this->_filePath.c_str());
 	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
 	printf("\n\nCONTENT TYPE: [%s]\n\n", contentType.c_str());
-
 
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
@@ -404,6 +425,7 @@ void	Response::sendContentInChunks(void)
 	std::memset(response, 0, CHUNK_SIZE);
 	send(this->_req.getConnFD(), (char*)response, 0, 0);
 	file.close();
+	std::cout << "End of the sendContentInChunks function" << std::endl;
 }
 
 /* UTILS */

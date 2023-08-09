@@ -46,7 +46,7 @@ void hostError(std::string notHost)
 void methodError(std::string line, std::string directive, std::string allowed)
 {
 	std::cerr << "Error: can't parse " << directive << ": invalid method: [";
-	std::cerr << line << "]. Allowed methods are: " << allowed << std::endl;
+	std::cerr << line << "]: allowed methods are: " << allowed << std::endl;
 	exit(EXIT_FAILURE);
 }
 

@@ -1,6 +1,14 @@
 #include "parse.hpp"
 #include <string>
 
+t_values	fillDefaultErrorPages(t_values values)
+{
+	values.errorPages[404] = "/404.html";
+	values.errorPages[408] = "/408.html";
+
+	return (values);
+}
+
 /**
  * @brief parse an error_page directive
  * 
@@ -23,7 +31,7 @@ t_values	parseErrorPage(std::string line, t_values values)
 	file = protectedSubstr(line, lastWhitespace, line.size() - lastWhitespace);
 	checkStartingSlash(file, "error_page");
 	checkHasDot(file, "error_page");
-	line = protectedSubstr(line, 0, line.find_last_of(" \t") + 1);
+	line = protectedSubstr(line, 0, line.find_last_of(" \t\v\b") + 1);
 	line = rtrim(line);
 	while (firstWhitespace(line) != line.size() && firstWhitespace(line) != 0)
 	{

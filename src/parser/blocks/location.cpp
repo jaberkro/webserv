@@ -6,7 +6,10 @@
 
 void	storeValuesInLocation(t_values values, Location &location)
 {
-	location.setRoot(values.root);
+	if (values.root != "")
+		location.setRoot(values.root);
+	else
+		location.setRoot("data/www");
 	location.setIndexes(values.indexes);
 	location.setAutoindex(values.autoindex);
 	location.setMaxBodySize(values.maxBodySize);
@@ -14,7 +17,10 @@ void	storeValuesInLocation(t_values values, Location &location)
 	location.setAllowed(values.allowed);
 	location.setDenied(values.denied);
 	location.setReturn(values.returnCode, values.returnText);
-	location.setUploadDir(values.uploadDir);
+	if (values.uploadDir != "")
+		location.setUploadDir(values.uploadDir);
+	else
+		location.setUploadDir("uploads");
 }
 
 static void checkNotImplementedLocation(std::string line)

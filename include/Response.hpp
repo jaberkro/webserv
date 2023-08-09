@@ -16,8 +16,9 @@ class Response {
 		Response &	operator=(Response &);
 		
 		/* functions */
-		void									prepareResponseGET(Server const & );
+		void									prepareResponseGET(Server const &);
 		void									prepareResponsePOST(Server const & server);
+		void									prepareResponseDELETE(Server const & server);
 		std::string								identifyErrorPage(std::vector<Location>::const_iterator itLoc);
 		std::vector<Location>::const_iterator 	findMatch(std::string target, std::vector<Location> const & locations);
 		std::vector<Location>::const_iterator	findExactMatch(std::string target, std::vector<Location> const & locations);
@@ -53,6 +54,8 @@ class Response {
 		static std::map<int, std::string> 	_responseCodes;
 
 };
+
+std::string	deleteFile(Request request, std::vector<Location>::const_iterator const & location);
 
 # define CHUNK_SIZE 100
 
