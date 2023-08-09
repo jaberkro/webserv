@@ -374,18 +374,10 @@ void	Response::sendHeaders(std::string const & root)
 {
 	uint8_t	response[MAXLINE + 1];
 	std::string		contentType;
-	if (this->_filePath.find(".css") == this->_filePath.find_last_of("."))
-	{
-		contentType = root == "data" ? \
-		"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
-		std::string::npos) : "text/css"; // JMA: THIS IS HARDCODED BUT SOMETIMES IT MUST BE text/css
-	}
-	else
-	{
-		contentType = root == "data" ? \
-		"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
-		std::string::npos) : "text/html"; // JMA: THIS IS HARDCODED BUT SOMETIMES IT MUST BE text/html
-	}
+
+	contentType = root == "data" ? \
+	"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
+	std::string::npos) : "text/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1);
 	std::memset(response, 0, MAXLINE);
 	snprintf((char *)response, MAXLINE, \
 	"Content-Type: %s\r\nContent-Length: %zu\r\n\r\n", contentType.c_str(), this->_fileLength);
