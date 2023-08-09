@@ -62,30 +62,16 @@ void	Request::processReq(void)
 {
 	char		socketBuffer[MAXLINE];
 	std::string	processingBuffer, line;
-	// int			n = 0;
 	ssize_t		bytesRead = 0;
-	// size_t		nlPos = 0;
 	bool		firstLineComplete = false;
 	bool		headersComplete = false;
 
 	std::memset(socketBuffer, 0, MAXLINE);
-
-/* 
-	read a chunk
-		while there is a \n --> extract line & process line
-		no \n --> read again
-
-		stop when:	pos of \n is > pos of header end
-					all Content Length has been read
-					EOF (= bytesRead = 0)
- */
 	
-	// DO: USE THE SOCKETBUFFER MORE THAN STD::STRING PROCESSING BUFFER
 	
 	while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE - 1, 0)) > 0 && !headersComplete)
 	{
 		std::cout << "[outer loop first & headers] just read " << bytesRead << " bytes." << std::endl;
-		this->addBytesRead(bytesRead);
 		processingBuffer += socketBuffer;
 		// std::cout << "[PROCESSING BUFFER IS NOW] >" << processingBuffer << "<" << std::endl;
 		std::memset(socketBuffer, 0, MAXLINE);
@@ -113,58 +99,16 @@ void	Request::processReq(void)
 	}
 	if (bytesRead < 0)
 		std::cerr << "[processReq] READING FROM SOCKET WENT WRONG" << std::endl;
-	else
-		std::cout << "I'M HERE" << std::endl;
 	// std::cout << "[after processing headers] buffer is >" << processingBuffer << "<" << std::endl;
 	if (this->_contentLength > 0)
 	{
 		this->_body.append(processingBuffer.substr(2, std::string::npos));
-		// this->_totalBytesRead = this->_body.length();
-		// std::cout << "\tJust rewrote the totalBytesRead to " << this->_totalBytesRead << std::endl;
+		this->_totalBytesRead = this->_body.length();
 	}
-	else
-		this->_body.append(processingBuffer);
 	processingBuffer.clear();
 
-/* OLD CODE - READING FIRST LINE AND HEADERS
-	while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE - 1, 0)) > 0) 
-	{
-		processingBuffer += socketBuffer;
-		totalBytesRead += bytesRead;
-		std::memset(socketBuffer, 0, MAXLINE);
-		while (!firstLineComplete)
-		{
-			extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
-			firstLineComplete = this->parseStartLine(line);
-		}
-		if (this->_statusCode != OK)
-			break;
-		// std::cout << "na statuscode check" << std::endl;
-		//BS Ergens tussen hier en het volgende comment blijftie hangen bij POST!
-		while (!headersComplete && (nlPos = processingBuffer.find_first_of('\n')) < std::string::npos) 
-		{
-			if (nlPos > processingBuffer.find(HEADER_END))
-				headersComplete = true;
-			extractStr(processingBuffer, line, nlPos);
-			this->parseFieldLine(line);
-			// std::cout << "in headerscompletecomplete loop" << std::endl;
-
-		}
-	
-		if (headersComplete)
-		{
-			// std::cout << "Before erasing: >" << processingBuffer << "<" << std::endl;
-			processingBuffer.erase(0, 2);
-			// std::cout << "After erasing: >" << processingBuffer << "<" << std::endl;
-			this->_body.append(processingBuffer);
-			break; //Silenced to be able to get the body!
-		}
-	}
-	*/
-
 	// READING THE BODY
-	std::cout << "Processing buffer: [" << processingBuffer << "]" << std::endl;
-	if (this->_contentLength > 0)
+	while (this->_totalBytesRead < this->_contentLength)
 	{
 		size_t	sizeToRead = std::min(this->_contentLength - this->_totalBytesRead, static_cast<size_t>(MAXLINE - 1));
 		while ((bytesRead = recv(this->_connFD, &socketBuffer, sizeToRead, 0)) > 0)
@@ -178,50 +122,14 @@ void	Request::processReq(void)
 				break;
 		}
 		if (bytesRead < 0)
-			std::cerr << "[processReq] READING BODY FROM SOCKET WENT WRONG" << std::endl;
+			std::cerr << "[processReq] (read "  << this->_totalBytesRead << "/" << this->_contentLength << "), to be read: " << sizeToRead << std::endl;
+		else if (bytesRead == 0)
+		{
+			std::cerr << "[processReq] READ 0; totalRead is " << this->_totalBytesRead << ", contentlength is " << this->_contentLength << std::endl;
+			break;
+		}
 	}
-	
-	// OLD CODE READING BODY
-	// try
-	// {
-	// 	if (headersComplete && contentLength > 0) //means there is a body to read
-	// 	{
-	// 		// size_t	counter = 1;
-	// 		while (totalBytesRead < static_cast<size_t>(contentLength))
-	// 		{
-	// 			sizeToRead = std::min(this->_contentLength - totalBytesRead, static_cast<size_t>(MAXLINE - 1));
-	// 			// std::cout << "Round " << counter++ << ": total read: " << totalBytesRead << ", content length: " << contentLength << ", size to read: " << sizeToRead << std::endl;
-	// 			bytesRead = recv(this->_connFD, &socketBuffer, sizeToRead, 0);
-	// 			// std::cout << "socketBuffer: [" << socketBuffer << "], bytesread: " << bytesRead << std::endl;
-	// 			// std::cout << "Just read " << bytesRead << " bytes" << std::endl;
-	// 			if (bytesRead < 0)
-	// 				perror("RECV ERROR: ");
-	// 			if (bytesRead <= 0)
-	// 				break;
 
-	// 			_body.append(socketBuffer);
-	// 			totalBytesRead += bytesRead;
-	// 			std::memset(socketBuffer, 0, MAXLINE);
-	// 			// std::cout << "End of loop. Total read is " << totalBytesRead << std::endl;
-	// 		}
-	// 	// delete[] socketBuf;
-	// 	}
-	// 	// std::cout << "Body now: ->" << this->_body << "<-" << std::endl;
-	// }
-	// catch (const std::length_error& e)
-	// {
-	// 	std::cerr << e.what() << '\n';
-	// }
-
-	// // if Content-Length specified (while received <= Content-Length)
-	// while (firstLineComplete & headersComplete)
-	// {
-	// 	bodyRead += processingBuffer.length();
-	// 	extractStr(processingBuffer, this->_body, processingBuffer.length());
-	// 	std::cout << "now in the body part" << std::endl;
-	// 	if (bodyRead == 0) // replace 0 with content-length
-	// 		return;
-	// }
 }
 
 
@@ -591,6 +499,6 @@ void	Request::printRequest()
 	for (std::map<std::string,std::string>::iterator it = this->_headers.begin(); \
 	it != this->_headers.end(); it++)
 		std::cout << "\t" << it->first << ": " << it->second << std::endl;
-	// std::cout << "Body: [" << this->getBody() << "]" << std::endl;
+	std::cout << "Body length: " << this->getBody().length() << std::endl;
 	std::cout << "\t***\n" << std::endl;
 }

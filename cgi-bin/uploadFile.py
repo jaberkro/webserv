@@ -1,4 +1,4 @@
-# !/usr/local/bin/python3
+#!/usr/local/bin/python3
 
 import cgi, sys, os
 import cgitb # for debugging messages
@@ -14,60 +14,52 @@ cgitb.enable()
 
 print("PYTHON SCRIPT STARTED", file=sys.stderr)
 
-# Read the entire request (headers + body) from stdin
-# full_request = sys.stdin.buffer.read()
-
-# Print the received request (for debugging purposes)
-# print("Received request:")
-# print(full_request)
-# print("environment vars")
-# print(os.environ)
-
 uploadDir = os.getenv("UPLOAD_DIR")
-# uploadDir = os.environ['UPLOAD_DIR']
-# envLen = os.getenv("CONTENT_LENGTH")
-# print("Content-Length is:")
-# print(envLen)
-form = cgi.FieldStorage()
-# print("===================================================")
+contentLen = int(os.getenv("CONTENT_LENGTH"))
 
-# print(form)
-# for key in form.keys():
-# 	value = form[key].value
-# 	print(f"Key: {key}, Value: {value}")
-# print("===================================================")
+# chunk = 100
+# while (True):
+# 	read = sys.stdin.buffer.read(chunk)
+# 	total += len(read)
+# 	print("PYTHON just read {}, in total {}".format(len(read), total), file=sys.stderr)
+# 	print("PYTHON: ", type(read), file=sys.stderr)
+# 	print("PYTHON: ", read, file=sys.stderr)
+# 	if len(read) == 0:
+# 		break
+print("PYTHON SCRIPT content length is ", contentLen, file=sys.stderr)
 
+if "multipart/form-data" in os.getenv("CONTENT_TYPE"):
+	form = cgi.FieldStorage()
+	fileitem = form['file']
+	if 'file' in form:
+		fileToUpload = form['file']
+		# print("File to upload:", fileToUpload)
+		fileName = os.path.basename(fileToUpload.filename)
+	else:
+		print("File key not found in form!")
+		# response = "{} 400 Bad Request\r\nContent-Type: text/html\r\n\r\nBad request.".format(os.environ["PROTOCOL_VERSION"])
+		response = "400 Bad Request\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\nBad request.".format(12)
+		sys.stdout.buffer.write(response.encode())
+else:
+	fileName = "hardcoded"
 
-fileitem = form['file']
-# print("File is ") #, form['file'], file=sys.stderr)
-# print(fileitem.filename)
-
+totalRead = 0
+with open(uploadDir + fileName, 'wb') as f:
+	while True:
+		data = sys.stdin.buffer.read(1024)  # Read data in chunks of 1024 bytes
+		totalRead += len(data)
+		if data:
+			f.write(data)
+		if totalRead == contentLen:
+			break
+	# open(uploadDir + fileName, 'wb').write(fileToUpload.file.read())
+	# response = "{} 201 Created\r\nContent-Type: text/html\r\n\r\nUpload successful.".format(os.environ["PROTOCOL_VERSION"])
+	response = "201 Created\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\nUpload successful.".format(18)
+	sys.stdout.buffer.write(response.encode())
 
 
 
 # print("Form keys:", form.keys())  # Print the keys present in the form
-if 'file' in form:
-	fileToUpload = form['file']
-	# print("File to upload:", fileToUpload)
-	fileName = os.path.basename(fileToUpload.filename)
-	with open(uploadDir + fileName, 'wb') as f:
-		while True:
-			data = sys.stdin.buffer.read(1024)  # Read data in chunks of 1024 bytes
-			if not data:
-				print("PYTHON SCRIPT didn't get any data", file=sys.stderr)
-				break
-			else:
-				print("PYTHON SCRIPT read something", file=sys.stderr)
-			f.write(data)
-	# open(uploadDir + fileName, 'wb').write(fileToUpload.file.read())
-	# response = "{} 201 Created\r\nContent-Type: text/html\r\n\r\nUpload successful.".format(os.environ["PROTOCOL_VERSION"])
-	response = "201 Created\r\nContent-Type: text/html\r\n\r\nUpload successful."
-	sys.stdout.buffer.write(response.encode())
-else:
-	print("File key not found in form!")
-	# response = "{} 400 Bad Request\r\nContent-Type: text/html\r\n\r\nBad request.".format(os.environ["PROTOCOL_VERSION"])
-	response = "400 Bad Request\r\nContent-Type: text/html\r\n\r\nBad request."
-	sys.stdout.buffer.write(response.encode())
 
 sys.stdin.close()
 sys.stdout.close()

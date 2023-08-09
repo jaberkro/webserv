@@ -49,8 +49,8 @@ class Request
 		void								setHost(std::string host);
 		std::string	const &					getBody() const;
 		int									getConnFD() const;
-		std::map<std::string, std::string>	&getHeaders();
-		std::string	const &					getFullRequest() const;
+		std::map<std::string, std::string>	& getHeaders();
+		// std::string	const &					getFullRequest() const;
 
 		bool	isLocalhost(std::string const & address);
 		void	printRequest();	// for debugging purposes, to be deleted

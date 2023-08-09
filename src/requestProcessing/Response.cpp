@@ -74,7 +74,9 @@ void	Response::prepareResponsePOST(Server const & server)
 	Server tmp(server); //BS: dit is temporary, om compiler error over unused var. te silencen
 
 	PostCGI	cgi(this->_req);
-	cgi.run(this->_req);
+	cgi.prepareEnv();
+	cgi.prepareArg();
+	cgi.run();
 
 	uint8_t	response[MAXLINE + 1];
 	
