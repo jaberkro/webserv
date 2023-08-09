@@ -43,6 +43,7 @@ void parseHTTP(std::vector<Server> &servers, std::fstream &file)
 	std::string line;
 	t_values	values;
 
+	values = fillDefaultErrorPages(values);
 	while (getValidLine(file, line))
 	{
 		if (line == "")
