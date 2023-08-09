@@ -145,10 +145,10 @@ void	Response::prepareResponseGET(Server const & server)
 					{
 						std::string message;
 						message = deleteFile(this->_req, itLoc);
-						if (message.find("204") == std::string::npos)
-							this->_filePath = "data/www/deleteFailed.html";
-						else
+						if (message.find("204") == 0)
 							this->_filePath = itLoc->getRoot() + targetUri;
+						else
+							this->_filePath = "data/www/deleteFailed.html";
 					}
 					else
 						this->_filePath = itLoc->getRoot() + targetUri;
