@@ -21,6 +21,7 @@ typedef struct s_values
 
 //parsing
 void		parse(std::vector<Server> &servers, char *configFile);
+t_values	fillDefaultErrorPages(t_values values);
 
 //parsing blocks
 void		parseHTTP(std::vector<Server> &servers, std::fstream &file);
