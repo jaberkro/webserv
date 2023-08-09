@@ -384,8 +384,6 @@ void	Response::sendHeaders(std::string const & root)
 	printf("\n\nFILEPATH: [%s]\n\n", this->_filePath.c_str());
 	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
 	printf("\n\nCONTENT TYPE: [%s]\n\n", contentType.c_str());
-
-
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
 
