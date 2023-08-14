@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/local/bin/python3
 
 import cgi, sys, os, urllib.parse
 import cgitb # for debugging messages
@@ -10,8 +10,6 @@ import cgitb # for debugging messages
 #!/usr/local/bin/python3
 
 cgitb.enable()
-
-
 
 uploadDir = os.getenv("UPLOAD_DIR")
 contentLen = int(os.getenv("CONTENT_LENGTH"))
@@ -32,14 +30,15 @@ print("PYTHON SCRIPT content length is ", contentLen, file=sys.stderr)
 # IF UPLOADING THROUGH THE BROWSER: BODY IS MULTIPART/FORM-DATA 
 if "multipart/form-data" in contentType:
 	form = cgi.FieldStorage()
-	# print("Form keys:", form.keys(), file=sys.stderr)  # Print the keys present in the form
+	print("Form keys:", form.keys(), file=sys.stderr)  # Print the keys present in the form
 	# print("Fileitem keys:", fileitem.keys(), file=sys.stderr)  # Print the keys present in the form
 	if 'file' in form:
 		fileToUpload = form['file']
-		filename = "newUpload" + str(contentLen) if 'filename' not in fileToUpload else fileToUpload.filename
+		print("FileToUpload:", fileToUpload, file=sys.stderr)
+		filename = "newUpload" + str(contentLen)# if 'filename' not in fileToUpload else fileToUpload.filename
 		print("File to upload:", filename, file=sys.stderr)
-		fileName = os.path.basename(filename)			# THIS TO BE FURTHER UNDERSTOOD!!!!!
-		open(uploadDir + fileName, 'wb').write(fileToUpload.file.read())
+		# fileName = os.path.basename(filename)			# THIS TO BE FURTHER UNDERSTOOD!!!!!
+		open(uploadDir + filename, 'wb').write(fileToUpload.file.read())
 	else:
 		print("File key not found in form!", file=sys.stderr)
 		# response = "{} 400 Bad Request\r\nContent-Type: text/html\r\n\r\nBad request.".format(os.environ["PROTOCOL_VERSION"])
@@ -48,9 +47,9 @@ if "multipart/form-data" in contentType:
 
 # IF UPLOADING THROUGH CURL
 else:
-	fileName = "newUpload" + str(contentLen)
+	filename = "newUpload" + str(contentLen)
 	totalRead = 0
-	with open(uploadDir + fileName, 'wb') as f:
+	with open(uploadDir + filename, 'wb') as f:
 		while True:
 			data = sys.stdin.buffer.read(1024)  # Read data in chunks of 1024 bytes
 			print("[python] just read >", data, "<", file=sys.stderr)
@@ -67,7 +66,7 @@ else:
 with open("data/www/uploaded.html", 'r') as uploaded:
 	responseBody = uploaded.read()
 	# response = "{} 201 Created\r\nContent-Type: text/html\r\n\r\nUpload successful.".format(os.environ["PROTOCOL_VERSION"])
-	response = "201 Created\r\nContent-Type: text/html\r\nContent-Length: {}\r\nLocation: {}\r\n\r\n".format(len(responseBody), uploadDir + fileName) + responseBody # Location to be fixed! And content type
+	response = "201 Created\r\nContent-Type: text/html\r\nContent-Length: {}\r\nLocation: {}\r\n\r\n".format(len(responseBody), uploadDir + filename) + responseBody # Location to be fixed! And content type
 	sys.stdout.buffer.write(response.encode())
 
 sys.stdin.close()

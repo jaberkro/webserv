@@ -14,7 +14,7 @@
 class Socket;
 
 # define SA struct sockaddr
-# define MAXLINE 6000 //which value should this be?
+# define MAXLINE 100 //which value should this be?
 
 class Webserver
 {

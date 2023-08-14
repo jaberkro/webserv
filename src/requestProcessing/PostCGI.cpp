@@ -90,6 +90,7 @@ void	PostCGI::run()
 			throw std::runtime_error("Fork failed");
 		if (id == 0)
 		{
+			std::cout << "Starting child process" << std::endl;
 			close(this->_webservToScript[W]);
 			close(this->_scriptToWebserv[R]);
 			dup2(this->_webservToScript[R], STDIN_FILENO);
@@ -102,6 +103,7 @@ void	PostCGI::run()
 		}
 		else
 		{
+			sleep(10);
 			std::vector<std::pair<std::vector<uint8_t>, size_t> >	const & body = this->_req.getBody();
 			size_t		i = 1;
 			

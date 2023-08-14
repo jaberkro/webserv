@@ -131,9 +131,9 @@ void	Request::processReq(void)
 			// this->addBytesRead(bytesRead);
 			std::cout << "Read " << bytesRead << " bytes, total is now " << this->_bodyLength << std::endl;
 			// _body.append(socketBuffer);
-			std::cout << "[reading body] Just read (PB) >" << socketBuffer << "<" << std::endl;
+			// std::cout << "[reading body] Just read (SB) >" << socketBuffer << "<" << std::endl;
 			std::vector<uint8_t>	bodyChunk(socketBuffer[0], socketBuffer[bytesRead - 1]);
-			this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(bodyChunk, this->_bodyLength));
+			this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(bodyChunk, bytesRead));
 			this->_bodyLength += bytesRead;
 			std::cout << "Just added a chunk; body is now " << this->_body.size() << " items long with total of " << this->_bodyLength << " characters." << std::endl;
 			std::memset(socketBuffer, 0, MAXLINE);
