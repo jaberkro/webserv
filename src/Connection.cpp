@@ -92,6 +92,11 @@ void	Connection::handleResponse()//Request *& newReq, Response *& newResp, Serve
 			_newResp->prepareResponsePOST(*_handler);
 			delete _newReq;
 		}
+		else if (_newReq->getMethod() == "DELETE")
+		{
+			_newResp->prepareResponseDELETE(*_handler);
+			delete _newReq;
+		}
 		else
 		{
 			std::cout << "Responsible SERVER size in _handleResponse is " << \

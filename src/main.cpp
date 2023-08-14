@@ -1,4 +1,4 @@
-#include "webserv.hpp"
+// #include "webserv.hpp"
 #include "parse.hpp"
 #include <iostream>
 #include "Webserver.hpp"
@@ -16,7 +16,7 @@ int	main(int argc, char **argv)
 
 	if (argc > 2)
 	{
-		std::cout << "usage: ./webserv [configuration file]" << std::endl;
+		std::cerr << "usage: ./webserv [configuration file]" << std::endl;
 		return (1);
 	}
 	else if (argc == 1)
