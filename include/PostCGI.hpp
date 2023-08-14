@@ -5,7 +5,6 @@
 #include <iostream>
 #include "Request.hpp"
 
-#define NUM_OF_ARGS 6
 #define R 0
 #define W 1
 #define LEN 200
@@ -13,19 +12,21 @@
 class PostCGI
 {
 	private:
-		pid_t	id;
-		int		webservToScript[2];
-		int		scriptToWebserv[2];
-		int		exitCode;
-		char	**arg;
-		size_t	sizeEnv;
-		char	**env;//std:string of vector van maken? [Darina: denk dat het zo kan blijven want execve verwacht een **char]
-		std::string	response;
-		Request	_req;
+		Request		& _req;
+		char		**_arg;
+		char		**_env;//std:string of vector van maken? [Darina: denk dat het zo kan blijven want execve verwacht een **char]
+		pid_t		id;
+		int			_webservToScript[2];
+		int			_scriptToWebserv[2];
+		int			_exitCode;
+		std::string	_response;
 	public:
-		PostCGI(Request req);
+		PostCGI(Request & req);
 		~PostCGI();
-		void	run(Request const & req);
+		void	run();
+		void	prepareArg();
+		void	prepareEnv();
+
 		std::string	getResponse();
 };
 

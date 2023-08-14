@@ -17,6 +17,7 @@ typedef struct s_values
 	int							returnCode = 0;
 	std::string					returnText = "";
 	std::string					uploadDir = "";
+	std::string					CGI = "";
 }	t_values;
 
 //parsing
@@ -44,6 +45,7 @@ t_values	parseAllow(std::string line, t_values values);
 t_values	parseDeny(std::string line, t_values values);
 t_values	parseReturn(std::string line, t_values values);
 t_values	parseUploadDir(std::string line, t_values values);
+t_values	parseCGI(std::string line, t_values values);
 
 //utils
 std::string protectedSubstr(std::string s, size_t start);

@@ -3,6 +3,7 @@
 
 # include <string>
 # include <map>
+# include <sys/socket.h>
 # include "Server.hpp"
 
 # define HEADER_END "\r\n\r\n"
@@ -13,7 +14,7 @@ class Request
 {
 	public:
 
-		Request(int connfd);
+		Request(int connfd, std::string address);
 		~Request(void);
 		Request(Request &);
 		Request &	operator=(Request &);
@@ -29,23 +30,28 @@ class Request
 
 
 
-		std::string	const &					getMethod() const;
-		void								setMethod(std::string method);
-		std::string	const &					getTarget() const;
-		void								setTarget(std::string target);
-		std::string	const &					getQueryString() const;
-		void								setQueryString(std::string target);
-		std::string	const &					getProtocolVersion() const;
-		void								setProtocolVersion(std::string protocol);
-		int									getStatusCode() const;
-		void								setStatusCode(int code);
-		std::string const &					getHostname() const;
-		std::string const &					getAddress() const;
-		unsigned short						getPort() const;
-		void								setHost(std::string host);
-		std::string	const &					getBody() const;
-		int									getConnFD() const;
-		std::map<std::string, std::string>	&getHeaders();
+		std::string	const &									getMethod() const;
+		void												setMethod(std::string method);
+		std::string	const &									getTarget() const;
+		void												setTarget(std::string target);
+		std::string	const &									getQueryString() const;
+		void												setQueryString(std::string target);
+		std::string	const &									getProtocolVersion() const;
+		void												setProtocolVersion(std::string protocol);
+		int													getStatusCode() const;
+		void												setStatusCode(int code);
+		size_t												getContentLength() const;
+		void												setContentLength(std::string contentLength);
+		// size_t												getTotalBytesRead() const;
+		// void												addBytesRead(size_t bytesRead);
+		std::string const &									getHostname() const;
+		std::string const &									getAddress() const;
+		unsigned short										getPort() const;
+		void												setHost(std::string host);
+		std::vector<std::pair<std::vector<uint8_t>, size_t> > & getBody();
+		size_t												getBodyLength() const;
+		int													getConnFD() const;
+		std::map<std::string, std::string>	& 				getHeaders();
 		// std::string	const &					getFullRequest() const;
 
 		bool	isLocalhost(std::string const & address);
@@ -55,19 +61,21 @@ class Request
 
 	private:
 
-		std::string					_method;
-		std::string					_target;
-		std::string					_queryString;
-		std::string					_protocolVersion;
-		std::map<std::string, std::string>	_headers;
+		std::string												_method;
+		std::string												_target;
+		std::string												_queryString;
+		std::string												_protocolVersion;
+		std::map<std::string, std::string>						_headers;
 		// std::map<std::string, std::string>	_trailers;
-		std::string					_body;
-		int							_connFD;
-		int							_statusCode;
-		std::string					_address = "127.0.0.1";
-		unsigned short				_port;
-		std::string					_hostname;
-		// std::string					fullRequest;
+		std::vector<std::pair<std::vector<uint8_t>, size_t> >	_body;
+		size_t													_bodyLength;
+		int														_connFD;
+		int														_statusCode;
+		std::string												_address;
+		unsigned short											_port;
+		std::string												_hostname;
+		size_t													_contentLength;
+		// size_t										_totalBytesRead;
 };
 
 void			removeTrailingSpaces(std::string &line);

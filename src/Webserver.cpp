@@ -147,11 +147,11 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 			if ((connfd = accept(evList.ident, (struct sockaddr *)&addr, &socklen)) < 0)
 				throw Webserver::AcceptError();
 			this->_connections[connfd] = Connection((int)evList.ident, sckts.at(eventSocket));
-			// if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
-			// {
-			// 	perror("fctnl");
-			// 	return ;
-			// }
+			if (fcntl(connfd, F_SETFL, O_NONBLOCK) < 0)
+			{
+				perror("fctnl");
+				return ;
+			}
 			EV_SET(&evList, connfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);//was evSet
 			if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
 				throw Webserver::KeventError();

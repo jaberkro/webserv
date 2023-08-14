@@ -25,6 +25,8 @@ static void checkNotImplementedServer(std::string line)
 		notImplementedError(line, "server", "location block");
 	else if (line.find("deny") == 0)
 		notImplementedError(line, "server", "location block");
+	else if (line.find("CGI") == 0)
+		notImplementedError(line, "server", "location block");
 }
 
 static int parsedImplementedServerOnly(Server &newServer, std::string line, \

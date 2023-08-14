@@ -1,69 +1,70 @@
 #!/usr/local/bin/python3
 
-import cgi, sys, os
+# the top line on Darina's laptop needs to be
+#!/usr/bin/python3
+# on Codam iMac:
+#!/usr/local/bin/python3
+
+import cgi, sys, os, urllib.parse
 import cgitb # for debugging messages
-
-
-# # required environment variables: UPLOAD_DIR and PROTOCOL_VERSION
-
 
 cgitb.enable()
 
+def sendResponseSuccess(fileName):
+	with open("data/www/uploaded.html", 'r') as uploaded:
+		responseBody = uploaded.read()
+		# response = "{} 201 Created\r\nContent-Type: text/html\r\n\r\nUpload successful.".format(os.environ["PROTOCOL_VERSION"])
+		response = "201 Created\r\nContent-Type: text/html\r\nContent-Length: {}\r\nLocation: {}\r\n\r\n".format(len(responseBody), uploadDir + fileName) + responseBody # Location to be fixed! And content type
+	sys.stdout.buffer.write(response.encode())
 
-print("PYTHON SCRIPT STARTED", file=sys.stderr)
-
-# Read the entire request (headers + body) from stdin
-# full_request = sys.stdin.buffer.read()
-
-# Print the received request (for debugging purposes)
-# print("Received request:")
-# print(full_request)
-# print("environment vars")
-# print(os.environ)
 
 uploadDir = os.getenv("UPLOAD_DIR")
-# uploadDir = os.environ['UPLOAD_DIR']
-# envLen = os.getenv("CONTENT_LENGTH")
-# print("Content-Length is:")
-# print(envLen)
-form = cgi.FieldStorage()
-# print("===================================================")
+contentLen = int(os.getenv("CONTENT_LENGTH"))
+contentType = os.getenv("CONTENT_TYPE")
+print("PYTHON SCRIPT STARTED; content type is ", contentType, ", content length is ", contentLen, file=sys.stderr)
 
-# print(form)
-# for key in form.keys():
-# 	value = form[key].value
-# 	print(f"Key: {key}, Value: {value}")
-# print("===================================================")
+# IF UPLOADING THROUGH THE BROWSER: BODY IS MULTIPART/FORM-DATA 
+if "multipart/form-data" in contentType:
+	
+	print("Before loading FieldStorage", file=sys.stderr)
+	form = cgi.FieldStorage()
+	print("After loading FieldStorage", file=sys.stderr)
+	print("Form keys:", form.keys(), file=sys.stderr)  # Print the keys present in the form
+	if 'file' in form:
+		fileToUpload = form['file']
+		print("FileToUpload:", fileToUpload, file=sys.stderr)
+		fileName = "newUpload" + str(contentLen) if 'filename' not in fileToUpload else fileToUpload.filename
+		print("File to upload:", fileName, file=sys.stderr)
+		with open(uploadDir + fileName, 'wb') as f:
+			f.write(fileToUpload.file.read())
+		sendResponseSuccess(fileName)
+	else:
+		print("File key not found in form!", file=sys.stderr)
+		# response = "{} 400 Bad Request\r\nContent-Type: text/html\r\n\r\nBad request.".format(os.environ["PROTOCOL_VERSION"])
+		response = "400 Bad Request\r\nContent-Length: {}\r\n\r\nBad request.".format(12)
+		sys.stdout.buffer.write(response.encode())
 
-
-fileitem = form['file']
-# print("File is ") #, form['file'], file=sys.stderr)
-# print(fileitem.filename)
-
-
-
-
-# print("Form keys:", form.keys())  # Print the keys present in the form
-if 'file' in form:
-	fileToUpload = form['file']
-	# print("File to upload:", fileToUpload)
-	fileName = os.path.basename(fileToUpload.filename)
+# IF UPLOADING THROUGH CURL
+else:
+	fileName = "newUpload" + str(contentLen)
+	totalRead = 0
 	with open(uploadDir + fileName, 'wb') as f:
 		while True:
 			data = sys.stdin.buffer.read(1024)  # Read data in chunks of 1024 bytes
-			if not data:
+			print("[python] just read >", data, "<", file=sys.stderr)
+			totalRead += len(data)
+			if data:
+				if "application/x-www-form-urlencoded" in contentType:
+					urllib.parse.unquote_to_bytes(data)
+				f.write(data)
+			else:
 				break
-			f.write(data)
-	# open(uploadDir + fileName, 'wb').write(fileToUpload.file.read())
-	# response = "{} 201 Created\r\nContent-Type: text/html\r\n\r\nUpload successful.".format(os.environ["PROTOCOL_VERSION"])
-	response = "201 Created\r\nContent-Type: text/html\r\n\r\nUpload successful."
-	sys.stdout.buffer.write(response.encode())
-else:
-	print("File key not found in form!")
-	# response = "{} 400 Bad Request\r\nContent-Type: text/html\r\n\r\nBad request.".format(os.environ["PROTOCOL_VERSION"])
-	response = "400 Bad Request\r\nContent-Type: text/html\r\n\r\nBad request."
-	sys.stdout.buffer.write(response.encode())
+			if totalRead == contentLen:
+				break
+		sendResponseSuccess(fileName)
+
 
 sys.stdin.close()
 sys.stdout.close()
 
+print("PYTHON SCRIPT FINISHED", file=sys.stderr)
