@@ -79,12 +79,12 @@ void	Response::prepareResponsePOST(Server const & server)
 
 	
 	
-	uint8_t	response[MAXLINE + 1];
+	// uint8_t	response[MAXLINE + 1];
 	
-	std::memset(response, 0, MAXLINE);
-	snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), cgi.getResponse().c_str());
-	printf("\n\nRESPONSE for POST: [%s]\n\n", (char*)response);
-	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+	// std::memset(response, 0, MAXLINE);
+	// snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), cgi.getResponse().c_str());
+	// printf("\n\nRESPONSE for POST: [%s]\n\n", (char*)response);
+	// send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 	//BS: Above is hardcoded, but needs to be a proper reponse with a html page focourse
 }
 

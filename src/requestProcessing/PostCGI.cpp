@@ -5,6 +5,7 @@
 #include <cstring>	// for strdup
 #include <string>	// for to_string
 #include <exception>
+#include <cstdio>
 
 
 PostCGI::PostCGI(Request & req) : _req(req) {}
@@ -25,10 +26,10 @@ void	PostCGI::prepareArg()
 	this->_arg[0] = strdup("cgi-bin/uploadFile.py");
 	this->_arg[1] = NULL;
 
-	std::cout << "* ARGUMENTS *" << std::endl;
-	size_t	i = 0;
-	while (this->_arg[i])
-		std::cout << this->_arg[i++] << std::endl;
+	// std::cout << "* ARGUMENTS *" << std::endl;
+	// size_t	i = 0;
+	// while (this->_arg[i])
+	// 	std::cout << this->_arg[i++] << std::endl;
 
 }
 
@@ -68,10 +69,10 @@ void	PostCGI::prepareEnv()
 	this->_env[i++] = strdup("PATH_TRANSLATED=cgi-bin/uploadFile.py");
 	this->_env[i] = NULL;
 
-	std::cout << "* ENV *" << std::endl;
-	i = 0;
-	while (this->_env[i])
-		std::cout << this->_env[i++] << std::endl;
+	// std::cout << "* ENV *" << std::endl;
+	// i = 0;
+	// while (this->_env[i])
+	// 	std::cout << this->_env[i++] << std::endl;
 }
 
 
@@ -103,16 +104,22 @@ void	PostCGI::run()
 		}
 		else
 		{
-			sleep(10);
+			// sleep(10);
 			std::vector<std::pair<std::vector<uint8_t>, size_t> >	const & body = this->_req.getBody();
 			size_t		i = 1;
+
+			// MAKE THEM NON-BLOCKING
 			
 			std::cout << "PARENT - BODY length of " << this->_req.getBodyLength() << " split into " << body.size() << " chunks" << std::endl;
 			
 			for (auto it = body.begin(); it != body.end(); it++)
 			{
 				std::cout << "\tchunk no. " << i++ << " is " << it->second << " characters long and its size is " << it->first.size() << std::endl;
-				write(this->_webservToScript[W], &(it->first[0]), it->second);
+				for (size_t i = 0; i < it->second; i++)
+					std::cout << it->first[i];
+					send(this->_webservToScript[W], &(it->first[i]), 1, 0);
+				std::cout << std::endl;
+				// write(this->_webservToScript[W], &(it->first[0]), it->first.size());
 			}
 			close(this->_scriptToWebserv[W]);
 			close(this->_webservToScript[R]);
@@ -124,6 +131,7 @@ void	PostCGI::run()
 				fullResponse.append(buf);
 			}
 			this->_response = fullResponse;
+			send(this->_req.getConnFD(), this->_response.c_str(), this->_response.length(), 0);
 			
 			//buf[bytesRead] = '\0';
 			// std::cout << "Parent received this message: " << buf << std::endl;

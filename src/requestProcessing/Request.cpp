@@ -79,60 +79,67 @@ void	Request::processReq(void)
 
 	std::memset(socketBuffer, 0, MAXLINE);
 	
-	
-	while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE - 1, 0)) > 0 && !headersComplete)
+
+	if (this->_method == "")
 	{
-		std::cout << "[outer loop first & headers] just read " << bytesRead << " bytes." << std::endl;
-		processingBuffer += reinterpret_cast<char *>(socketBuffer);
-		// std::cout << "[PROCESSING BUFFER IS NOW] >" << processingBuffer << "<" << std::endl;
-		std::memset(socketBuffer, 0, MAXLINE);
-		while (!headersComplete && processingBuffer.find('\n') < std::string::npos) // if a whole (first) line is in the buffer
+		while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && !headersComplete)
 		{
-			extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
-			if (!firstLineComplete)
+			std::cout << "[headers loop] just read " << bytesRead << " bytes." << std::endl;
+			for (ssize_t i = 0; i < bytesRead; i++)
+				processingBuffer += static_cast<char>(socketBuffer[i]);
+			std::cout << "[PROCESSING BUFFER IS NOW] >" << processingBuffer << "<" << std::endl;
+			std::memset(socketBuffer, 0, MAXLINE);
+			while (!headersComplete && processingBuffer.find('\n') < std::string::npos) // if a whole (first) line is in the buffer
 			{
-				// std::cout << "[parsing start line:] " << line << std::endl;
-				firstLineComplete = this->parseStartLine(line);
+				extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
+				if (!firstLineComplete)
+				{
+					// std::cout << "[parsing start line:] " << line << std::endl;
+					firstLineComplete = this->parseStartLine(line);
+				}
+				else if (!headersComplete)
+				{
+					this->parseFieldLine(line);
+					if (processingBuffer.find("\r\n") == 0)
+						headersComplete = true;
+				}
+				// else
+				// 	std::cout << "[processReq - FL and headers complete but I'm stuck in the loop]" << std::endl;
 			}
-			else if (!headersComplete)
-			{
-				this->parseFieldLine(line);
-				if (processingBuffer.find("\r\n") == 0)
-					headersComplete = true;
-			}
-			// else
-			// 	std::cout << "[processReq - FL and headers complete but I'm stuck in the loop]" << std::endl;
+			// std::cout << "[processReq] Out of the inner loop, headersComplete is " << headersComplete << ", bytesRead is " << bytesRead << ", totalBytesRead is " << this->_totalBytesRead << ", Content Length is ";
+			std::cout << this->_contentLength << std::endl;
+			if (headersComplete || (this->_bodyLength > 0 && this->_bodyLength == this->_contentLength))
+				break;
 		}
-		// std::cout << "[processReq] Out of the inner loop, headersComplete is " << headersComplete << ", bytesRead is " << bytesRead << ", totalBytesRead is " << this->_totalBytesRead << ", Content Length is ";
-		std::cout << this->_contentLength << std::endl;
-		if (headersComplete || (this->_bodyLength > 0 && this->_bodyLength == this->_contentLength))
-			break;
+		if (bytesRead < 0)
+			std::cerr << "[processReq] READING FROM SOCKET WENT WRONG" << std::endl;
+		if (this->_contentLength > 0)
+		{
+			processingBuffer.erase(0, 2);
+			this->_bodyLength = processingBuffer.length();
+			std::vector<uint8_t>	bodyChunk(processingBuffer.begin(), processingBuffer.end());
+			this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(bodyChunk, this->_bodyLength));
+			// this->_totalBytesRead = this->_bodyLength;
+			std::cout << "Just finished headers; body is now " << this->_body.size() << " items long with total of " << this->_bodyLength << " characters and chunk size of " << this->_body[0].first.size() << std::endl;
+		}
+		processingBuffer.clear();
 	}
-	if (bytesRead < 0)
-		std::cerr << "[processReq] READING FROM SOCKET WENT WRONG" << std::endl;
 	// std::cout << "[after processing headers] buffer is >" << processingBuffer << "<" << std::endl;
-	if (this->_contentLength > 0)
-	{
-		processingBuffer.erase(0, 2);
-		this->_bodyLength = processingBuffer.length();
-		std::vector<uint8_t>	bodyChunk(processingBuffer.begin(), processingBuffer.end());
-		this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(bodyChunk, this->_bodyLength));
-		// this->_totalBytesRead = this->_bodyLength;
-		std::cout << "Just finished headers; body is now " << this->_body.size() << " items long with total of " << this->_bodyLength << " characters and chunk size of " << this->_body[0].first.size() << std::endl;
-	}
-	processingBuffer.clear();
 
 	// READING THE BODY
 	while (this->_bodyLength < this->_contentLength)
 	{
-		size_t	sizeToRead = std::min(this->_contentLength - this->_bodyLength, static_cast<size_t>(MAXLINE - 1));
+		size_t	sizeToRead = std::min(this->_contentLength - this->_bodyLength, static_cast<size_t>(MAXLINE));
 		while ((bytesRead = recv(this->_connFD, &socketBuffer, sizeToRead, 0)) > 0)
 		{
 			// this->addBytesRead(bytesRead);
 			std::cout << "Read " << bytesRead << " bytes, total is now " << this->_bodyLength << std::endl;
 			// _body.append(socketBuffer);
 			// std::cout << "[reading body] Just read (SB) >" << socketBuffer << "<" << std::endl;
-			std::vector<uint8_t>	bodyChunk(socketBuffer[0], socketBuffer[bytesRead - 1]);
+			std::vector<uint8_t>	bodyChunk;
+			for (ssize_t i = 0; i < bytesRead; i++)
+				bodyChunk.push_back(socketBuffer[i]);
+			std::cout << "Created a new vector of size " << bodyChunk.size() << " and bytesRead are " << bytesRead << std::endl;
 			this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(bodyChunk, bytesRead));
 			this->_bodyLength += bytesRead;
 			std::cout << "Just added a chunk; body is now " << this->_body.size() << " items long with total of " << this->_bodyLength << " characters." << std::endl;
@@ -143,8 +150,8 @@ void	Request::processReq(void)
 		}
 		if (bytesRead < 0)
 		{
-			std::cerr << "[processReq] (read "  << this->_bodyLength << "/" << this->_contentLength << "), still to be read: " << sizeToRead << "leaving loop" << std::endl;
-			break;
+			std::cerr << "[processReq] (read "  << this->_bodyLength << "/" << this->_contentLength << "), still to be read: " << sizeToRead << "NOT leaving loop" << std::endl;
+			// break;
 		}
 		else if (bytesRead == 0)
 		{
