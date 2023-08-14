@@ -1,19 +1,19 @@
 #include "Request.hpp"
 # include "responseCodes.hpp"
 #include "Webserver.hpp"
-#include <sys/socket.h>
+#include <algorithm>
 
 
 Request::Request(int connfd, std::string address) : \
 _method (""), \
 _target (""), \
 _protocolVersion (""), \
-_body (""), \
+_bodyLength (0), \
 _connFD (connfd), \
 _statusCode (OK), \
 _address (address), \
-_contentLength (0), \
-_totalBytesRead (0) {
+_contentLength (0) {
+// _totalBytesRead (0) {
 	std::cout << "***REQUEST CONSTRUCTOR CALLED, connfd is " << connfd << " ***" << std::endl;
 	makeLowercase(this->_address); // not sure this is necessary
 }
@@ -26,14 +26,21 @@ _target (r.getTarget()), \
 _queryString (r.getQueryString()), \
 _protocolVersion (r.getProtocolVersion()), \
 _headers (r.getHeaders()), \
-_body (r.getBody()), \
+_bodyLength (r.getBodyLength()), \
 _connFD (r.getConnFD()), \
 _statusCode (r.getStatusCode()), \
 _address (r.getAddress()), \
 _port (r.getPort()),\
 _hostname (r.getHostname()), \
-_contentLength (r.getContentLength()), \
-_totalBytesRead (r.getTotalBytesRead()) {}
+_contentLength (r.getContentLength())
+// _totalBytesRead (r.getTotalBytesRead()) 
+{
+	for (auto it = r.getBody().begin(); it != r.getBody().end(); it++)
+	{
+		this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(it->first, it->second));
+	}
+
+}
 
 Request &	Request::operator=(Request &r)
 {
@@ -42,14 +49,18 @@ Request &	Request::operator=(Request &r)
 	this->_queryString = r.getQueryString();
 	this->_headers = r.getHeaders();
 	this->_protocolVersion = r.getProtocolVersion();
-	this->_body = r.getBody();
+	this->_bodyLength = r.getBodyLength();
+	for (auto it = r.getBody().begin(); it != r.getBody().end(); it++)
+	{
+		this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(it->first, it->second));
+	}
 	this->_connFD = r.getConnFD();
 	this->_statusCode = r.getStatusCode();
 	this->_address = r.getAddress();
 	this->_port = r.getPort();
 	this->_hostname = r.getHostname();
 	this->_contentLength = r.getContentLength();
-	this->_totalBytesRead = r.getTotalBytesRead();
+	// this->_totalBytesRead = r.getTotalBytesRead();
 	return (*this);
 }
 
@@ -60,7 +71,7 @@ Request &	Request::operator=(Request &r)
  */
 void	Request::processReq(void) 
 {
-	char		socketBuffer[MAXLINE];
+	uint8_t		socketBuffer[MAXLINE];
 	std::string	processingBuffer, line;
 	ssize_t		bytesRead = 0;
 	bool		firstLineComplete = false;
@@ -72,7 +83,7 @@ void	Request::processReq(void)
 	while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE - 1, 0)) > 0 && !headersComplete)
 	{
 		std::cout << "[outer loop first & headers] just read " << bytesRead << " bytes." << std::endl;
-		processingBuffer += socketBuffer;
+		processingBuffer += reinterpret_cast<char *>(socketBuffer);
 		// std::cout << "[PROCESSING BUFFER IS NOW] >" << processingBuffer << "<" << std::endl;
 		std::memset(socketBuffer, 0, MAXLINE);
 		while (!headersComplete && processingBuffer.find('\n') < std::string::npos) // if a whole (first) line is in the buffer
@@ -92,9 +103,9 @@ void	Request::processReq(void)
 			// else
 			// 	std::cout << "[processReq - FL and headers complete but I'm stuck in the loop]" << std::endl;
 		}
-		std::cout << "[processReq] Out of the inner loop, headersComplete is " << headersComplete << ", bytesRead is " << bytesRead << ", totalBytesRead is " << this->_totalBytesRead << ", Content Length is ";
+		// std::cout << "[processReq] Out of the inner loop, headersComplete is " << headersComplete << ", bytesRead is " << bytesRead << ", totalBytesRead is " << this->_totalBytesRead << ", Content Length is ";
 		std::cout << this->_contentLength << std::endl;
-		if (headersComplete || this->_totalBytesRead == this->_contentLength)
+		if (headersComplete || (this->_bodyLength > 0 && this->_bodyLength == this->_contentLength))
 			break;
 	}
 	if (bytesRead < 0)
@@ -102,30 +113,42 @@ void	Request::processReq(void)
 	// std::cout << "[after processing headers] buffer is >" << processingBuffer << "<" << std::endl;
 	if (this->_contentLength > 0)
 	{
-		this->_body.append(processingBuffer.substr(2, std::string::npos));
-		this->_totalBytesRead = this->_body.length();
+		processingBuffer.erase(0, 2);
+		this->_bodyLength = processingBuffer.length();
+		std::vector<uint8_t>	bodyChunk(processingBuffer.begin(), processingBuffer.end());
+		this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(bodyChunk, this->_bodyLength));
+		// this->_totalBytesRead = this->_bodyLength;
+		std::cout << "Just finished headers; body is now " << this->_body.size() << " items long with total of " << this->_bodyLength << " characters and chunk size of " << this->_body[0].first.size() << std::endl;
 	}
 	processingBuffer.clear();
 
 	// READING THE BODY
-	while (this->_totalBytesRead < this->_contentLength)
+	while (this->_bodyLength < this->_contentLength)
 	{
-		size_t	sizeToRead = std::min(this->_contentLength - this->_totalBytesRead, static_cast<size_t>(MAXLINE - 1));
+		size_t	sizeToRead = std::min(this->_contentLength - this->_bodyLength, static_cast<size_t>(MAXLINE - 1));
 		while ((bytesRead = recv(this->_connFD, &socketBuffer, sizeToRead, 0)) > 0)
 		{
-			this->addBytesRead(bytesRead);
-			std::cout << "Read " << bytesRead << " bytes, total is now " << this->_totalBytesRead << std::endl;
-			_body.append(socketBuffer);
+			// this->addBytesRead(bytesRead);
+			std::cout << "Read " << bytesRead << " bytes, total is now " << this->_bodyLength << std::endl;
+			// _body.append(socketBuffer);
+			std::cout << "[reading body] Just read (PB) >" << socketBuffer << "<" << std::endl;
+			std::vector<uint8_t>	bodyChunk(socketBuffer[0], socketBuffer[bytesRead - 1]);
+			this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(bodyChunk, this->_bodyLength));
+			this->_bodyLength += bytesRead;
+			std::cout << "Just added a chunk; body is now " << this->_body.size() << " items long with total of " << this->_bodyLength << " characters." << std::endl;
 			std::memset(socketBuffer, 0, MAXLINE);
-			sizeToRead = std::min(this->_contentLength - this->_totalBytesRead, static_cast<size_t>(MAXLINE - 1));
-			if (this->_totalBytesRead == this->_contentLength)
+			sizeToRead = std::min(this->_contentLength - this->_bodyLength, static_cast<size_t>(MAXLINE - 1));
+			if (this->_bodyLength == this->_contentLength)
 				break;
 		}
 		if (bytesRead < 0)
-			std::cerr << "[processReq] (read "  << this->_totalBytesRead << "/" << this->_contentLength << "), to be read: " << sizeToRead << std::endl;
+		{
+			std::cerr << "[processReq] (read "  << this->_bodyLength << "/" << this->_contentLength << "), still to be read: " << sizeToRead << "leaving loop" << std::endl;
+			break;
+		}
 		else if (bytesRead == 0)
 		{
-			std::cerr << "[processReq] READ 0; totalRead is " << this->_totalBytesRead << ", contentlength is " << this->_contentLength << std::endl;
+			std::cerr << "[processReq] READ 0; total read body length is " << this->_bodyLength << ", contentlength is " << this->_contentLength << std::endl;
 			break;
 		}
 	}
@@ -421,15 +444,15 @@ void	Request::setContentLength(std::string contentLength)
 	this->_contentLength = std::stoul(contentLength);
 }
 
-size_t	Request::getTotalBytesRead() const
-{
-	return (this->_totalBytesRead);
-}
+// size_t	Request::getTotalBytesRead() const
+// {
+// 	return (this->_totalBytesRead);
+// }
 
-void	Request::addBytesRead(size_t bytesRead)
-{
-	this->_totalBytesRead += bytesRead;
-}
+// void	Request::addBytesRead(size_t bytesRead)
+// {
+// 	this->_totalBytesRead += bytesRead;
+// }
 
 std::string const &	Request::getHostname() const
 {
@@ -453,10 +476,16 @@ void	Request::setHost(std::string host)
 	this->_port = stoi(extractValue(host)); // what if exception?
 }
 
-std::string	const & Request::getBody() const
+std::vector<std::pair<std::vector<uint8_t>, size_t>> & Request::getBody()
 {
 	return (this->_body);
 }
+
+size_t	Request::getBodyLength() const
+{
+	return (this->_bodyLength);
+}
+
 
 int	Request::getConnFD() const
 {
@@ -499,6 +528,6 @@ void	Request::printRequest()
 	for (std::map<std::string,std::string>::iterator it = this->_headers.begin(); \
 	it != this->_headers.end(); it++)
 		std::cout << "\t" << it->first << ": " << it->second << std::endl;
-	std::cout << "Body length: " << this->getBody().length() << std::endl;
+	std::cout << "Body length: " << this->getBodyLength() << std::endl;
 	std::cout << "\t***\n" << std::endl;
 }

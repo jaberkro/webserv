@@ -1,21 +1,22 @@
-#!/usr/local/bin/python3
+#!/usr/bin/python3
 
-import cgi, sys, os
+import cgi, sys, os, urllib.parse
 import cgitb # for debugging messages
 
 
-# # required environment variables: UPLOAD_DIR and PROTOCOL_VERSION
-
 # the top line on Darina's laptop needs to be
 #!/usr/bin/python3
+# on Codam iMac:
+#!/usr/local/bin/python3
 
 cgitb.enable()
 
 
-print("PYTHON SCRIPT STARTED", file=sys.stderr)
 
 uploadDir = os.getenv("UPLOAD_DIR")
 contentLen = int(os.getenv("CONTENT_LENGTH"))
+contentType = os.getenv("CONTENT_TYPE")
+print("PYTHON SCRIPT STARTED; content type is ", contentType, file=sys.stderr)
 
 # chunk = 100
 # while (True):
@@ -28,39 +29,48 @@ contentLen = int(os.getenv("CONTENT_LENGTH"))
 # 		break
 print("PYTHON SCRIPT content length is ", contentLen, file=sys.stderr)
 
-if "multipart/form-data" in os.getenv("CONTENT_TYPE"):
+# IF UPLOADING THROUGH THE BROWSER: BODY IS MULTIPART/FORM-DATA 
+if "multipart/form-data" in contentType:
 	form = cgi.FieldStorage()
-	fileitem = form['file']
+	# print("Form keys:", form.keys(), file=sys.stderr)  # Print the keys present in the form
+	# print("Fileitem keys:", fileitem.keys(), file=sys.stderr)  # Print the keys present in the form
 	if 'file' in form:
 		fileToUpload = form['file']
-		# print("File to upload:", fileToUpload)
-		fileName = os.path.basename(fileToUpload.filename)
+		filename = "newUpload" + str(contentLen) if 'filename' not in fileToUpload else fileToUpload.filename
+		print("File to upload:", filename, file=sys.stderr)
+		fileName = os.path.basename(filename)			# THIS TO BE FURTHER UNDERSTOOD!!!!!
+		open(uploadDir + fileName, 'wb').write(fileToUpload.file.read())
 	else:
-		print("File key not found in form!")
+		print("File key not found in form!", file=sys.stderr)
 		# response = "{} 400 Bad Request\r\nContent-Type: text/html\r\n\r\nBad request.".format(os.environ["PROTOCOL_VERSION"])
-		response = "400 Bad Request\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\nBad request.".format(12)
+		response = "400 Bad Request\r\nContent-Length: {}\r\n\r\nBad request.".format(12)
 		sys.stdout.buffer.write(response.encode())
+
+# IF UPLOADING THROUGH CURL
 else:
-	fileName = "hardcoded"
+	fileName = "newUpload" + str(contentLen)
+	totalRead = 0
+	with open(uploadDir + fileName, 'wb') as f:
+		while True:
+			data = sys.stdin.buffer.read(1024)  # Read data in chunks of 1024 bytes
+			print("[python] just read >", data, "<", file=sys.stderr)
+			totalRead += len(data)
+			if data:
+				if "application/x-www-form-urlencoded" in contentType:
+					urllib.parse.unquote_to_bytes(data)
+				f.write(data)
+			else:
+				break
+			if totalRead == contentLen:
+				break
 
-totalRead = 0
-with open(uploadDir + fileName, 'wb') as f:
-	while True:
-		data = sys.stdin.buffer.read(1024)  # Read data in chunks of 1024 bytes
-		totalRead += len(data)
-		if data:
-			f.write(data)
-		if totalRead == contentLen:
-			break
-	# open(uploadDir + fileName, 'wb').write(fileToUpload.file.read())
+with open("data/www/uploaded.html", 'r') as uploaded:
+	responseBody = uploaded.read()
 	# response = "{} 201 Created\r\nContent-Type: text/html\r\n\r\nUpload successful.".format(os.environ["PROTOCOL_VERSION"])
-	response = "201 Created\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\nUpload successful.".format(18)
+	response = "201 Created\r\nContent-Type: text/html\r\nContent-Length: {}\r\nLocation: {}\r\n\r\n".format(len(responseBody), uploadDir + fileName) + responseBody # Location to be fixed! And content type
 	sys.stdout.buffer.write(response.encode())
-
-
-
-# print("Form keys:", form.keys())  # Print the keys present in the form
 
 sys.stdin.close()
 sys.stdout.close()
 
+print("PYTHON SCRIPT FINISHED", file=sys.stderr)

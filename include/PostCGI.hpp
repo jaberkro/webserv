@@ -16,10 +16,10 @@ class PostCGI
 		char		**_arg;
 		char		**_env;//std:string of vector van maken? [Darina: denk dat het zo kan blijven want execve verwacht een **char]
 		pid_t		id;
-		int			webservToScript[2];
-		int			scriptToWebserv[2];
-		int			exitCode;
-		std::string	response;
+		int			_webservToScript[2];
+		int			_scriptToWebserv[2];
+		int			_exitCode;
+		std::string	_response;
 	public:
 		PostCGI(Request & req);
 		~PostCGI();
