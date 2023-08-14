@@ -35,7 +35,8 @@ Response::Response(Request & req) : \
 _req (req), \
 _statusCode (req.getStatusCode()), \
 _fileLength (0), \
-_isReady (false) {}
+_isReady (false), \
+_location () {}
 
 /**
  * @brief Destroy the Response:: Response object
@@ -52,7 +53,8 @@ Response::Response(Response &r) : \
 _req (r.getRequest()), \
 _statusCode (r.getStatusCode()), \
 _fileLength (r.getFileLength()), \
-_isReady (r.getIsReady()) {}
+_isReady (r.getIsReady()), \
+_location () {}
 
 /**
  * @brief Response copy assignment operator
@@ -76,8 +78,17 @@ void	Response::prepareResponseDELETE(Server const & server)
 
 	std::memset(response, 0, MAXLINE);
 	message = deleteFile(this->_req, findMatch(this->_req.getTarget(), server.getLocations()));
-	snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), message.c_str());
-	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+	if (this->_req.getMethod() == "GET")
+	{
+		if (message.find("204") != 0)
+			this->_filePath = "data/www/deleteFailed.html";
+		this->retrieveFile(this->_location->getRoot());
+	}
+	else
+	{
+		snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), message.c_str());
+		send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+	}
 }
 
 void	Response::prepareResponsePOST(Server const & server)
@@ -90,8 +101,6 @@ void	Response::prepareResponsePOST(Server const & server)
 	cgi.prepareArg();
 	cgi.run();
 
-	
-	
 	uint8_t	response[MAXLINE + 1];
 	
 	std::memset(response, 0, MAXLINE);
@@ -112,7 +121,12 @@ void	Response::prepareResponsePOST(Server const & server)
  * @param server a reference to the server that was identified to respond to this
  * request
  */
-void	Response::prepareResponseGET(Server const & server)
+void	Response::prepareResponseGET(Server const & )
+{
+	this->retrieveFile(this->_location->getRoot());
+}
+
+void	Response::prepareTargetURI(Server const & server)
 {
 	std::vector<Location>::const_iterator	itLoc;
 	std::string								targetUri = \
@@ -144,19 +158,20 @@ void	Response::prepareResponseGET(Server const & server)
 				}
 				else
 				{
-					//JMA: this is a check if it actually is DELETE request from browser, with a filename to be deleted in it
-					if (this->_req.getTarget() == "/deleted.html" && this->_req.getQueryString() != "")
-					{
-						std::string message;
-						message = deleteFile(this->_req, itLoc);
-						if (message.find("204") == 0)
-							this->_filePath = itLoc->getRoot() + targetUri;
-						else
-							this->_filePath = "data/www/deleteFailed.html";
-					}
-					else
-						this->_filePath = itLoc->getRoot() + targetUri;
-					this->retrieveFile(itLoc->getRoot());
+					// //JMA: this is a check if it actually is DELETE request from browser, with a filename to be deleted in it
+					// if (this->_req.getTarget() == "/deleted.html" && this->_req.getQueryString() != "")
+					// {
+					// 	std::string message;
+					// 	message = deleteFile(this->_req, itLoc);
+					// 	if (message.find("204") == 0)
+					// 		this->_filePath = itLoc->getRoot() + targetUri;
+					// 	else
+					// 		this->_filePath = "data/www/deleteFailed.html";
+					// }
+					// else
+					this->_filePath = itLoc->getRoot() + targetUri;
+					// this->retrieveFile(itLoc->getRoot());
+					this->_location = itLoc;
 					this->_isReady = true;
 				}
 			}
@@ -494,6 +509,10 @@ bool	Response::getIsReady(void)
 	return (this->_isReady);
 }
 
+std::vector<Location>::const_iterator	const & Response::getLocation(void) const
+{
+	return (this->_location);
+}
 
 Request &	Response::getRequest(void)
 {
