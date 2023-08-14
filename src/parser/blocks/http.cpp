@@ -20,6 +20,8 @@ static void checkNotImplementedHTTP(std::string line)
 		notImplementedError(line, "HTTP", "location block");
 	else if (line.find("deny") == 0)
 		notImplementedError(line, "HTTP", "location block");
+	else if (line.find("CGI") == 0)
+		notImplementedError(line, "HTTP", "location block");
 }
 
 static int parsedImplementedHTTPOnly(std::vector<Server> &servers, std::string line, \

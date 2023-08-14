@@ -82,6 +82,9 @@ t_values	parseLocDirective(int directive, std::string line, t_values values)
 		case 1:
 			values = parseDeny(line, values);
 			break;
+		case 2:
+			values = parseCGI(line, values);
+			break;
 	}
 	return (values);
 }
@@ -95,11 +98,11 @@ t_values	parseLocDirective(int directive, std::string line, t_values values)
  */
 int	hasLocDirective(std::string line)
 {
-	std::string directives[] = {"allow", "deny"};
+	std::string directives[] = {"allow", "deny", "CGI"};
 
 	int i = 0;
 
-	while (i < 2)
+	while (i < 3)
 	{
 		if (line.find(directives[i]) == 0)
 			return (i);
