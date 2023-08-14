@@ -7,6 +7,7 @@
 Request::Request(int connfd, std::string address) : \
 _method (""), \
 _target (""), \
+_queryString (""), \
 _protocolVersion (""), \
 _bodyLength (0), \
 _connFD (connfd), \
@@ -204,8 +205,6 @@ void	Request::parseFieldLine(std::string &line)
 	std::string	key, value;
 	std::map<std::string,std::string>::iterator	it;
 
-	// trim spaces incl \r -> maybe not necessary
-
 	key = extractKey(line);
 	value = extractValue(line);
 	if (key == "Host")
@@ -236,30 +235,14 @@ Server const &	Request::identifyServer(std::vector<Server> const & servers)
 	int					bestMatch = -1;
 	int					zero = -1;
 	
-	// for (auto printIt = servers.begin(); printIt != servers.end(); printIt++)
-	// {
-	// 	printServer(*printIt);
-	// }
 	findHostMatch(servers, matches, &zero);
-	/* begin debug code */
-	// std::cout << "Found " << matches.size() << " matching servers" << std::endl; 
-	// for (auto printIt = matches.begin(); printIt != matches.end(); printIt++)
-	// {
-	// 	// printServer(*(*printIt));
-	// 	std::cout << servers[*printIt].getServerName(0) << "; ";
-	// }
-	// std::cout << std::endl;
-	// if (zero >= 0)
-	// 	std::cout << "Zero is " << servers[zero].getServerName(0) << std::endl;
-	// else
-	// 	std::cout << "Zero is NOT there" << std::endl;
-	/* end debug code */
 	switch (matches.size())
 	{
 		case 0:
-			if (zero < 0)
+			if (zero < 0){
 				this->_statusCode = INTERNAL_SERVER_ERROR;
 				throw std::runtime_error("ERROR: No matching server, not even a default 0.0.0.0 found");
+			}
 			return (servers[zero]);
 		case 1:
 			return (servers[matches[0]]);
@@ -329,7 +312,6 @@ std::vector<int>	& matches)
 			splitServerName(*itName, nameSplit);
 			if ((*itName)[0] == '*' && (*itName)[1] == '.') // als server name only a "*" is --> segfault
 			{
-				// std::cout << "[leading *] ";
 				size_t	overlap = countOverlapLeading(hostSplit, nameSplit);
 				// std::cout << this->_hostname << " and " << *itName << " overlap: " << overlap << std::endl;
 				if (overlap > overlapLeading)
@@ -341,7 +323,6 @@ std::vector<int>	& matches)
 			else if ((*itName)[(*itName).length() - 1] == '*' && \
 			(*itName)[(*itName).length() - 2] == '.')
 			{
-				// std::cout << "[trailing *] ";
 				size_t	overlap = countOverlapTrailing(hostSplit, nameSplit);
 				// std::cout << this->_hostname << " and " << *itName << " overlap: " << overlap << std::endl;
 				if (overlap > overlapTrailing)
@@ -478,8 +459,12 @@ unsigned short	Request::getPort() const
 
 void	Request::setHost(std::string host)
 {
-	this->_hostname = extractKey(host);
-	// makeLowercase(this->_address);
+	std::string	tmpHost = extractKey(host);
+	if (!isLocalhost(tmpHost))
+		this->_hostname = tmpHost;
+	else
+		this->_address = tmpHost;
+	makeLowercase(this->_address);
 	this->_port = stoi(extractValue(host)); // what if exception?
 }
 
@@ -503,6 +488,12 @@ std::map<std::string, std::string> &	Request::getHeaders()
 {
 	return (this->_headers);
 }
+
+
+// std::string	const & Request::getFullRequest() const
+// {
+// 	return(this->fullRequest);
+// }
 
 
 // FOR DEBUGGING ONLY

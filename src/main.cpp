@@ -1,4 +1,4 @@
-#include "webserv.hpp"
+// #include "webserv.hpp"
 #include "parse.hpp"
 #include <iostream>
 #include "Webserver.hpp"
@@ -12,14 +12,18 @@ void	func_atexit(void)
 int	main(int argc, char **argv)
 {
 	std::vector<Server> servers;
+	char	*defaultFile = strdup("config/nginx.conf");
 
-	if (argc != 2)
+	if (argc > 2)
 	{
-		std::cout << "usage: ./webserv [configuration file]" << std::endl;
+		std::cerr << "usage: ./webserv [configuration file]" << std::endl;
 		return (1);
 	}
+	else if (argc == 1)
+		parse(servers, defaultFile);
+	else
+		parse(servers, argv[1]);
 	// try{
-	parse(servers, argv[1]);
 	printServers(servers); // turn on to see parsed configuration settings
 	// } 
 	// catch (const std::exception& e)

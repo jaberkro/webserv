@@ -7,6 +7,8 @@
 #include "Webserver.hpp"
 #include "PostCGI.hpp"
 #include <cstdio>
+#include <unistd.h>
+#include <stdio.h>
 
 #include <vector>
 
@@ -33,7 +35,8 @@ Response::Response(Request & req) : \
 _req (req), \
 _statusCode (req.getStatusCode()), \
 _fileLength (0), \
-_isReady (false) {}
+_isReady (false), \
+_location () {}
 
 /**
  * @brief Destroy the Response:: Response object
@@ -50,7 +53,8 @@ Response::Response(Response &r) : \
 _req (r.getRequest()), \
 _statusCode (r.getStatusCode()), \
 _fileLength (r.getFileLength()), \
-_isReady (r.getIsReady()) {}
+_isReady (r.getIsReady()), \
+_location () {}
 
 /**
  * @brief Response copy assignment operator
@@ -67,6 +71,26 @@ Response &	Response::operator=(Response & r)
 	return (*this);
 }
 
+void	Response::prepareResponseDELETE(Server const & server)
+{
+	uint8_t	response[MAXLINE + 1];
+	std::string message;
+
+	std::memset(response, 0, MAXLINE);
+	message = deleteFile(this->_req, findMatch(this->_req.getTarget(), server.getLocations()));
+	if (this->_req.getMethod() == "GET")
+	{
+		if (message.find("204") != 0)
+			this->_filePath = "data/www/deleteFailed.html";
+		this->retrieveFile(this->_location->getRoot());
+	}
+	else
+	{
+		snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), message.c_str());
+		send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+	}
+}
+
 void	Response::prepareResponsePOST(Server const & server)
 {
 	
@@ -76,16 +100,6 @@ void	Response::prepareResponsePOST(Server const & server)
 	cgi.prepareEnv();
 	cgi.prepareArg();
 	cgi.run();
-
-	
-	
-	// uint8_t	response[MAXLINE + 1];
-	
-	// std::memset(response, 0, MAXLINE);
-	// snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), cgi.getResponse().c_str());
-	// printf("\n\nRESPONSE for POST: [%s]\n\n", (char*)response);
-	// send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
-	//BS: Above is hardcoded, but needs to be a proper reponse with a html page focourse
 }
 
 /**
@@ -99,7 +113,12 @@ void	Response::prepareResponsePOST(Server const & server)
  * @param server a reference to the server that was identified to respond to this
  * request
  */
-void	Response::prepareResponseGET(Server const & server)
+void	Response::prepareResponseGET(Server const & )
+{
+	this->retrieveFile(this->_location->getRoot());
+}
+
+void	Response::prepareTargetURI(Server const & server)
 {
 	std::vector<Location>::const_iterator	itLoc;
 	std::string								targetUri = \
@@ -118,13 +137,12 @@ void	Response::prepareResponseGET(Server const & server)
 		std::cout << "I cannot handle the \"" << this->_req.getMethod() \
 		<< "\" method just yet, sorry!" << std::endl;
 	else
+	{
 		while (!this->_isReady && rounds++ < 6) // rounds moeten weg (is voor debugging)
 		{
-			// std::cout << "Target Uri is " << targetUri << std::endl;
 			try 
 			{
 				itLoc = findMatch(targetUri, server.getLocations());
-				// std::cout << "Matching location found: " << itLoc->getMatch() << std::endl;
 				if (targetUri[targetUri.length() - 1] == '/' && !itLoc->getIndexes().empty())
 				{
 					targetUri = findIndexPage(itLoc);
@@ -132,29 +150,42 @@ void	Response::prepareResponseGET(Server const & server)
 				}
 				else
 				{
+					// //JMA: this is a check if it actually is DELETE request from browser, with a filename to be deleted in it
+					// if (this->_req.getTarget() == "/deleted.html" && this->_req.getQueryString() != "")
+					// {
+					// 	std::string message;
+					// 	message = deleteFile(this->_req, itLoc);
+					// 	if (message.find("204") == 0)
+					// 		this->_filePath = itLoc->getRoot() + targetUri;
+					// 	else
+					// 		this->_filePath = "data/www/deleteFailed.html";
+					// }
+					// else
 					this->_filePath = itLoc->getRoot() + targetUri;
-					// std::cout << "File path is " << this->_filePath << std::endl;
-					this->retrieveFile(itLoc->getRoot());
+					// this->retrieveFile(itLoc->getRoot());
+					this->_location = itLoc;
 					this->_isReady = true;
 				}
 			}
 			catch(const std::ios_base::failure & f)
 			{
-				std::cerr << "IOS exception caught: ";
+				std::cerr << "IOS exception caught (something went wrong with opening the file " << this->_filePath << "): ";
 				std::cerr << f.what() << std::endl;
 				targetUri = identifyErrorPage(itLoc);
 			}
 			catch(const std::range_error &re)
 			{
-				std::cerr << "Range exception caught: ";
+				std::cerr << "Range exception caught (no location match found for target " << this->_req.getTarget() << "): ";
 				std::cerr << re.what() << std::endl;
 				
-				// TO BE ADDED: try to find a corresponding error page in the SERVER block;
-				targetUri = "data/www/defaultError.html";
+				// TO BE ADDED: try to find a corresponding error page (BAD REQUEST) in the SERVER block;
+				targetUri = "/defaultError.html";
 			}
 			if (rounds == 6)	// moet straks weg
 				std::cout << "--> loop ended after 6 rounds <--" << std::endl;
 		}
+		
+	}
 }
 
 /**
@@ -174,7 +205,7 @@ std::string	Response::identifyErrorPage(std::vector<Location>::const_iterator it
 	}
 	catch(const std::out_of_range& oor)
 	{
-		// std::cerr << "No custom error page found" << std::endl;
+		std::cerr << "No custom error page provided for status code " << this->_statusCode << ")";
 		return("/defaultError.html");
 	}
 }
@@ -353,15 +384,17 @@ void	Response::sendFirstLine(void)
 void	Response::sendHeaders(std::string const & root)
 {
 	uint8_t	response[MAXLINE + 1];
+	std::string		contentType;
 
-	std::string		contentType = root == "data" ? \
+	contentType = root == "data" ? \
 	"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
-	std::string::npos) : "text/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, std::string::npos);
-
+	std::string::npos) : "text/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1);
 	std::memset(response, 0, MAXLINE);
 	snprintf((char *)response, MAXLINE, \
 	"Content-Type: %s\r\nContent-Length: %zu\r\n\r\n", contentType.c_str(), this->_fileLength);
-	printf("\n\nRESPONSE for GET: [%s]\n\n", (char*)response);
+	printf("\n\nFILEPATH: [%s]\n\n", this->_filePath.c_str());
+	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
+	printf("\n\nCONTENT TYPE: [%s]\n\n", contentType.c_str());
 
 	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
@@ -468,6 +501,10 @@ bool	Response::getIsReady(void)
 	return (this->_isReady);
 }
 
+std::vector<Location>::const_iterator	const & Response::getLocation(void) const
+{
+	return (this->_location);
+}
 
 Request &	Response::getRequest(void)
 {
