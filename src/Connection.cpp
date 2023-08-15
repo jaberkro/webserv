@@ -3,11 +3,11 @@
 
 Connection::Connection()
 {
-	// this->_newReq = nullptr;
-	// this->_newResp = nullptr;
-	// this->_handler = nullptr;
-	// this->_address = "";
-	// this->_port = 0;
+	this->_newReq = nullptr;
+	this->_newResp = nullptr;
+	this->_handler = nullptr;
+	this->_address = "";
+	this->_port = 0;
 	// std::cout << "Default constructor called on Connection" << std::endl;
 }
 
@@ -91,12 +91,15 @@ void	Connection::handleResponse()
 		{
 			this->_newResp->prepareResponseDELETE(*this->_handler);
 		}
-		else
+		else if (this->_newReq->getMethod() == "GET")
 		{
 			this->_newResp->prepareResponseGET(*this->_handler);
 		}
+		else
+		{
+			std::cout << "I can't handle the "" method, sorry!" << std::endl;
+		}
 		this->_newReq->setState(OVERWRITE);
-		// delete _newReq;
 		delete this->_newResp;
 		delete this->_handler;
 	}
@@ -109,4 +112,9 @@ void	Connection::handleResponse()
 void	Connection::setRequest(Request *request)
 {
 	this->_newReq = request;
+}
+
+Request *	Connection::getRequest(void)
+{
+	return (this->_newReq);
 }

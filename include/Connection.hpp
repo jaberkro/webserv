@@ -23,6 +23,7 @@ class Connection
 		void			handleRequest(int connfd, std::vector<Server> servers);//, Server *& handler, Request *& newReq);
 		void			handleResponse();//Request *& newReq, Response *& newResp, Server *& handler);//int connfd, std::vector<Server> servers)
 		void			setRequest(Request *request);
+		Request *		getRequest(void);
 
 		Connection();
 		Connection(int listenfd, Socket sckt);
