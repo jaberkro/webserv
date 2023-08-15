@@ -84,10 +84,10 @@ body {
   .button {
 	display: inline-block;
 	padding: 10px 20px;
-	background-image: linear-gradient(to bottom, #007bff, #0056b3);
+	background-image: linear-gradient(to bottom, #96a6b7, #c363de);
 	color: #fff;
 	border: none;
-	border-radius: 30px;
+	border-radius: 4px;
 	cursor: pointer;
 	text-transform: uppercase;
 	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -95,6 +95,6 @@ body {
   }
   
   .button:hover {
-	background-image: linear-gradient(to bottom, #0056b3, #007bff);
+	background-image: linear-gradient(to bottom, #96a6b7, #c363de);
   }
   
