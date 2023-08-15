@@ -119,7 +119,9 @@ void	PostCGI::run()
 				for (size_t i = 0; i < it->second; i++)
 				{
 					std::cout << it->first[i];
-					send(this->_webservToScript[W], &(it->first), 1, 0);
+					write(this->_webservToScript[W], &(it->first[0]), it->first.size());
+
+					// send(this->_webservToScript[W], &(it->first[i]), 1, 0);
 				}
 				std::cout << std::endl;
 				// write(this->_webservToScript[W], &(it->first[0]), it->first.size());

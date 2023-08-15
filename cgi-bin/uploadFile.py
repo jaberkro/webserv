@@ -5,23 +5,31 @@
 # on Codam iMac:
 #!/usr/local/bin/python3
 
-import cgi, sys, os, urllib.parse
+import cgi, sys, os #, urllib.parse
 import cgitb # for debugging messages
 
 cgitb.enable()
+print(" =====================================================================================")
+full_request = sys.stdin.buffer.read()
+# full_request = sys.stdin.buffer.read()
 
-def sendResponseSuccess(fileName):
-	with open("data/www/uploaded.html", 'r') as uploaded:
-		responseBody = uploaded.read()
-		# response = "{} 201 Created\r\nContent-Type: text/html\r\n\r\nUpload successful.".format(os.environ["PROTOCOL_VERSION"])
-		response = "201 Created\r\nContent-Type: text/html\r\nContent-Length: {}\r\nLocation: {}\r\n\r\n".format(len(responseBody), uploadDir + fileName) + responseBody # Location to be fixed! And content type
-	sys.stdout.buffer.write(response.encode())
+# Print the received request (for debugging purposes)
+print("Received request:")
+print(full_request)
+print(" =====================================================================================")
+
+# def sendResponseSuccess(fileName):
+# 	with open("data/www/uploaded.html", 'r') as uploaded:
+# 		responseBody = uploaded.read()
+# 		# response = "{} 201 Created\r\nContent-Type: text/html\r\n\r\nUpload successful.".format(os.environ["PROTOCOL_VERSION"])
+# 		response = "201 Created\r\nContent-Type: text/html\r\nContent-Length: {}\r\nLocation: {}\r\n\r\n".format(len(responseBody), uploadDir + fileName) + responseBody # Location to be fixed! And content type
+# 	sys.stdout.buffer.write(response.encode())
 
 
 uploadDir = os.getenv("UPLOAD_DIR")
 contentLen = int(os.getenv("CONTENT_LENGTH"))
 contentType = os.getenv("CONTENT_TYPE")
-print("PYTHON SCRIPT STARTED; content type is ", contentType, ", content length is ", contentLen, file=sys.stderr)
+print("PYTHON SCRIPT STARTED") #; content type is ", contentType, ", content length is ", contentLen, file=sys.stderr)
 
 # IF UPLOADING THROUGH THE BROWSER: BODY IS MULTIPART/FORM-DATA 
 if "multipart/form-data" in contentType:
@@ -61,7 +69,7 @@ else:
 				break
 			if totalRead == contentLen:
 				break
-		sendResponseSuccess(fileName)
+		# sendResponseSuccess(fileName)
 
 
 sys.stdin.close()

@@ -41,10 +41,14 @@ class Webserver
 
 	class KeventError : public std::exception {
 		public:
+			KeventError() : message(std::strerror(errno)) {}
 			const char*	what() const throw()
 			{
-				return ("Kevent failed");
+				std::cout << "Kevent error: ";
+				return (message.c_str());
 			}
+		private:
+			std::string message;
 		};
 	class AcceptError : public std::exception {
 		public:

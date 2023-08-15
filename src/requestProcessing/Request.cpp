@@ -164,6 +164,7 @@ void	Request::processReq(void)
 			if (bytesRead < 0)
 			{
 				std::cerr << "[processReq] (read "  << this->_bodyLength << "/" << this->_contentLength << "), still to be read: " << sizeToRead << "leaving loop" << std::endl;
+				this->_state = WRITE;//jma temporary
 				break;
 			}
 			else if (bytesRead == 0)
