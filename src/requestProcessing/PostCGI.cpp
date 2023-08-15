@@ -112,12 +112,15 @@ void	PostCGI::run()
 			
 			std::cout << "PARENT - BODY length of " << this->_req.getBodyLength() << " split into " << body.size() << " chunks" << std::endl;
 			
+
 			for (auto it = body.begin(); it != body.end(); it++)
 			{
 				std::cout << "\tchunk no. " << i++ << " is " << it->second << " characters long and its size is " << it->first.size() << std::endl;
 				for (size_t i = 0; i < it->second; i++)
+				{
 					std::cout << it->first[i];
-					send(this->_webservToScript[W], &(it->first[i]), 1, 0);
+					send(this->_webservToScript[W], &(it->first), 1, 0);
+				}
 				std::cout << std::endl;
 				// write(this->_webservToScript[W], &(it->first[0]), it->first.size());
 			}
