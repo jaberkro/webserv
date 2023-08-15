@@ -133,6 +133,7 @@ void	Response::prepareTargetURI(Server const & server)
 		try 
 		{
 			itLoc = findMatch(targetUri, server.getLocations());
+			std::cout << "location found: " << itLoc->getMatch() << std::endl;
 			if (targetUri[targetUri.length() - 1] == '/' && !itLoc->getIndexes().empty())
 			{
 				targetUri = findIndexPage(itLoc);
@@ -273,8 +274,10 @@ std::vector<Location> const & locations)
 				break;
 			}
 		}
+		std::cout << "checking match: " << it->getMatch() << "\tidx: " << idx << std::endl;
 		if (idx > overlap)
 		{
+			std::cout << "better match found: " << it->getMatch() << "overlap: " << overlap << std::endl;
 			overlap = idx;
 			longest = it;
 		}
