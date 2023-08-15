@@ -55,7 +55,8 @@ class Request
 		std::string const &									getAddress() const;
 		unsigned short										getPort() const;
 		void												setHost(std::string host);
-		std::vector<std::pair<std::vector<uint8_t>, size_t> > & getBody();
+		// std::vector<std::pair<std::vector<uint8_t>, size_t> > & getBody();
+		std::string											getBody();
 		size_t												getBodyLength() const;
 		int													getConnFD() const;
 		std::map<std::string, std::string>	 & 				getHeaders();
@@ -76,7 +77,8 @@ class Request
 		std::string												_protocolVersion;
 		std::map<std::string, std::string>						_headers;
 		// std::map<std::string, std::string>	_trailers;
-		std::vector<std::pair<std::vector<uint8_t>, size_t> >	_body;
+		// std::vector<std::pair<std::vector<uint8_t>, size_t> >	_body;
+		std::string												_body;//BS
 		size_t													_bodyLength;
 		int														_connFD;
 		int														_statusCode;
