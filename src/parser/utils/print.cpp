@@ -10,8 +10,7 @@ void	printLocation(Location location)
 	if (location.getModifier() != "(none)")
 		std::cout << location.getModifier() << " ";
 	std::cout << location.getMatch() << ":";
-	if (location.getRoot().size())
-		std::cout << "\n\t\troot: [" << location.getRoot() << "]";
+	std::cout << "\n\t\troot: [" << location.getRoot() << "]";
 	if (location.getIndexes().size())
 	{
 		std::cout << "\n\t\tindex:";
