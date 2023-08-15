@@ -177,7 +177,7 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 				throw Webserver::KeventError();
 
 		}
-		else if (evList.filter == EVFILT_WRITE && _connections[(int)evList.ident].getRequest()->getState() == WRITE)//Hier response senden!
+		else if (evList.filter == EVFILT_WRITE)// && _connections[(int)evList.ident].getRequest()->getState() == WRITE)//Hier response senden!
 		{
 			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~WRITE EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
 			//send response content that you bind to your request class. When all data is sent, delete TIMEOUT events and close conn

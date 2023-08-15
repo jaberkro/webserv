@@ -10,10 +10,10 @@ print("hoooooi", file=sys.stderr)
 cgitb.enable()
 
 def sendResponseSuccess(fileName):
+	redirect_url = "/uploaded.html"
 	with open("data/www/uploaded.html", 'r') as uploaded:
 		responseBody = uploaded.read()
-		# response = "{} 201 Created\r\nContent-Type: text/html\r\n\r\nUpload successful.".format(os.environ["PROTOCOL_VERSION"])
-		response = "HTTP/1.1 201 Created\r\nContent-Type: text/html\r\nContent-Length: {}\r\nLocation: {}\r\n\r\n".format(len(responseBody), uploadDir + fileName) + responseBody # Location to be fixed! And content type
+		response = "{} 302 Found\r\nContent-Type: text/html\r\nContent-Length: {}\r\nLocation: {}\r\n\r\n".format(os.environ["SERVER_PROTOCOL"], len(responseBody), redirect_url) + responseBody # Location to be fixed! And content type
 	sys.stdout.buffer.write(response.encode())
 
 
