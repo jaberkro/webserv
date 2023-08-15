@@ -65,36 +65,6 @@ else:
 # 				break
 		# sendResponseSuccess(fileName)
 
-################################################
-# form = cgi.FieldStorage()
-
-# fileitem = form['file']
-
-# if 'file' in form:
-# 	fileToUpload = form['file']
-# 	# print("File to upload:", fileToUpload)
-# 	fileName = os.path.basename(fileToUpload.filename)
-# 	open(uploadDir + fileName, 'wb').write(fileToUpload.file.read())
-
-# 	# with open(uploadDir + fileName, 'wb') as f:
-# 	# 	while True:
-# 	# 		data = sys.stdin.buffer.read(1024)  # Read data in chunks of 1024 bytes
-# 	# 		if not data:
-# 	# 			break
-# 	# 		f.write(data)
-# 	# open(uploadDir + fileName, 'wb').write(fileToUpload.file.read())
-# 	# response = "{} 201 Created\r\nContent-Type: text/html\r\n\r\nUpload successful.".format(os.environ["PROTOCOL_VERSION"])
-# 	response = "201 Created\r\nContent-Type: text/html\r\n\r\nUpload successful."
-# 	sys.stdout.buffer.write(response.encode())
-# else:
-# 	print("File key not found in form!")
-# 	# response = "{} 400 Bad Request\r\nContent-Type: text/html\r\n\r\nBad request.".format(os.environ["PROTOCOL_VERSION"])
-# 	response = "400 Bad Request\r\nContent-Type: text/html\r\n\r\nBad request."
-# 	sys.stdout.buffer.write(response.encode())
-
-# sys.stdin.close()
-# sys.stdout.close()
-###############################################
 sys.stdin.close()
 sys.stdout.close()
 

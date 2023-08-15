@@ -165,12 +165,6 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
 
 			//At each call ofthis event, add a oneshot event for the timeout event (EVFILT_TIMER)!
-			// char buf[256];//[evList[i].data]; //eventList.data returns size of pending content
-			// size_t bytes_read;
-			// bytes_read = recv(evList.ident, buf, sizeof(buf), 0);
-			// printf("=================%d BYTESSSSSSSS===============\n", (int)bytes_read);
-			// if ((int)bytes_read < 0)
-			// 	printf("%d bytes read\n", (int)bytes_read);
 			_connections[(int)evList.ident].handleRequest(evList.ident, servers);//, handler, newReq);
 			EV_SET(&evList, (int)evList.ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);//was evSet
 			if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
@@ -182,7 +176,6 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~WRITE EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
 			//send response content that you bind to your request class. When all data is sent, delete TIMEOUT events and close conn
 			_connections[(int)evList.ident].handleResponse();//newReq, newResp, handler);//;connfd, servers); //of moet connfd hier wel evList.ident zijn?
-			// send(evList.ident, "Write Event", 11, 0);//This obviously should be smth else
 			EV_SET(&evList, (int)evList.ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);//was evSet
 			if (kevent(kq, &evList, 1, NULL, 0, NULL) == -1)//was evSet
 				throw Webserver::KeventError();
