@@ -10,6 +10,13 @@
 # define SPACES " \t\v\r\f"
 # define UPPERCASE "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+enum {
+	READHEADERS,
+	READBODY,
+	WRITE,
+	OVERWRITE
+};
+
 class Request 
 {
 	public:
@@ -48,10 +55,13 @@ class Request
 		std::string const &									getAddress() const;
 		unsigned short										getPort() const;
 		void												setHost(std::string host);
-		std::vector<std::pair<std::vector<uint8_t>, size_t> > & getBody();
+		// std::vector<std::pair<std::vector<uint8_t>, size_t> > & getBody();
+		std::string											getBody();
 		size_t												getBodyLength() const;
 		int													getConnFD() const;
-		std::map<std::string, std::string>	& 				getHeaders();
+		std::map<std::string, std::string>	 & 				getHeaders();
+		size_t	const & 									getState() const;
+		void												setState(size_t state);
 		// std::string	const &					getFullRequest() const;
 
 		bool	isLocalhost(std::string const & address);
@@ -67,7 +77,8 @@ class Request
 		std::string												_protocolVersion;
 		std::map<std::string, std::string>						_headers;
 		// std::map<std::string, std::string>	_trailers;
-		std::vector<std::pair<std::vector<uint8_t>, size_t> >	_body;
+		// std::vector<std::pair<std::vector<uint8_t>, size_t> >	_body;
+		std::string												_body;//BS
 		size_t													_bodyLength;
 		int														_connFD;
 		int														_statusCode;
@@ -75,7 +86,8 @@ class Request
 		unsigned short											_port;
 		std::string												_hostname;
 		size_t													_contentLength;
-		// size_t										_totalBytesRead;
+		size_t													_state;
+		// size_t												_totalBytesRead;
 };
 
 void			removeTrailingSpaces(std::string &line);

@@ -124,67 +124,44 @@ void	Response::prepareTargetURI(Server const & server)
 	std::string								targetUri = \
 	this->_req.getTarget().substr(0, this->_req.getTarget().find_first_of('?'));
 	int	rounds = 0;
-	
 
-		std::cout << "Responsible SERVER size is " << \
-		server.getServerNames().size() << std::endl;
+	std::cout << "Responsible SERVER size is " << \
+	server.getServerNames().size() << std::endl;
 
-	// if (this->_req.getMethod() == "")
-	// 	close(this->_req.getConnFD());
-	// else if (this->_req.getMethod() == "POST")
-	// 	prepareResponsePOST(server);
-	if (this->_req.getMethod() != "GET")
-		std::cout << "I cannot handle the \"" << this->_req.getMethod() \
-		<< "\" method just yet, sorry!" << std::endl;
-	else
+	while (!this->_isReady && rounds++ < 6) // rounds moeten weg (is voor debugging)
 	{
-		while (!this->_isReady && rounds++ < 6) // rounds moeten weg (is voor debugging)
+		try 
 		{
-			try 
+			itLoc = findMatch(targetUri, server.getLocations());
+			if (targetUri[targetUri.length() - 1] == '/' && !itLoc->getIndexes().empty())
 			{
-				itLoc = findMatch(targetUri, server.getLocations());
-				if (targetUri[targetUri.length() - 1] == '/' && !itLoc->getIndexes().empty())
-				{
-					targetUri = findIndexPage(itLoc);
-					continue;
-				}
-				else
-				{
-					// //JMA: this is a check if it actually is DELETE request from browser, with a filename to be deleted in it
-					// if (this->_req.getTarget() == "/deleted.html" && this->_req.getQueryString() != "")
-					// {
-					// 	std::string message;
-					// 	message = deleteFile(this->_req, itLoc);
-					// 	if (message.find("204") == 0)
-					// 		this->_filePath = itLoc->getRoot() + targetUri;
-					// 	else
-					// 		this->_filePath = "data/www/deleteFailed.html";
-					// }
-					// else
-					this->_filePath = itLoc->getRoot() + targetUri;
-					// this->retrieveFile(itLoc->getRoot());
-					this->_location = itLoc;
-					this->_isReady = true;
-				}
+				targetUri = findIndexPage(itLoc);
+				continue;
 			}
-			catch(const std::ios_base::failure & f)
+			else
 			{
-				std::cerr << "IOS exception caught (something went wrong with opening the file " << this->_filePath << "): ";
-				std::cerr << f.what() << std::endl;
-				targetUri = identifyErrorPage(itLoc);
+				this->_filePath = itLoc->getRoot() + targetUri;
+				this->checkFile();
+				this->_location = itLoc;
+				this->_isReady = true;
 			}
-			catch(const std::range_error &re)
-			{
-				std::cerr << "Range exception caught (no location match found for target " << this->_req.getTarget() << "): ";
-				std::cerr << re.what() << std::endl;
-				
-				// TO BE ADDED: try to find a corresponding error page (BAD REQUEST) in the SERVER block;
-				targetUri = "/defaultError.html";
-			}
-			if (rounds == 6)	// moet straks weg
-				std::cout << "--> loop ended after 6 rounds <--" << std::endl;
 		}
-		
+		catch(const std::ios_base::failure & f)
+		{
+			std::cerr << "IOS exception caught (something went wrong with opening the file " << this->_filePath << "): ";
+			std::cerr << f.what() << std::endl;
+			targetUri = identifyErrorPage(itLoc);
+		}
+		catch(const std::range_error &re)
+		{
+			std::cerr << "Range exception caught (no location match found for target " << this->_req.getTarget() << "): ";
+			std::cerr << re.what() << std::endl;
+			
+			// TO BE ADDED: try to find a corresponding error page (BAD REQUEST) in the SERVER block;
+			targetUri = "/defaultError.html";
+		}
+		if (rounds == 6)	// moet straks weg
+			std::cout << "--> loop ended after 6 rounds <--" << std::endl;
 	}
 }
 
@@ -335,13 +312,27 @@ std::string	Response::findIndexPage(std::vector<Location>::const_iterator itLoc)
 }
 
 /**
+ * @brief checks a file or throws an exception, if file is not found.
+ * 
+ * @param response the buffer into which the response is written
+ */
+void	Response::checkFile()
+{
+	this->_fileLength = this->getFileSize(this->_filePath);
+	if (access(this->_filePath.c_str(), F_OK | R_OK) < 0)
+	{
+		this->_statusCode = NOT_FOUND;
+		throw std::ios_base::failure("File not found: " + this->_filePath);
+	}
+}
+
+/**
  * @brief retrieves a file or throws an exception, if file is not found.
  * 
  * @param response the buffer into which the response is written
  */
 void	Response::retrieveFile(std::string const & root)
 {
-	
 	this->_fileLength = this->getFileSize(this->_filePath);
 	if (access(this->_filePath.c_str(), F_OK | R_OK) < 0)
 	{
@@ -352,7 +343,6 @@ void	Response::retrieveFile(std::string const & root)
 	sendHeaders(root);
 	sendContentInChunks();
 }
-
 
 /**
  * @brief composes the first line of a response, writing it into the response buffer.

@@ -13,7 +13,8 @@ _bodyLength (0), \
 _connFD (connfd), \
 _statusCode (OK), \
 _address (address), \
-_contentLength (0) {
+_contentLength (0), \
+_state (READHEADERS) {
 // _totalBytesRead (0) {
 	std::cout << "***REQUEST CONSTRUCTOR CALLED, connfd is " << connfd << " ***" << std::endl;
 	makeLowercase(this->_address); // not sure this is necessary
@@ -33,13 +34,15 @@ _statusCode (r.getStatusCode()), \
 _address (r.getAddress()), \
 _port (r.getPort()),\
 _hostname (r.getHostname()), \
-_contentLength (r.getContentLength())
+_contentLength (r.getContentLength()), \
+_state(r._state)
 // _totalBytesRead (r.getTotalBytesRead()) 
 {
-	for (auto it = r.getBody().begin(); it != r.getBody().end(); it++)
-	{
-		this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(it->first, it->second));
-	}
+	// for (auto it = r.getBody().begin(); it != r.getBody().end(); it++)
+	// {
+	// 	this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(it->first, it->second));
+	// }
+	this->_body = r.getBody();
 
 }
 
@@ -51,16 +54,18 @@ Request &	Request::operator=(Request &r)
 	this->_headers = r.getHeaders();
 	this->_protocolVersion = r.getProtocolVersion();
 	this->_bodyLength = r.getBodyLength();
-	for (auto it = r.getBody().begin(); it != r.getBody().end(); it++)
-	{
-		this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(it->first, it->second));
-	}
+	// for (auto it = r.getBody().begin(); it != r.getBody().end(); it++)
+	// {
+	// 	this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(it->first, it->second));
+	// }
+	this->_body = r.getBody();
 	this->_connFD = r.getConnFD();
 	this->_statusCode = r.getStatusCode();
 	this->_address = r.getAddress();
 	this->_port = r.getPort();
 	this->_hostname = r.getHostname();
 	this->_contentLength = r.getContentLength();
+	this->_state = r._state;
 	// this->_totalBytesRead = r.getTotalBytesRead();
 	return (*this);
 }
@@ -72,7 +77,8 @@ Request &	Request::operator=(Request &r)
  */
 void	Request::processReq(void) 
 {
-	uint8_t		socketBuffer[MAXLINE];
+	// uint8_t		socketBuffer[MAXLINE];
+	char		socketBuffer[MAXLINE];
 	std::string	processingBuffer, line;
 	ssize_t		bytesRead = 0;
 	bool		firstLineComplete = false;
@@ -80,15 +86,14 @@ void	Request::processReq(void)
 
 	std::memset(socketBuffer, 0, MAXLINE);
 	
-
-	if (this->_method == "")
+	if (this->_state == READHEADERS)
 	{
 		while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && !headersComplete)
 		{
-			std::cout << "[headers loop] just read " << bytesRead << " bytes." << std::endl;
+			// std::cout << "[headers loop] just read " << bytesRead << " bytes." << std::endl;
 			for (ssize_t i = 0; i < bytesRead; i++)
 				processingBuffer += static_cast<char>(socketBuffer[i]);
-			std::cout << "[PROCESSING BUFFER IS NOW] >" << processingBuffer << "<" << std::endl;
+			// std::cout << "[PROCESSING BUFFER IS NOW] >" << processingBuffer << "<" << std::endl;
 			std::memset(socketBuffer, 0, MAXLINE);
 			while (!headersComplete && processingBuffer.find('\n') < std::string::npos) // if a whole (first) line is in the buffer
 			{
@@ -102,7 +107,13 @@ void	Request::processReq(void)
 				{
 					this->parseFieldLine(line);
 					if (processingBuffer.find("\r\n") == 0)
+					{
 						headersComplete = true;
+						if (this->_method == "POST")
+							this->_state = READBODY;
+						else
+							this->_state = WRITE;
+					}
 				}
 				// else
 				// 	std::cout << "[processReq - FL and headers complete but I'm stuck in the loop]" << std::endl;
@@ -118,51 +129,58 @@ void	Request::processReq(void)
 		{
 			processingBuffer.erase(0, 2);
 			this->_bodyLength = processingBuffer.length();
-			std::vector<uint8_t>	bodyChunk(processingBuffer.begin(), processingBuffer.end());
-			this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(bodyChunk, this->_bodyLength));
+			// std::vector<uint8_t>	bodyChunk(processingBuffer.begin(), processingBuffer.end());
+			// this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(bodyChunk, this->_bodyLength));
+			this->_body = _body.append(processingBuffer);
 			// this->_totalBytesRead = this->_bodyLength;
-			std::cout << "Just finished headers; body is now " << this->_body.size() << " items long with total of " << this->_bodyLength << " characters and chunk size of " << this->_body[0].first.size() << std::endl;
+			std::cout << "Just finished headers; body is now " << this->_body.size() << " items long with total of " << this->_bodyLength << std::endl;//" characters and chunk size of " << this->_body[0].first.size() << std::endl;
 		}
 		processingBuffer.clear();
 	}
 	// std::cout << "[after processing headers] buffer is >" << processingBuffer << "<" << std::endl;
 
 	// READING THE BODY
-	while (this->_bodyLength < this->_contentLength)
+	if (this->_state == READBODY)
 	{
-		size_t	sizeToRead = std::min(this->_contentLength - this->_bodyLength, static_cast<size_t>(MAXLINE));
-		while ((bytesRead = recv(this->_connFD, &socketBuffer, sizeToRead, 0)) > 0)
+		while (this->_bodyLength < this->_contentLength)
 		{
-			// this->addBytesRead(bytesRead);
-			std::cout << "Read " << bytesRead << " bytes, total is now " << this->_bodyLength << std::endl;
-			// _body.append(socketBuffer);
-			// std::cout << "[reading body] Just read (SB) >" << socketBuffer << "<" << std::endl;
-			std::vector<uint8_t>	bodyChunk;
-			for (ssize_t i = 0; i < bytesRead; i++)
-				bodyChunk.push_back(socketBuffer[i]);
-			std::cout << "Created a new vector of size " << bodyChunk.size() << " and bytesRead are " << bytesRead << std::endl;
-			this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(bodyChunk, bytesRead));
-			this->_bodyLength += bytesRead;
-			std::cout << "Just added a chunk; body is now " << this->_body.size() << " items long with total of " << this->_bodyLength << " characters." << std::endl;
-			std::memset(socketBuffer, 0, MAXLINE);
-			sizeToRead = std::min(this->_contentLength - this->_bodyLength, static_cast<size_t>(MAXLINE - 1));
-			if (this->_bodyLength == this->_contentLength)
+			size_t	sizeToRead = std::min(this->_contentLength - this->_bodyLength, static_cast<size_t>(MAXLINE - 1));
+			while ((bytesRead = recv(this->_connFD, &socketBuffer, sizeToRead, 0)) > 0)
+			{
+				// this->addBytesRead(bytesRead);
+				std::cout << "Read " << bytesRead << " bytes, total is now " << this->_bodyLength << std::endl;
+				// _body.append(socketBuffer);
+				// std::cout << "[reading body] Just read (SB) >" << socketBuffer << "<" << std::endl;
+				// std::vector<uint8_t>	bodyChunk;
+				// for (ssize_t i = 0; i < bytesRead; i++)
+				// 	bodyChunk.push_back(socketBuffer[i]);
+				// std::cout << "Created a new vector of size " << bodyChunk.size() << " and bytesRead are " << bytesRead << std::endl;
+				// this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(bodyChunk, bytesRead));
+				this->_body.append(socketBuffer);
+				this->_bodyLength += bytesRead;
+				std::cout << "Just added a chunk; body is now " << this->_body.size() << " items long with total of " << this->_bodyLength << " characters." << std::endl;
+				std::memset(socketBuffer, 0, MAXLINE);
+				sizeToRead = std::min(this->_contentLength - this->_bodyLength, static_cast<size_t>(MAXLINE - 1));
+				if (this->_bodyLength == this->_contentLength)
+				{
+					this->_state = WRITE;
+					break;
+				}
+			}
+			if (bytesRead < 0)
+			{
+				std::cerr << "[processReq] (read "  << this->_bodyLength << "/" << this->_contentLength << "), still to be read: " << sizeToRead << "leaving loop" << std::endl;
+				this->_state = WRITE;//jma temporary
 				break;
-		}
-		if (bytesRead < 0)
-		{
-			std::cerr << "[processReq] (read "  << this->_bodyLength << "/" << this->_contentLength << "), still to be read: " << sizeToRead << "NOT leaving loop" << std::endl;
-			// break;
-		}
-		else if (bytesRead == 0)
-		{
-			std::cerr << "[processReq] READ 0; total read body length is " << this->_bodyLength << ", contentlength is " << this->_contentLength << std::endl;
-			break;
+			}
+			else if (bytesRead == 0)
+			{
+				std::cerr << "[processReq] READ 0; total read body length is " << this->_bodyLength << ", contentlength is " << this->_contentLength << std::endl;
+				break;
+			}
 		}
 	}
-
 }
-
 
 /**
  * @brief parses the start line of a request and saves the data in the 
@@ -468,7 +486,12 @@ void	Request::setHost(std::string host)
 	this->_port = stoi(extractValue(host)); // what if exception?
 }
 
-std::vector<std::pair<std::vector<uint8_t>, size_t>> & Request::getBody()
+// std::vector<std::pair<std::vector<uint8_t>, size_t>> & Request::getBody()
+// {
+// 	return (this->_body);
+// }
+
+std::string Request::getBody()
 {
 	return (this->_body);
 }
@@ -477,7 +500,6 @@ size_t	Request::getBodyLength() const
 {
 	return (this->_bodyLength);
 }
-
 
 int	Request::getConnFD() const
 {
@@ -488,6 +510,17 @@ std::map<std::string, std::string> &	Request::getHeaders()
 {
 	return (this->_headers);
 }
+
+size_t	const & Request::getState() const
+{
+	return (this->_state);
+}
+
+void	Request::setState(size_t state)
+{
+	this->_state = state;
+}
+
 
 
 // std::string	const & Request::getFullRequest() const

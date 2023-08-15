@@ -25,6 +25,7 @@ class Response {
 		std::vector<Location>::const_iterator	findExactMatch(std::string target, std::vector<Location> const & locations);
 		std::vector<Location>::const_iterator	findClosestMatch(std::string target, std::vector<Location> const & locations);
 		std::string								findIndexPage(std::vector<Location>::const_iterator itLoc);
+		void									checkFile(void);
 		void									retrieveFile(std::string const & root);
 		void									sendFirstLine(void);
 		void									sendHeaders(std::string const & root);
