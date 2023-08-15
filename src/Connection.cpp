@@ -3,6 +3,11 @@
 
 Connection::Connection()
 {
+	// this->_newReq = nullptr;
+	// this->_newResp = nullptr;
+	// this->_handler = nullptr;
+	// this->_address = "";
+	// this->_port = 0;
 	// std::cout << "Default constructor called on Connection" << std::endl;
 }
 
@@ -43,9 +48,11 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 {
 	try
 	{
-
-		if (!this->_newReq)
-			_newReq = new Request(connfd, this->_address);
+		if (this->_newReq->getState() == OVERWRITE)
+		{
+			delete this->_newReq;
+			this->_newReq = new Request(connfd, this->_address);
+		}
 		std::cout << "After Request constructor" << std::endl;
 		this->_newReq->processReq();
 		this->_newReq->printRequest();
@@ -68,29 +75,38 @@ void	Connection::handleResponse()
 
 	try
 	{
-		this->_newResp = new Response(*_newReq);
-		this->_newResp->prepareTargetURI(*_handler);
+		this->_newResp = new Response(*this->_newReq);
+		this->_newResp->prepareTargetURI(*this->_handler);
 
 		//insert tests of allowed methods
 
 		if (this->_newReq->getMethod() == "POST")
 		{
-			this->_newResp->prepareResponsePOST(*_handler);
+			this->_newResp->prepareResponsePOST(*this->_handler);
 		}
-		else if (this->_newReq->getMethod() == "DELETE" || (_newReq->getMethod() == "GET" && this->_newReq->getTarget() == "/deleted.html" && this->_newReq->getQueryString() != ""))
+		else if (this->_newReq->getMethod() == "DELETE" || \
+			(this->_newReq->getMethod() == "GET" && \
+			this->_newReq->getTarget() == "/deleted.html" && \
+			this->_newReq->getQueryString() != ""))
 		{
-			this->_newResp->prepareResponseDELETE(*_handler);
+			this->_newResp->prepareResponseDELETE(*this->_handler);
 		}
 		else
 		{
-			this->_newResp->prepareResponseGET(*_handler);
+			this->_newResp->prepareResponseGET(*this->_handler);
 		}
-		delete _newReq;
-		delete _newResp;
-		delete _handler;
+		this->_newReq->setState(OVERWRITE);
+		// delete _newReq;
+		delete this->_newResp;
+		delete this->_handler;
 	}
 	catch(const std::exception& e)
 	{
 		std::cerr << "!!! " << e.what() << '\n';
 	}
+}
+
+void	Connection::setRequest(Request *request)
+{
+	this->_newReq = request;
 }

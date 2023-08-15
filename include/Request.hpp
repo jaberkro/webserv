@@ -10,6 +10,12 @@
 # define SPACES " \t\v\r\f"
 # define UPPERCASE "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+enum {
+	READ,
+	WRITE,
+	OVERWRITE
+};
+
 class Request 
 {
 	public:
@@ -51,7 +57,9 @@ class Request
 		std::vector<std::pair<std::vector<uint8_t>, size_t> > & getBody();
 		size_t												getBodyLength() const;
 		int													getConnFD() const;
-		std::map<std::string, std::string>	& 				getHeaders();
+		std::map<std::string, std::string>	 & 				getHeaders();
+		size_t	const & 									getState() const;
+		void												setState(size_t state);
 		// std::string	const &					getFullRequest() const;
 
 		bool	isLocalhost(std::string const & address);
@@ -75,7 +83,8 @@ class Request
 		unsigned short											_port;
 		std::string												_hostname;
 		size_t													_contentLength;
-		// size_t										_totalBytesRead;
+		size_t													_state;
+		// size_t												_totalBytesRead;
 };
 
 void			removeTrailingSpaces(std::string &line);

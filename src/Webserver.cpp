@@ -147,6 +147,7 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 			if ((connfd = accept(evList.ident, (struct sockaddr *)&addr, &socklen)) < 0)
 				throw Webserver::AcceptError();
 			this->_connections[connfd] = Connection((int)evList.ident, sckts.at(eventSocket));
+			this->_connections[connfd].setRequest(new Request(connfd, sckts.at(eventSocket).getAddress()));
 			if (fcntl(connfd, F_SETFL, O_NONBLOCK) < 0)
 			{
 				perror("fctnl");

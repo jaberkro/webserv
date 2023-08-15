@@ -13,7 +13,9 @@ _bodyLength (0), \
 _connFD (connfd), \
 _statusCode (OK), \
 _address (address), \
-_contentLength (0) {
+_contentLength (0)
+/*_state (READ)*/ {
+
 // _totalBytesRead (0) {
 	std::cout << "***REQUEST CONSTRUCTOR CALLED, connfd is " << connfd << " ***" << std::endl;
 	makeLowercase(this->_address); // not sure this is necessary
@@ -34,6 +36,8 @@ _address (r.getAddress()), \
 _port (r.getPort()),\
 _hostname (r.getHostname()), \
 _contentLength (r.getContentLength())
+/*_state(r._state)*/
+
 // _totalBytesRead (r.getTotalBytesRead()) 
 {
 	for (auto it = r.getBody().begin(); it != r.getBody().end(); it++)
@@ -61,6 +65,7 @@ Request &	Request::operator=(Request &r)
 	this->_port = r.getPort();
 	this->_hostname = r.getHostname();
 	this->_contentLength = r.getContentLength();
+	// this->_state = r._state;
 	// this->_totalBytesRead = r.getTotalBytesRead();
 	return (*this);
 }
@@ -102,7 +107,10 @@ void	Request::processReq(void)
 				{
 					this->parseFieldLine(line);
 					if (processingBuffer.find("\r\n") == 0)
+					{
 						headersComplete = true;
+						// this->_state = WRITE;
+					}
 				}
 				// else
 				// 	std::cout << "[processReq - FL and headers complete but I'm stuck in the loop]" << std::endl;
@@ -151,8 +159,8 @@ void	Request::processReq(void)
 		}
 		if (bytesRead < 0)
 		{
-			std::cerr << "[processReq] (read "  << this->_bodyLength << "/" << this->_contentLength << "), still to be read: " << sizeToRead << "NOT leaving loop" << std::endl;
-			// break;
+			std::cerr << "[processReq] (read "  << this->_bodyLength << "/" << this->_contentLength << "), still to be read: " << sizeToRead << "leaving loop" << std::endl;
+			break;
 		}
 		else if (bytesRead == 0)
 		{
@@ -478,7 +486,6 @@ size_t	Request::getBodyLength() const
 	return (this->_bodyLength);
 }
 
-
 int	Request::getConnFD() const
 {
 	return (this->_connFD);
@@ -488,6 +495,17 @@ std::map<std::string, std::string> &	Request::getHeaders()
 {
 	return (this->_headers);
 }
+
+size_t	const & Request::getState() const
+{
+	return (this->_state);
+}
+
+void	Request::setState(size_t state)
+{
+	this->_state = state;
+}
+
 
 
 // std::string	const & Request::getFullRequest() const
