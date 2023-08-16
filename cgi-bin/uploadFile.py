@@ -31,10 +31,7 @@ print("After loading FieldStorage", file=sys.stderr)
 print("Form keys:", form.keys(), file=sys.stderr)  # Print the keys present in the form
 if 'file' in form:
 	fileToUpload = form['file']
-	# print("FileToUpload:", fileToUpload, file=sys.stderr)
-	# fileName = "newUpload" + contentLen if 'filename' not in fileToUpload else fileToUpload.filename
-	fileName = os.path.basename(fileToUpload.filename)
-
+	fileName = fileToUpload.filename
 	print("File to upload:", fileName, file=sys.stderr)
 	open(uploadDir + fileName, 'wb').write(fileToUpload.file.read())
 		# with open(uploadDir + fileName, 'wb') as f:

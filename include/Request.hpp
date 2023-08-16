@@ -27,6 +27,8 @@ class Request
 		Request &	operator=(Request &);
 
 		void		processReq(void);
+		void		readFirstLineAndHeaders(void);
+		void		readBody(void);
 		bool		parseStartLine(std::string &line);
 		void		parseFieldLine(std::string &line);
 
@@ -42,7 +44,9 @@ class Request
 		std::string	const &									getTarget() const;
 		void												setTarget(std::string target);
 		std::string	const &									getQueryString() const;
-		void												setQueryString(std::string target);
+		void												setQueryString(std::string queryString);
+		std::string	const &									getBoundary() const;
+		void												setBoundary(std::string boundary);
 		std::string	const &									getProtocolVersion() const;
 		void												setProtocolVersion(std::string protocol);
 		int													getStatusCode() const;
@@ -74,6 +78,7 @@ class Request
 		std::string												_method;
 		std::string												_target;
 		std::string												_queryString;
+		std::string												_boundary;
 		std::string												_protocolVersion;
 		std::map<std::string, std::string>						_headers;
 		// std::map<std::string, std::string>	_trailers;
