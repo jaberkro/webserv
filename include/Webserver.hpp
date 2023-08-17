@@ -13,7 +13,7 @@
 
 class Socket;
 
-# define MAXLINE 60000 //which value should this be?
+# define MAXLINE 100 //which value should this be?
 
 class Webserver
 {
