@@ -6,20 +6,26 @@
 #include <vector>
 #include "Socket.hpp"
 #include "Server.hpp"
+#include "Response.hpp"
+#include "Request.hpp"
+#include "Connection.hpp"
+#include <map>
 
 class Socket;
 
-# define SA struct sockaddr
-# define MAXLINE 4000 //which vaue should this be?
+# define MAXLINE 60000 //which value should this be?
 
 class Webserver
 {
 	private:
-		bool		running;
-		std::vector<Socket> sckts;
-		int			kq;
-		int			comparefd(int fd);
-		void		runWebserver(std::vector<Server> servers);
+		bool						running; //BS:houden of weg?
+		std::vector<Socket> 		_sckts;
+		std::map<int, Connection>	_connections;
+		int							_kq;
+		int							comparefd(int fd);
+		void						setSignal();
+		void						runWebserver(std::vector<Server> servers);
+		void						eofEvent(int ident);
 		Webserver(const Webserver &src); //private because shouldn't be instantiated!
 		Webserver& operator=(const Webserver &src); //idem
 	public:
@@ -28,10 +34,14 @@ class Webserver
 
 	class KeventError : public std::exception {
 		public:
+			KeventError() : message(std::strerror(errno)) {}
 			const char*	what() const throw()
 			{
-				return ("Kevent failed");
+				std::cout << "Kevent error: ";
+				return (message.c_str());
 			}
+		private:
+			std::string message;
 		};
 	class AcceptError : public std::exception {
 		public:

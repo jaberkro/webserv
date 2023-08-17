@@ -9,17 +9,21 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
+# define SA struct sockaddr
+
 class Socket
 {
 	private:
-		unsigned short port;
-		int	listenfd;
-		struct	sockaddr_in	servAddr;
-		void	setAddressHostPort(std::string address);
+		unsigned short 		_port;
+		int					_listenfd;
+		std::string			_address;
+		struct	sockaddr_in	_servAddr;
+		void				setAddressHostPort(std::string address);
 	public:
 		Socket(std::string address, unsigned short newport, int kq, struct kevent evSet);
-		int		getListenfd();
-		void	watchLoop(); //deze weer implementeren en private maken!
+		int					getListenfd() const;
+		std::string			getAddress() const;
+		unsigned short		getPort() const;
 		
 	class SocketError : public std::exception {
 		public:
@@ -44,10 +48,14 @@ class Socket
 		};
 	class BindError : public std::exception {
 		public:
+			BindError() : message(std::strerror(errno)) {}
 			const char*	what() const throw()
 			{
-				return ("Binding socket failed");
+				std::cout << "Bind error: ";
+				return (message.c_str());
 			}
+		private:
+			std::string message;
 		};
 	class ListenError : public std::exception {
 		public:
@@ -64,7 +72,5 @@ class Socket
 			}
 		};
 };
-
-
 
 #endif

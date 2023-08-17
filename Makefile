@@ -11,7 +11,10 @@ SRC = 	main.cpp \
 		requestProcessing/Request.cpp \
 		requestProcessing/Response.cpp \
 		requestProcessing/PostCGI.cpp \
+		requestProcessing/delete.cpp \
+		requestProcessing/utils.cpp \
 		Socket.cpp \
+		Connection.cpp \
 		classes/Server.cpp \
 		classes/Location.cpp \
 		parser/parse.cpp \
@@ -34,7 +37,8 @@ SRC = 	main.cpp \
 		parser/blocks/directives/allow.cpp \
 		parser/blocks/directives/deny.cpp \
 		parser/blocks/directives/return.cpp \
-		parser/blocks/directives/uploadDir.cpp
+		parser/blocks/directives/uploadDir.cpp \
+		parser/blocks/directives/cgi.cpp
 
 OBJ := $(addprefix $(BUILD_DIR)/, $(SRC:.cpp=.o))
 SRC := $(addprefix $(SRC_DIR)/, $(SRC))

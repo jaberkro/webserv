@@ -16,13 +16,16 @@ class Response {
 		Response &	operator=(Response &);
 		
 		/* functions */
-		void									prepareResponseGET(Server const & );
+		void									prepareTargetURI(Server const & server);
+		void									prepareResponseGET(Server const &);
 		void									prepareResponsePOST(Server const & server);
+		void									prepareResponseDELETE(Server const & server);
 		std::string								identifyErrorPage(std::vector<Location>::const_iterator itLoc);
 		std::vector<Location>::const_iterator 	findMatch(std::string target, std::vector<Location> const & locations);
 		std::vector<Location>::const_iterator	findExactMatch(std::string target, std::vector<Location> const & locations);
 		std::vector<Location>::const_iterator	findClosestMatch(std::string target, std::vector<Location> const & locations);
 		std::string								findIndexPage(std::vector<Location>::const_iterator itLoc);
+		void									checkFile(void);
 		void									retrieveFile(std::string const & root);
 		void									sendFirstLine(void);
 		void									sendHeaders(std::string const & root);
@@ -33,26 +36,30 @@ class Response {
 		void	printResponse(void) const;	// for debugging purposes
 
 		/* getters */
-		size_t			getFileLength(void) const;
-		Request &		getRequest(void);
-		bool			getIsReady(void);
-		int				getStatusCode(void);
-		std::string	&	getFilePath(void);
+		size_t											getFileLength(void) const;
+		Request &										getRequest(void);
+		bool											getIsReady(void);
+		int												getStatusCode(void);
+		std::string	&									getFilePath(void);
+		std::vector<Location>::const_iterator	const & getLocation(void) const;
 
 	private:
 
-		Request								_req;
-		int									_statusCode;
-		std::map<std::string, std::string>	_headers; // currently unused
-		std::string							_content; // currently unused
-		size_t								_fileLength;
-		std::string							_filePath;
-		bool								_isReady;
+		Request									_req;
+		int										_statusCode;
+		std::map<std::string, std::string>		_headers; // currently unused
+		std::string								_content; // currently unused
+		size_t									_fileLength;
+		std::string								_filePath;
+		bool									_isReady;
+		std::vector<Location>::const_iterator	_location;
 		// std::map<std::string, std::string>	_trailers;
 		size_t	getFileSize(std::string filePath);
 		static std::map<int, std::string> 	_responseCodes;
 
 };
+
+std::string	deleteFile(Request request, std::vector<Location>::const_iterator const & location);
 
 # define CHUNK_SIZE 100
 
