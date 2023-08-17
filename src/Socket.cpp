@@ -4,12 +4,12 @@
 
 int Socket::getListenfd() const
 {
-    return(this->listenfd);
+    return(this->_listenfd);
 }
 
 unsigned short Socket::getPort() const
 {
-	return (this->port);
+	return (this->_port);
 }
 
 std::string Socket::getAddress() const
@@ -27,10 +27,10 @@ std::string Socket::getAddress() const
 
 void	Socket::setAddressHostPort(std::string address)
 {
-	std::memset(&servAddr, '\0', sizeof(servAddr));
-	servAddr.sin_family		= AF_INET;
-	servAddr.sin_port		= htons(port);
-	printf("port: [%d] address: [%s]\n", this->port, address.c_str());
+	std::memset(&_servAddr, '\0', sizeof(_servAddr));
+	_servAddr.sin_family		= AF_INET;
+	_servAddr.sin_port		= htons(_port);
+	printf("port: [%d] address: [%s]\n", this->_port, address.c_str());
 	// servAddr.sin_addr.s_addr = htonl(INADDR_ANY); // will respond to anything
 	///Checken met curl --resolve of onderstaande code nodig is, of bovenstaande regel genoeg is!////
 	// Als onderstaande niet nodg is, dan ook std::string address niet meer doorsturen naar deze func!
@@ -45,7 +45,7 @@ void	Socket::setAddressHostPort(std::string address)
 	{
 		//Copy resolved IP to servAddr
 		struct sockaddr_in *addr_in = (struct sockaddr_in*)res->ai_addr;
-		servAddr.sin_addr.s_addr = addr_in->sin_addr.s_addr;
+		_servAddr.sin_addr.s_addr = addr_in->sin_addr.s_addr;
 		freeaddrinfo(res);
 	}
 	else
@@ -66,15 +66,15 @@ void	Socket::setAddressHostPort(std::string address)
  * @param evSet the kevent struct used to add information to the kqueue
  */
 
-Socket::Socket(std::string address, unsigned short newport, int kq, struct kevent evSet) : port(newport), _address(address)
+Socket::Socket(std::string address, unsigned short newport, int kq, struct kevent evSet) : _port(newport), _address(address)
 {
-	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	if ((_listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		throw Socket::SocketError();
 	int reuse = 1;
-	if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1)
+	if (setsockopt(_listenfd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1)
 		throw Socket::SetsockoptError();
 	setAddressHostPort(address);
-	if ((bind(listenfd, (SA *) &servAddr, sizeof(servAddr))) < 0)
+	if ((bind(_listenfd, (SA *) &_servAddr, sizeof(_servAddr))) < 0)
 	{
 		int error_code = errno;
 		if (error_code == EADDRINUSE) //deze error niet tonen, iet catchen bij EADDRINUSE
@@ -84,11 +84,11 @@ Socket::Socket(std::string address, unsigned short newport, int kq, struct keven
 		else
 			throw BindError();
 	}
-	if ((listen(listenfd, SOMAXCONN)) < 0)
+	if ((listen(_listenfd, SOMAXCONN)) < 0)
 		throw Socket::ListenError();
     // if (fcntl(listenfd, F_SETFL, O_NONBLOCK) < 0)
    	// 	return (write_exit("fcntl error"));
-	EV_SET(&evSet, listenfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	EV_SET(&evSet, _listenfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 		throw Socket::KeventError();
 	// struct timespec timeout;
