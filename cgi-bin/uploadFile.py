@@ -39,9 +39,15 @@ if 'file' in form:
 	sendResponseSuccess(fileName)
 else:
 	print("File key not found in form!", file=sys.stderr)
-	# response = "{} 400 Bad Request\r\nContent-Type: text/html\r\n\r\nBad request.".format(os.environ["PROTOCOL_VERSION"])
-	response = "HTTP/1.1 400 Bad Request\r\nContent-Length: {}\r\n\r\nBad request.".format(12)
+	redirect_url = "/postFailed.html"
+	with open("data/www/postFailed.html", 'r') as uploaded:
+		responseBody = uploaded.read()
+		response = "{} 400 Bad Request\r\nContent-Type: text/html\r\nContent-Length: {}\r\nLocation: {}\r\n\r\n".format(os.environ["SERVER_PROTOCOL"], len(responseBody), redirect_url) + responseBody # Location to be fixed! And content type
 	sys.stdout.buffer.write(response.encode())
+
+	# response = "{} 400 Bad Request\r\nContent-Type: text/html\r\n\r\nBad request.".format(os.environ["PROTOCOL_VERSION"])
+	# response = "HTTP/1.1 400 Bad Request\r\nContent-Length: {}\r\n\r\nBad request.".format(12)
+	# sys.stdout.buffer.write(response.encode())
 
 # IF UPLOADING THROUGH CURL
 # else:
