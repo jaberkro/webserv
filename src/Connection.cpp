@@ -70,9 +70,6 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 
 void	Connection::handleResponse()
 {
-	std::cout << "Responsible SERVER size in handleResponse is " << \
-	this->_handler->getServerNames().size() << std::endl;
-
 	try
 	{
 		this->_newResp = new Response(*this->_newReq);
@@ -82,7 +79,7 @@ void	Connection::handleResponse()
 
 		if (this->_newReq->getMethod() == "POST")
 		{
-			this->_newResp->prepareResponsePOST(*this->_handler);
+			this->_newResp->prepareResponsePOST();
 		}
 		else if (this->_newReq->getMethod() == "DELETE" || \
 			(this->_newReq->getMethod() == "GET" && \
@@ -93,7 +90,7 @@ void	Connection::handleResponse()
 		}
 		else if (this->_newReq->getMethod() == "GET")
 		{
-			this->_newResp->prepareResponseGET(*this->_handler);
+			this->_newResp->prepareResponseGET();
 		}
 		else
 		{
