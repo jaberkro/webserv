@@ -124,7 +124,8 @@ void		Request::readBody()
 	std::memset(socketBuffer, 0, MAXLINE);
 	ssize_t		bytesRead = 0;
 
-	while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && this->_state != WRITE)
+	//while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && this->_state != WRITE)
+	if ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && this->_state != WRITE)
 	{
 		std::cout << "Read " << bytesRead << " bytes, total is now " << this->_bodyLength << std::endl;
 		std::string	chunk(socketBuffer, bytesRead);
