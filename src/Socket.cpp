@@ -17,8 +17,6 @@ std::string Socket::getAddress() const
 	return (this->_address);
 }
 
-
-
 /**
  * @brief Sets up address, port, and host the socket needs to listen to.
  * - AF_INET is an address family used to designate the type of address the socket
@@ -90,13 +88,12 @@ Socket::Socket(std::string address, unsigned short newport, int kq, struct keven
 		throw Socket::ListenError();
     // if (fcntl(listenfd, F_SETFL, O_NONBLOCK) < 0)
    	// 	return (write_exit("fcntl error"));
-	// added EV-ENABLE
 	EV_SET(&evSet, listenfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 		throw Socket::KeventError();
-	struct timespec timeout;
-	timeout.tv_sec = 10; //Timeout after 10 sec
-	timeout.tv_nsec = 0;//this is nanosecs
+	// struct timespec timeout;
+	// timeout.tv_sec = 10; //Timeout after 10 sec
+	// timeout.tv_nsec = 0;//this is nanosecs
 	// EV_SET(&evSet, 0, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 0, NULL);
 	// if (kevent(kq, &evSet, 1, NULL, 0, &timeout) == -1)
 	// 	throw Socket::KeventError();

@@ -104,29 +104,12 @@ void	PostCGI::run()
 		}
 		else
 		{
-			// sleep(10);
-			// std::vector<std::pair<std::vector<uint8_t>, size_t> >	const & body = this->_req.getBody();
 			std::string body = this->_req.getBody();
-			// size_t		i = 1;
-
 			// MAKE THEM NON-BLOCKING
 			
 			std::cout << "PARENT - BODY length of " << this->_req.getBodyLength() << " split into " << body.size() << " chunks" << std::endl;
 			// std::cout << " ==============================BODY========================\n\n" << _req.getBody() << "\n\n==================================================================\n\n" <<std::endl;
 			write(_webservToScript[W], _req.getBody().c_str(), _req.getBody().size());
-			// for (auto it = body.begin(); it != body.end(); it++)
-			// {
-			// 	std::cout << "\tchunk no. " << i++ << " is " << it->second << " characters long and its size is " << it->first.size() << std::endl;
-			// 	for (size_t i = 0; i < it->second; i++)
-			// 	{
-			// 		std::cout << it->first[i];
-					// write(this->_webservToScript[W], &(it->first[0]), it->first.size());
-
-			// 		// send(this->_webservToScript[W], &(it->first[i]), 1, 0);
-			// 	}
-			// 	std::cout << std::endl;
-			// 	// write(this->_webservToScript[W], &(it->first[0]), it->first.size());
-			// }
 			close(this->_scriptToWebserv[W]);
 			close(this->_webservToScript[R]);
 			close(this->_webservToScript[W]);
