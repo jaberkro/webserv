@@ -26,10 +26,10 @@ void	PostCGI::prepareArg()
 	this->_arg[0] = strdup(this->_req.getTarget().substr(1).c_str()); // DM: this was hardcoded "cgi-bin/uploadFile.py"
 	this->_arg[1] = NULL;
 
-	// std::cout << "* ARGUMENTS *" << std::endl;
-	// size_t	i = 0;
-	// while (this->_arg[i])
-	// 	std::cout << this->_arg[i++] << std::endl;
+	std::cout << "* ARGUMENTS *" << std::endl;
+	size_t	i = 0;
+	while (this->_arg[i])
+		std::cout << this->_arg[i++] << std::endl;
 }
 
 void	PostCGI::prepareEnv()
@@ -64,10 +64,10 @@ void	PostCGI::prepareEnv()
 	this->_env[i++] = strdup("PATH_TRANSLATED=cgi-bin/uploadFile.py"); // TBD - what is this?
 	this->_env[i] = NULL;
 
-	// std::cout << "* ENV *" << std::endl;
-	// i = 0;
-	// while (this->_env[i])
-	// 	std::cout << this->_env[i++] << std::endl;
+	std::cout << "* ENV *" << std::endl;
+	i = 0;
+	while (this->_env[i])
+		std::cout << this->_env[i++] << std::endl;
 }
 
 
@@ -93,6 +93,7 @@ void	PostCGI::run()
 			close(this->_webservToScript[R]);
 			dup2(this->_scriptToWebserv[W], STDOUT_FILENO);
 			close(this->_scriptToWebserv[W]);
+			std::cout << "trying to run script: [" << this->_arg[0] << "]" << std::endl;
 			if (execve(this->_arg[0], this->_arg, this->_env) < 0)
 				std::cerr << strerror(errno) << std::endl;
 			std::cout << "FAIL: script: [" << this->_arg[0] << "]" << std::endl;
@@ -115,7 +116,7 @@ void	PostCGI::run()
 			}
 			std::cout << "Parent received this response: [" << this->_response << "]" << std::endl;
 			close(this->_scriptToWebserv[R]);
-			// send(this->_req.getConnFD(), this->_response.c_str(), this->_response.length(), 0);
+			send(this->_req.getConnFD(), this->_response.c_str(), this->_response.length(), 0);
 			waitpid(id, &(this->_exitCode), 0);
 			if (WIFEXITED(this->_exitCode))
 				std::cout << "Script exited with exit code " << this->_exitCode << std::endl;

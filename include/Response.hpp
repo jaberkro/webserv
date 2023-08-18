@@ -49,9 +49,9 @@ class Response {
 		
 		size_t									getFileSize(std::string filePath);
 		std::string								identifyErrorPage(std::map<int, std::string> const & errorPages);
-		std::vector<Location>::const_iterator 	findMatch(std::string target, std::vector<Location> const & locations);
-		std::vector<Location>::const_iterator	findExactMatch(std::string target, std::vector<Location> const & locations);
-		std::vector<Location>::const_iterator	findClosestMatch(std::string target, std::vector<Location> const & locations);
+		std::vector<Location>::const_iterator 	findLocationMatch(std::string target, std::vector<Location> const & locations);
+		std::vector<Location>::const_iterator	findExactLocationMatch(std::string target, std::vector<Location> const & locations);
+		std::vector<Location>::const_iterator	findClosestLocationMatch(std::string target, std::vector<Location> const & locations);
 		std::string								findIndexPage(std::vector<Location>::const_iterator itLoc);
 		void									checkWhetherFileExists(void);
 		void									sendFirstLine(void);

@@ -56,7 +56,6 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 		std::cout << "After Request constructor" << std::endl;
 		this->_newReq->processReq();
 		this->_newReq->printRequest();
-		std::cout << " Address/host in Connection is: [" << this->_address << "]" << std::endl;
 		this->_handler = new Server(this->_newReq->identifyServer(servers)); //BS: hier kun je het IP e.d. meenemen uit de Connection class
 		std::cout << "_Handler info: host: [" << this->_handler->getPort(0) << "], port: [" << this->_handler->getHost(0) << "]" << std::endl;
 		std::cout << "Responsible server is " << \

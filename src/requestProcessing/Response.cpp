@@ -32,7 +32,7 @@ void	Response::prepareResponseDELETE(Server const & server)
 	std::string	message;
 
 	std::memset(response, 0, RESPONSELINE);
-	message = deleteFile(this->_req, findMatch(this->_req.getTarget(), server.getLocations()));
+	message = deleteFile(this->_req, findLocationMatch(this->_req.getTarget(), server.getLocations()));
 	if (this->_req.getMethod() == "GET")
 	{
 		if (message.find("204") != 0)
@@ -53,7 +53,8 @@ void	Response::prepareResponsePOST()
 	cgi.prepareEnv();
 	cgi.prepareArg();
 	cgi.run();
-	send(this->_req.getConnFD(), cgi.getResponse().c_str(), cgi.getResponse().length(), 0);
+	// std::cout << "about to send response >" << cgi.getResponse() << "<" << std::endl;
+	// send(this->_req.getConnFD(), cgi.getResponse().c_str(), cgi.getResponse().length(), 0);
 
 }
 
@@ -86,7 +87,7 @@ void	Response::prepareTargetURI(Server const & server)
 	{
 		try 
 		{
-			this->_location = findMatch(targetUri, server.getLocations());
+			this->_location = findLocationMatch(targetUri, server.getLocations());
 			if (targetUri[targetUri.length() - 1] == '/' && !this->_location->getIndexes().empty())
 			{
 				targetUri = findIndexPage(this->_location);
@@ -147,14 +148,14 @@ std::string	Response::identifyErrorPage(std::map<int, std::string> const & error
  * @return std::vector<Location>::iterator pointing to a Location instance that 
  * is either the exact match for the target, if available, or the closest one.
  */
-std::vector<Location>::const_iterator Response::findMatch(std::string target, \
+std::vector<Location>::const_iterator Response::findLocationMatch(std::string target, \
 std::vector<Location> const & locations)
 {
 	std::vector<Location>::const_iterator	itLoc;
 
-	itLoc = findExactMatch(target, locations);
+	itLoc = findExactLocationMatch(target, locations);
 	if (itLoc == locations.end())
-		itLoc = findClosestMatch(target, locations);
+		itLoc = findClosestLocationMatch(target, locations);
 	if (itLoc == locations.end())
 	{
 		this->_statusCode = INTERNAL_SERVER_ERROR;
@@ -173,7 +174,7 @@ std::vector<Location> const & locations)
  * is the exact match for the target. If no exact match was found, an iterator
  * pointing to the end of the locations vector is returned.
  */
-std::vector<Location>::const_iterator	Response::findExactMatch(std::string target, \
+std::vector<Location>::const_iterator	Response::findExactLocationMatch(std::string target, \
 std::vector<Location> const & locations)
 {
 	std::vector<Location>::const_iterator it;
@@ -199,7 +200,7 @@ std::vector<Location> const & locations)
  * is the closest match for the target. If no location is found, iterator to the
  * end of the locations vector is returned.
  */
-std::vector<Location>::const_iterator	Response::findClosestMatch(std::string target, \
+std::vector<Location>::const_iterator	Response::findClosestLocationMatch(std::string target, \
 std::vector<Location> const & locations)
 {
 	size_t									overlap = 0;

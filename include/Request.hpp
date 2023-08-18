@@ -10,7 +10,7 @@
 # define SPACES " \t\v\r\f"
 # define UPPERCASE "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-# define MAXLINE 6000 //which value should this be?
+# define MAXLINE 6000
 # define RESPONSELINE 5000
 
 enum {
@@ -29,7 +29,8 @@ class Request
 		Request(Request &);
 		Request &	operator=(Request &);
 
-		void		processReq(void);
+		void			processReq(void);
+		Server const &	identifyServer(std::vector<Server> const & servers);
 	
 		std::string	const &									getMethod() const;
 		std::string	const &									getTarget() const;
@@ -57,9 +58,8 @@ class Request
 		void												setHost(std::string host);
 		void												setState(size_t state);
 
-		bool	isLocalhost(std::string const & address);
-		void	printRequest();	// for debugging purposes, to be deleted
-		void	printServer(Server const & server); // for debugging purposes, to be deleted
+		void			printRequest();	// for debugging purposes, to be deleted
+		void			printServer(Server const & server); // for debugging purposes, to be deleted
 
 
 	private:
@@ -84,9 +84,9 @@ class Request
 		void			readBody(void);
 		bool			parseStartLine(std::string &line);
 		void			parseFieldLine(std::string &line);
-		Server const &	identifyServer(std::vector<Server> const & servers);
 		void			findHostMatch(std::vector<Server> const & servers, std::vector<int> & matches, int *zero);
 		int				findServerNameMatch(std::vector<Server> const & servers, std::vector<int>	& matches);
+		bool			isLocalhost(std::string const & address);
 };
 
 void			removeTrailingSpaces(std::string &line);
