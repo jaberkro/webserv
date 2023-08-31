@@ -24,6 +24,7 @@ t_values	parseUploadDir(std::string line, t_values values)
 	line = ltrim(line);
 	checkEmptyString(line, "upload_dir", reason);
 	checkOneArgumentOnly(line, "upload_dir");
+	checkNotPreviousDirectory(line, "upload_dir");
 	checkStartingSlash(line, "upload_dir");
 	line = protectedSubstr(line, 1, line.size() - 1);
 	checkNoEndingSlash(line, "upload_dir");
@@ -35,5 +36,3 @@ t_values	parseUploadDir(std::string line, t_values values)
 	values.uploadDir = line;
 	return (values);
 }
-
-//WHAT IF USER DEFINES WWW AS UPLOAD_DIR???? OR IMAGES???

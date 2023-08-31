@@ -1,6 +1,8 @@
 #ifndef WEBSERVER_HPP
 # define WEBSERVER_HPP
 
+# define MAXLINE 60000 //which value should this be?
+
 #include <iostream>
 #include <algorithm>
 #include <vector>
@@ -13,7 +15,6 @@
 
 class Socket;
 
-# define MAXLINE 60000 //which value should this be?
 
 class Webserver
 {

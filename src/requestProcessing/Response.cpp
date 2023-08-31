@@ -82,12 +82,11 @@ void	Response::prepareResponseDELETE(Server const & server)
 	{
 		if (message.find("204") != 0)
 			this->_filePath = "data/www/deleteFailed.html";
-		this->retrieveFile(this->_location->getRoot());
 	}
 	else
 	{
 		snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), message.c_str());
-		send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+		setFullResponse(response);
 	}
 }
 
@@ -115,7 +114,7 @@ void	Response::prepareResponsePOST(Server const & server)
  */
 void	Response::prepareResponseGET(Server const & )
 {
-	this->retrieveFile(this->_location->getRoot());
+	// this->retrieveFile(this->_location->getRoot());
 }
 
 void	Response::prepareTargetURI(Server const & server)
@@ -133,6 +132,7 @@ void	Response::prepareTargetURI(Server const & server)
 		try 
 		{
 			itLoc = findMatch(targetUri, server.getLocations());
+			std::cout << "location found: " << itLoc->getMatch() << std::endl;
 			if (targetUri[targetUri.length() - 1] == '/' && !itLoc->getIndexes().empty())
 			{
 				targetUri = findIndexPage(itLoc);
@@ -273,8 +273,10 @@ std::vector<Location> const & locations)
 				break;
 			}
 		}
+		std::cout << "checking match: " << it->getMatch() << "\tidx: " << idx << std::endl;
 		if (idx > overlap)
 		{
+			std::cout << "better match found: " << it->getMatch() << "overlap: " << overlap << std::endl;
 			overlap = idx;
 			longest = it;
 		}
@@ -486,6 +488,11 @@ std::string	& Response::getFilePath(void)
 	return (this->_filePath);
 }
 
+void	Response::setFilePath(std::string path)
+{
+	this->_filePath = path;
+}
+
 bool	Response::getIsReady(void)
 {
 	return (this->_isReady);
@@ -504,6 +511,16 @@ Request &	Response::getRequest(void)
 int	Response::getStatusCode(void)
 {
 	return (this->_statusCode);
+}
+
+uint8_t	* Response::getFullResponse(void)
+{
+	return (this->_fullResponse);
+}
+
+void Response::setFullResponse(uint8_t * response)
+{
+	this->_fullResponse = response;
 }
 
 /* TO BE DELETED */
