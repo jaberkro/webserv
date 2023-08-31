@@ -32,6 +32,4 @@ class Connection
 		~Connection();
 };
 
-
-
 #endif

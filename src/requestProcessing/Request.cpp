@@ -26,8 +26,10 @@ Request::Request(Request &r) : \
 _method (r.getMethod()), \
 _target (r.getTarget()), \
 _queryString (r.getQueryString()), \
+_boundary (r.getBoundary()), \
 _protocolVersion (r.getProtocolVersion()), \
 _headers (r.getHeaders()), \
+_body (r.getBody()), \
 _bodyLength (r.getBodyLength()), \
 _connFD (r.getConnFD()), \
 _statusCode (r.getStatusCode()), \
@@ -35,22 +37,16 @@ _address (r.getAddress()), \
 _port (r.getPort()),\
 _hostname (r.getHostname()), \
 _contentLength (r.getContentLength()), \
-_state(r._state)
+_state(r.getState())
 // _totalBytesRead (r.getTotalBytesRead()) 
-{
-	// for (auto it = r.getBody().begin(); it != r.getBody().end(); it++)
-	// {
-	// 	this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(it->first, it->second));
-	// }
-	this->_body = r.getBody();
-
-}
+{}
 
 Request &	Request::operator=(Request &r)
 {
 	this->_method = r.getMethod();
 	this->_target = r.getTarget();
 	this->_queryString = r.getQueryString();
+	this->_boundary = r.getBoundary();
 	this->_headers = r.getHeaders();
 	this->_protocolVersion = r.getProtocolVersion();
 	this->_bodyLength = r.getBodyLength();
@@ -65,7 +61,7 @@ Request &	Request::operator=(Request &r)
 	this->_port = r.getPort();
 	this->_hostname = r.getHostname();
 	this->_contentLength = r.getContentLength();
-	this->_state = r._state;
+	this->_state = r.getState();
 	// this->_totalBytesRead = r.getTotalBytesRead();
 	return (*this);
 }
@@ -77,110 +73,84 @@ Request &	Request::operator=(Request &r)
  */
 void	Request::processReq(void) 
 {
-	// uint8_t		socketBuffer[MAXLINE];
-	char		socketBuffer[MAXLINE];
+	if (this->_state == READHEADERS)
+		readFirstLineAndHeaders();
+	if (this->_state == READBODY)
+		readBody();
+}
+
+void		Request::readFirstLineAndHeaders(void) 
+{
+	char	socketBuffer[MAXLINE];
+	std::memset(socketBuffer, 0, MAXLINE);
 	std::string	processingBuffer, line;
 	ssize_t		bytesRead = 0;
 	bool		firstLineComplete = false;
-	bool		headersComplete = false;
 
-	std::memset(socketBuffer, 0, MAXLINE);
-	
-	if (this->_state == READHEADERS)
+	while (this->_state == READHEADERS && (bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0)
 	{
-		while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && !headersComplete)
+		std::string	chunk(socketBuffer, bytesRead);
+		processingBuffer += chunk;
+		std::memset(socketBuffer, 0, MAXLINE);
+		while (this->_state == READHEADERS && processingBuffer.find('\n') < std::string::npos) // if a whole (first) line is in the buffer
 		{
-			// std::cout << "[headers loop] just read " << bytesRead << " bytes." << std::endl;
-			for (ssize_t i = 0; i < bytesRead; i++)
-				processingBuffer += static_cast<char>(socketBuffer[i]);
-			// std::cout << "[PROCESSING BUFFER IS NOW] >" << processingBuffer << "<" << std::endl;
-			std::memset(socketBuffer, 0, MAXLINE);
-			while (!headersComplete && processingBuffer.find('\n') < std::string::npos) // if a whole (first) line is in the buffer
+			extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
+			if (!firstLineComplete)
+				firstLineComplete = this->parseStartLine(line);
+			else
 			{
-				extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
-				if (!firstLineComplete)
-				{
-					// std::cout << "[parsing start line:] " << line << std::endl;
-					firstLineComplete = this->parseStartLine(line);
-				}
-				else if (!headersComplete)
-				{
-					this->parseFieldLine(line);
-					if (processingBuffer.find("\r\n") == 0)
-					{
-						headersComplete = true;
-						if (this->_method == "POST")
-							this->_state = READBODY;
-						else
-							this->_state = WRITE;
-					}
-				}
-				// else
-				// 	std::cout << "[processReq - FL and headers complete but I'm stuck in the loop]" << std::endl;
-			}
-			// std::cout << "[processReq] Out of the inner loop, headersComplete is " << headersComplete << ", bytesRead is " << bytesRead << ", totalBytesRead is " << this->_totalBytesRead << ", Content Length is ";
-			std::cout << this->_contentLength << std::endl;
-			if (headersComplete || (this->_bodyLength > 0 && this->_bodyLength == this->_contentLength))
-				break;
-		}
-		if (bytesRead < 0)
-			std::cerr << "[processReq] READING FROM SOCKET WENT WRONG" << std::endl;
-		if (this->_contentLength > 0)
-		{
-			processingBuffer.erase(0, 2);
-			this->_bodyLength = processingBuffer.length();
-			// std::vector<uint8_t>	bodyChunk(processingBuffer.begin(), processingBuffer.end());
-			// this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(bodyChunk, this->_bodyLength));
-			this->_body = _body.append(processingBuffer);
-			// this->_totalBytesRead = this->_bodyLength;
-			std::cout << "Just finished headers; body is now " << this->_body.size() << " items long with total of " << this->_bodyLength << std::endl;//" characters and chunk size of " << this->_body[0].first.size() << std::endl;
-		}
-		processingBuffer.clear();
-	}
-	// std::cout << "[after processing headers] buffer is >" << processingBuffer << "<" << std::endl;
-
-	// READING THE BODY
-	if (this->_state == READBODY)
-	{
-		while (this->_bodyLength < this->_contentLength)
-		{
-			size_t	sizeToRead = std::min(this->_contentLength - this->_bodyLength, static_cast<size_t>(MAXLINE - 1));
-			while ((bytesRead = recv(this->_connFD, &socketBuffer, sizeToRead, 0)) > 0)
-			{
-				// this->addBytesRead(bytesRead);
-				std::cout << "Read " << bytesRead << " bytes, total is now " << this->_bodyLength << std::endl;
-				// _body.append(socketBuffer);
-				// std::cout << "[reading body] Just read (SB) >" << socketBuffer << "<" << std::endl;
-				// std::vector<uint8_t>	bodyChunk;
-				// for (ssize_t i = 0; i < bytesRead; i++)
-				// 	bodyChunk.push_back(socketBuffer[i]);
-				// std::cout << "Created a new vector of size " << bodyChunk.size() << " and bytesRead are " << bytesRead << std::endl;
-				// this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(bodyChunk, bytesRead));
-				this->_body.append(socketBuffer);
-				this->_bodyLength += bytesRead;
-				std::cout << "Just added a chunk; body is now " << this->_body.size() << " items long with total of " << this->_bodyLength << " characters." << std::endl;
-				std::memset(socketBuffer, 0, MAXLINE);
-				sizeToRead = std::min(this->_contentLength - this->_bodyLength, static_cast<size_t>(MAXLINE - 1));
-				if (this->_bodyLength == this->_contentLength)
-				{
-					this->_state = WRITE;
-					break;
-				}
-			}
-			if (bytesRead < 0)
-			{
-				std::cerr << "[processReq] (read "  << this->_bodyLength << "/" << this->_contentLength << "), still to be read: " << sizeToRead << "leaving loop" << std::endl;
-				this->_state = WRITE;//jma temporary
-				break;
-			}
-			else if (bytesRead == 0)
-			{
-				std::cerr << "[processReq] READ 0; total read body length is " << this->_bodyLength << ", contentlength is " << this->_contentLength << std::endl;
-				break;
+				this->parseFieldLine(line);
+				if (processingBuffer.find("\r\n") == 0)
+					this->_state = this->_method == "POST" ? READBODY : WRITE;
 			}
 		}
 	}
+	if (bytesRead == 0)	// is this < 0 OR <= 0? what to do if 0?
+	{
+		this->_state = OVERWRITE;	// TBD whether to implement sth for -1 (very very unlikely)
+		std::cerr << "[processReq] READING FROM SOCKET WENT WRONG" << std::endl;
+	}
+	if (this->_contentLength > 0)
+	{
+		this->_body = processingBuffer.substr(2);
+		this->_bodyLength = _body.length();
+	}
+	processingBuffer.clear();
 }
+
+void		Request::readBody() 
+{
+	char	socketBuffer[MAXLINE];
+	std::memset(socketBuffer, 0, MAXLINE);
+	ssize_t		bytesRead = 0;
+
+	while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && this->_state != WRITE)
+	{
+		std::cout << "Read " << bytesRead << " bytes, total is now " << this->_bodyLength << std::endl;
+		std::string	chunk(socketBuffer, bytesRead);
+		// std::cout << "[***chunk IS] >" << chunk << "<" << std::endl;
+		this->_body.append(chunk);
+		this->_bodyLength += bytesRead;
+		std::memset(socketBuffer, 0, MAXLINE);
+		if (this->_bodyLength == this->_contentLength || this->_body.find((this->_boundary + "--")) < std::string::npos)
+			this->_state = WRITE;
+	}
+	if (bytesRead < 0)
+	{
+		std::string lastpart = _body.substr(_body.size() - 42);
+		std::cerr << "[processReq] (read "  << this->_bodyLength << "/" << this->_contentLength << "), leaving loop. Last part of body is: [" << lastpart << "]" << std::endl;
+		if (this->_bodyLength == this->_contentLength || this->_body.find((this->_boundary + "--")) < std::string::npos)
+			this->_state = WRITE;
+		else
+			this->_state = READBODY;
+		std::cout << "State is now: " << this->_state << std::endl;
+	}
+	else if (bytesRead == 0)
+		std::cerr << "[processReq] READ 0; total read body length is " << this->_bodyLength << ", contentlength is " << this->_contentLength << std::endl;
+	// std::cout <<"***** WHOLE BODY IS ****" << this->_body << "****" << std::endl;
+}
+
+
 
 /**
  * @brief parses the start line of a request and saves the data in the 
@@ -229,6 +199,11 @@ void	Request::parseFieldLine(std::string &line)
 		setHost(value);
 	else if (key == "Content-Length")
 		setContentLength(value);
+	else if (key == "Content-Type" && value.find("boundary=") < std::string::npos)
+	{
+		setBoundary(value.substr(value.find("boundary=") + 9));
+		std::cout << "[parsing Field] line is >" << line << "< and boundary is now >" << this->_boundary << std::endl;
+	}
 	try
 	{
 		this->_headers.at(key) += ", " + value;
@@ -418,6 +393,17 @@ void	Request::setQueryString(std::string queryString)
 	this->_queryString = queryString;
 }
 
+std::string const &	Request::getBoundary() const
+{
+	return (this->_boundary);
+
+}
+
+void	Request::setBoundary(std::string boundary)
+{
+	this->_boundary = boundary;
+}
+
 std::string const &	Request::getProtocolVersion() const
 {
 	return (this->_protocolVersion);
@@ -555,7 +541,8 @@ void	Request::printRequest()
 {
 	std::cout << "\n\t***" << std::endl;
 	std::cout << "\t" << this->_method << " " << this->_target << " " << this->_protocolVersion << std::endl;
-	std::cout << "\tQuery string:" << this->_queryString << std::endl;
+	std::cout << "\tQuery string: " << this->_queryString << std::endl;
+	std::cout << "\tBoundary: " << this->_boundary << std::endl;
 	for (std::map<std::string,std::string>::iterator it = this->_headers.begin(); \
 	it != this->_headers.end(); it++)
 		std::cout << "\t" << it->first << ": " << it->second << std::endl;

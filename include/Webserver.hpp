@@ -13,26 +13,19 @@
 
 class Socket;
 
-# define SA struct sockaddr
 # define MAXLINE 60000 //which value should this be?
 
 class Webserver
 {
 	private:
-		bool		running;
-		// Request		*newReq;
-		// Response	*newResp;
-		// Server		*handler;
-
-		std::vector<Socket> sckts;
+		bool						running; //BS:houden of weg?
+		std::vector<Socket> 		_sckts;
 		std::map<int, Connection>	_connections;
-		int			kq;
-		int			comparefd(int fd);
-		void		setSignal();
-		void		runWebserver(std::vector<Server> servers);
-		void		eofEvent(/*int connfd, */int ident);
-		// void		handleRequest(int connfd, std::vector<Server> servers, Server *& handler, Request *& newReq);
-		// void		handleResponse(Request *& newReq, Response *& newResp, Server *& handler);//int connfd, std::vector<Server> servers)
+		int							_kq;
+		int							comparefd(int fd);
+		void						setSignal();
+		void						runWebserver(std::vector<Server> servers);
+		void						eofEvent(int ident);
 		Webserver(const Webserver &src); //private because shouldn't be instantiated!
 		Webserver& operator=(const Webserver &src); //idem
 	public:
