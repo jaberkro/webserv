@@ -1,0 +1,15 @@
+To be included (not necessarily in one config file)
+
+* Testing finding the index file 
+	- (include multiple index files in the "/" location)
+	- also autoindex (on/off) - this still needs to be included int the code
+
+
+* Testing error pages
+	- put all error pages in folder /error_pages
+	- make a location for /defaultError.html
+
+* Test multiple servers with same IP:port and different server_name
+
+* location for cgi (/uploaded.html)
+

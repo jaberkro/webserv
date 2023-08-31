@@ -1,70 +1,6 @@
 #include "Request.hpp"
-# include "responseCodes.hpp"
+#include "responseCodes.hpp"
 #include "Webserver.hpp"
-#include <algorithm>
-
-
-Request::Request(int connfd, std::string address) : \
-_method (""), \
-_target (""), \
-_queryString (""), \
-_protocolVersion (""), \
-_bodyLength (0), \
-_connFD (connfd), \
-_statusCode (OK), \
-_address (address), \
-_contentLength (0), \
-_state (READHEADERS) {
-// _totalBytesRead (0) {
-	std::cout << "***REQUEST CONSTRUCTOR CALLED, connfd is " << connfd << " ***" << std::endl;
-	makeLowercase(this->_address); // not sure this is necessary
-}
-
-Request::~Request(void) {}
-
-Request::Request(Request &r) : \
-_method (r.getMethod()), \
-_target (r.getTarget()), \
-_queryString (r.getQueryString()), \
-_boundary (r.getBoundary()), \
-_protocolVersion (r.getProtocolVersion()), \
-_headers (r.getHeaders()), \
-_body (r.getBody()), \
-_bodyLength (r.getBodyLength()), \
-_connFD (r.getConnFD()), \
-_statusCode (r.getStatusCode()), \
-_address (r.getAddress()), \
-_port (r.getPort()),\
-_hostname (r.getHostname()), \
-_contentLength (r.getContentLength()), \
-_state(r.getState())
-// _totalBytesRead (r.getTotalBytesRead()) 
-{}
-
-Request &	Request::operator=(Request &r)
-{
-	this->_method = r.getMethod();
-	this->_target = r.getTarget();
-	this->_queryString = r.getQueryString();
-	this->_boundary = r.getBoundary();
-	this->_headers = r.getHeaders();
-	this->_protocolVersion = r.getProtocolVersion();
-	this->_bodyLength = r.getBodyLength();
-	// for (auto it = r.getBody().begin(); it != r.getBody().end(); it++)
-	// {
-	// 	this->_body.push_back(std::pair<std::vector<uint8_t>, size_t>(it->first, it->second));
-	// }
-	this->_body = r.getBody();
-	this->_connFD = r.getConnFD();
-	this->_statusCode = r.getStatusCode();
-	this->_address = r.getAddress();
-	this->_port = r.getPort();
-	this->_hostname = r.getHostname();
-	this->_contentLength = r.getContentLength();
-	this->_state = r.getState();
-	// this->_totalBytesRead = r.getTotalBytesRead();
-	return (*this);
-}
 
 /**
  * @brief reads a request from the socket, splits it into separate lines 
@@ -105,12 +41,9 @@ void		Request::readFirstLineAndHeaders(void)
 			}
 		}
 	}
-	if (bytesRead == 0)	// is this < 0 OR <= 0? what to do if 0?
-	{
-		this->_state = OVERWRITE;	// TBD whether to implement sth for -1 (very very unlikely)
-		std::cerr << "[processReq] READING FROM SOCKET WENT WRONG" << std::endl;
-	}
-	if (this->_contentLength > 0)
+	if (bytesRead == 0)
+		this->_state = OVERWRITE;
+	if (this->_state == READBODY && this->_contentLength > 0)
 	{
 		this->_body = processingBuffer.substr(2);
 		this->_bodyLength = _body.length();
@@ -121,8 +54,8 @@ void		Request::readFirstLineAndHeaders(void)
 void		Request::readBody() 
 {
 	char	socketBuffer[MAXLINE];
+	ssize_t	bytesRead = 0;
 	std::memset(socketBuffer, 0, MAXLINE);
-	ssize_t		bytesRead = 0;
 
 	while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && this->_state != WRITE)
 	{
@@ -149,8 +82,6 @@ void		Request::readBody()
 		std::cerr << "[processReq] READ 0; total read body length is " << this->_bodyLength << ", contentlength is " << this->_contentLength << std::endl;
 	// std::cout <<"***** WHOLE BODY IS ****" << this->_body << "****" << std::endl;
 }
-
-
 
 /**
  * @brief parses the start line of a request and saves the data in the 
@@ -260,14 +191,11 @@ std::vector<int> & matches, int *zero)
 		for (size_t i = 0; i < servers[idx].getListens().size(); i++)
 		{
 			std::string const & serverAddress = servers[idx].getHost(i);
-			// std::cout << "[FINDHOSTMATCH] COMPARING " << servers[idx].getPort(i) << " with " << this->_port << " and " << serverAddress << " with " << this->_address << std::endl;
 			if (servers[idx].getPort(i) == this->_port && \
 			(serverAddress == this->_address || this->isLocalhost(serverAddress)))
-			{
-				// std::cout << "[FINDHOSTMATCH] matches: adding " << servers[idx].getServerName(0) << std::endl;
 				matches.push_back(idx);
-			}
-			else if (servers[idx].getHost(i) == "0.0.0.0" && *zero < 0)	// ook port vergelijken
+			else if (*zero < 0 && servers[idx].getHost(i) == "0.0.0.0" && \
+			this->_port == servers[idx].getPort(i))
 				*zero = idx;
 		}
 	}
@@ -355,165 +283,6 @@ bool	Request::isLocalhost(std::string const &address)
 	} 
 	return (count == 2 ? true : false);
 }
-
-
-
-
-/* GETTERS & SETTERS */
-
-std::string const &	Request::getMethod() const
-{
-	return (this->_method);
-}
-
-void	Request::setMethod(std::string method)
-{
-	this->_method = method;
-}
-
-std::string const &	Request::getTarget() const
-{
-	return (this->_target);
-
-}
-
-void	Request::setTarget(std::string target)
-{
-	this->_target = target;
-}
-
-std::string const &	Request::getQueryString() const
-{
-	return (this->_queryString);
-
-}
-
-void	Request::setQueryString(std::string queryString)
-{
-	this->_queryString = queryString;
-}
-
-std::string const &	Request::getBoundary() const
-{
-	return (this->_boundary);
-
-}
-
-void	Request::setBoundary(std::string boundary)
-{
-	this->_boundary = boundary;
-}
-
-std::string const &	Request::getProtocolVersion() const
-{
-	return (this->_protocolVersion);
-
-}
-
-void	Request::setProtocolVersion(std::string protocol)
-{
-	this->_protocolVersion = protocol;
-}
-
-
-int	Request::getStatusCode() const
-{
-	return (this->_statusCode);
-}
-
-void	Request::setStatusCode(int code)
-{
-	this->_statusCode = code;
-}
-
-size_t	Request::getContentLength() const
-{
-	return (this->_contentLength);
-}
-
-void	Request::setContentLength(std::string contentLength)
-{
-	this->_contentLength = std::stoul(contentLength);
-}
-
-// size_t	Request::getTotalBytesRead() const
-// {
-// 	return (this->_totalBytesRead);
-// }
-
-// void	Request::addBytesRead(size_t bytesRead)
-// {
-// 	this->_totalBytesRead += bytesRead;
-// }
-
-std::string const &	Request::getHostname() const
-{
-	return (this->_hostname);
-}
-
-std::string const &	Request::getAddress() const
-{
-	return (this->_address);
-}
-
-unsigned short	Request::getPort() const
-{
-	return (this->_port);
-}
-
-void	Request::setHost(std::string host)
-{
-	std::string	tmpHost = extractKey(host);
-	if (!isLocalhost(tmpHost))
-		this->_hostname = tmpHost;
-	else
-		this->_address = tmpHost;
-	makeLowercase(this->_address);
-	this->_port = stoi(extractValue(host)); // what if exception?
-}
-
-// std::vector<std::pair<std::vector<uint8_t>, size_t>> & Request::getBody()
-// {
-// 	return (this->_body);
-// }
-
-std::string Request::getBody()
-{
-	return (this->_body);
-}
-
-size_t	Request::getBodyLength() const
-{
-	return (this->_bodyLength);
-}
-
-int	Request::getConnFD() const
-{
-	return (this->_connFD);
-}
-
-std::map<std::string, std::string> &	Request::getHeaders()
-{
-	return (this->_headers);
-}
-
-size_t	const & Request::getState() const
-{
-	return (this->_state);
-}
-
-void	Request::setState(size_t state)
-{
-	this->_state = state;
-}
-
-
-
-// std::string	const & Request::getFullRequest() const
-// {
-// 	return(this->fullRequest);
-// }
-
 
 // FOR DEBUGGING ONLY
 void	Request::printServer(Server const & server)

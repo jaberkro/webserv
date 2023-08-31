@@ -57,7 +57,6 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 		std::cout << "After Request constructor" << std::endl;
 		this->_newReq->processReq();
 		this->_newReq->printRequest();
-		std::cout << " Address/host in Connection is: [" << this->_address << "]" << std::endl;
 		this->_handler = new Server(this->_newReq->identifyServer(servers)); //BS: hier kun je het IP e.d. meenemen uit de Connection class
 		std::cout << "_Handler info: host: [" << this->_handler->getPort(0) << "], port: [" << this->_handler->getHost(0) << "]" << std::endl;
 		std::cout << "Responsible server is " << \
@@ -85,9 +84,6 @@ static bool	allowedInLocation(std::string method, std::vector<Location>::const_i
 
 void	Connection::handleResponse()
 {
-	std::cout << "Responsible SERVER size in handleResponse is " << \
-	this->_handler->getServerNames().size() << std::endl;
-
 	try
 	{
 		this->_newResp = new Response(*this->_newReq);
@@ -104,7 +100,7 @@ void	Connection::handleResponse()
 
 		if (this->_newReq->getMethod() == "POST")
 		{
-			this->_newResp->prepareResponsePOST(*this->_handler);
+			this->_newResp->prepareResponsePOST();
 		}
 		else if (this->_newReq->getMethod() == "DELETE" || \
 			(this->_newReq->getMethod() == "GET" && \
@@ -138,7 +134,9 @@ void	Connection::handleResponse()
 			// else
 			// {
 				if (this->_newReq->getMethod() == "GET")
-					this->_newResp->retrieveFile(this->_newResp->getLocation()->getRoot());
+				{
+					this->_newResp->prepareResponseGET();
+				}
 				else
 					send(this->_newReq->getConnFD(), (char*)this->_newResp->getFullResponse(), std::strlen((char *)this->_newResp->getFullResponse()), 0);
 			// }
