@@ -1,6 +1,6 @@
+#!/usr/bin/python3
+
 #!/usr/local/bin/python3
-
-
 
 import cgi, sys, os #, urllib.parse
 import cgitb # for debugging messages
@@ -18,6 +18,9 @@ def sendResponseSuccess(fileName):
 
 
 uploadDir = os.getenv("UPLOAD_DIR")
+if os.path.exists(uploadDir) == False or os.path.isdir(uploadDir) == False:
+	os.mkdir(uploadDir, mode = 0o755)
+
 contentLen = os.getenv("CONTENT_LENGTH")
 contentType = os.getenv("CONTENT_TYPE")
 print("PYTHON SCRIPT STARTED", file=sys.stderr) #; content type is ", contentType, ", content length is ", contentLen, file=sys.stderr)
@@ -33,14 +36,16 @@ if 'file' in form:
 	fileToUpload = form['file']
 	fileName = fileToUpload.filename
 	print("File to upload:", fileName, file=sys.stderr)
-	open(uploadDir + fileName, 'wb').write(fileToUpload.file.read())
+	open(uploadDir + fileName, 'wb').write(fileToUpload.file.read())	#IF UPLOAD DIR DOES NOT EXIST, CREATE IT
 		# with open(uploadDir + fileName, 'wb') as f:
 	# 	f.write(fileToUpload.file.read())
 	sendResponseSuccess(fileName)
 else:
 	print("File key not found in form!", file=sys.stderr)
-	# response = "{} 400 Bad Request\r\nContent-Type: text/html\r\n\r\nBad request.".format(os.environ["PROTOCOL_VERSION"])
-	response = "HTTP/1.1 400 Bad Request\r\nContent-Length: {}\r\n\r\nBad request.".format(12)
+	redirect_url = "/postFailed.html"
+	with open("data/www/postFailed.html", 'r') as uploaded:
+		responseBody = uploaded.read()
+		response = "{} 400 Bad Request\r\nContent-Type: text/html\r\nContent-Length: {}\r\nLocation: {}\r\n\r\n".format(os.environ["SERVER_PROTOCOL"], len(responseBody), redirect_url) + responseBody # Location to be fixed! And content type
 	sys.stdout.buffer.write(response.encode())
 
 # IF UPLOADING THROUGH CURL

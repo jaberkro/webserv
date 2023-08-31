@@ -9,7 +9,12 @@ BUILD_DIR = obj
 SRC = 	main.cpp \
 		Webserver.cpp \
 		requestProcessing/Request.cpp \
+		requestProcessing/RequestOCF.cpp \
+		requestProcessing/RequestGetters.cpp \
+		requestProcessing/RequestSetters.cpp \
 		requestProcessing/Response.cpp \
+		requestProcessing/ResponseOCF.cpp \
+		requestProcessing/ResponseGetters.cpp \
 		requestProcessing/PostCGI.cpp \
 		requestProcessing/delete.cpp \
 		requestProcessing/utils.cpp \
