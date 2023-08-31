@@ -1,3 +1,4 @@
+#include "Webserver.hpp"
 #include "Connection.hpp"
 #include "Socket.hpp"
 
@@ -67,6 +68,20 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 		std::cerr << "!!! " << e.what() << '\n';
 	}
 }
+static bool	allowedInLocation(std::string method, std::vector<Location>::const_iterator location)
+{
+	for (size_t i = 0; i < location->getAllowed().size(); i++)
+	{
+		if (location->getAllowed().at(i) == method)
+			return (true);
+	}
+	for (size_t i = 0; i < location->getDenied().size(); i++)
+	{
+		if (location->getDenied().at(i) == method || location->getDenied().at(i) == "all")
+			return (false);
+	}
+	return (true);
+}
 
 void	Connection::handleResponse()
 {
@@ -78,6 +93,13 @@ void	Connection::handleResponse()
 		this->_newResp = new Response(*this->_newReq);
 		this->_newResp->prepareTargetURI(*this->_handler);
 
+		if (!allowedInLocation(this->_newReq->getMethod(), this->_newResp->getLocation()))
+		{
+			std::cout << "BOOOOH not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl;
+			this->_newResp->setFilePath("data/www/defaultError.html");
+			this->_newReq->setMethod("GET");//should be removed 
+			//this should be something that overwrites all variables that matter for the response sending
+		}
 		//insert tests of allowed methods
 
 		if (this->_newReq->getMethod() == "POST")
@@ -90,14 +112,36 @@ void	Connection::handleResponse()
 			this->_newReq->getQueryString() != ""))
 		{
 			this->_newResp->prepareResponseDELETE(*this->_handler);
-		}
+		}	
 		else if (this->_newReq->getMethod() == "GET")
 		{
-			this->_newResp->prepareResponseGET(*this->_handler);
+			;
 		}
 		else
 		{
 			std::cout << "I can't handle the "" method, sorry!" << std::endl;
+		}
+
+		//RETURN CHECK
+		if (this->_newReq->getMethod() == "GET" || this->_newReq->getMethod() == "DELETE")
+		{
+			// if (this->_newResp->getLocation()->getReturn().first != 0)
+			// {
+			// 	std::cout << "RETURN!!!!!!!!!!" << std::endl;
+			// 	// uint8_t	response[MAXLINE + 1];
+			// 	// std::memset(response, 0, MAXLINE);
+
+			// 	// snprintf((char *)response, MAXLINE, "%s 301 %s\r\n", this->_newReq->getProtocolVersion().c_str(), /*this->_newResp->getLocation()->getReturn().first,*/ (this->_newResp->getLocation()->getReturn().second).c_str());
+			// 	// std::cout << "Return about to send: " << (char*)response << std::endl;
+			// 	// send(this->_newReq->getConnFD(), (char*)response, std::strlen((char *)response), 0);
+			// }
+			// else
+			// {
+				if (this->_newReq->getMethod() == "GET")
+					this->_newResp->retrieveFile(this->_newResp->getLocation()->getRoot());
+				else
+					send(this->_newReq->getConnFD(), (char*)this->_newResp->getFullResponse(), std::strlen((char *)this->_newResp->getFullResponse()), 0);
+			// }
 		}
 		this->_newReq->setState(OVERWRITE);
 		delete this->_newResp;
