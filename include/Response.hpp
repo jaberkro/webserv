@@ -5,6 +5,7 @@
 # include "Request.hpp"
 # include "responseCodes.hpp"
 # include "Location.hpp"
+// # include "Webserver.hpp"
 
 class Response {
 
@@ -35,13 +36,18 @@ class Response {
 		void	splitUri(std::string const & uri, std::vector<std::string> & chunks);
 		void	printResponse(void) const;	// for debugging purposes
 
-		/* getters */
+		/* getters and setters */
 		size_t											getFileLength(void) const;
 		Request &										getRequest(void);
 		bool											getIsReady(void);
 		int												getStatusCode(void);
 		std::string	&									getFilePath(void);
+		void											setFilePath(std::string path);
 		std::vector<Location>::const_iterator	const & getLocation(void) const;
+		uint8_t			*								getFullResponse(void);
+		void											setFullResponse(uint8_t * response);
+
+
 
 	private:
 
@@ -53,6 +59,7 @@ class Response {
 		std::string								_filePath;
 		bool									_isReady;
 		std::vector<Location>::const_iterator	_location;
+		uint8_t		*							_fullResponse;
 		// std::map<std::string, std::string>	_trailers;
 		size_t	getFileSize(std::string filePath);
 		static std::map<int, std::string> 	_responseCodes;
