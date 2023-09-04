@@ -102,7 +102,7 @@ void	PostCGI::run(Response & response)
 			std::string const & body = this->_req.getBody();
 			// MAKE THEM NON-BLOCKING
 			
-			write(_webservToScript[W], _req.getBody().c_str(), _req.getBody().size());
+			write(_webservToScript[W], body.c_str(), body.size());
 			close(this->_scriptToWebserv[W]);
 			close(this->_webservToScript[R]);
 			close(this->_webservToScript[W]);
