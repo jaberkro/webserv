@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <unistd.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 #include <vector>
 
@@ -26,33 +27,53 @@ std::map<int, std::string> 	Response::_responseCodes =
 	{INTERNAL_SERVER_ERROR, "Internal Server Error"}
 };
 
-void	Response::prepareResponseDELETE(Server const & server)
+void	Response::prepareResponseDELETE(void)
 {
 	uint8_t		response[RESPONSELINE + 1];
-	std::string	message;
+	// std::string	message;
 
 	std::memset(response, 0, RESPONSELINE);
-	message = deleteFile(this->_req, findLocationMatch(this->_req.getTarget(), server.getLocations()));
-	if (this->_req.getMethod() == "GET")
-	{
-		if (message.find("204") != 0)
+	this->deleteFile();
+	// if (this->_req.getMethod() == "GET")
+	// {
+		if (this->_statusCode != OK)
 			this->_filePath = "data/www/deleteFailed.html";
-		// this->prepareResponseGET(); // DM: I've removed the function retrieveFile, this one does the same
-	}
-	else
-	{
-		snprintf((char *)response, RESPONSELINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), message.c_str());
-		// send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
-	}
+	// }
 }
 
-void	Response::prepareResponsePOST()
+void	Response::deleteFile(void)
+{
+	std::string	toRemove;
+	struct stat fileInfo;
+
+	std::cout << "\nATTEMPT TO DELETE RIGHT NOW!!!" << std::endl;
+	if (this->_req.getMethod() == "GET")
+		toRemove = this->_location->getUploadDir() + "/" + this->_req.getQueryString().substr(this->_req.getQueryString().find_last_of("=") + 1);
+	else
+		toRemove = this->_location->getRoot() + this->_req.getTarget();
+	std::cout << "DELETE path: " << toRemove << "; TO REMOVE IS " << toRemove << std::endl;
+	if (!allowedToDelete(toRemove, this->_location))
+		this->_statusCode = FORBIDDEN;
+		// return ("403 Not allowed\r\nContent-Type: text/html\r\nContent-Length: 12\r\n\r\nNot allowed\n");
+	if (stat(toRemove.c_str(), &fileInfo) != 0)	// DM: this seems not to be working
+		this->_statusCode = NOT_FOUND;
+		// return ("404 Not Found\r\nContent-Type: text/html\r\nContent-Length: 10\r\n\r\nNot found\n");
+	if (fileInfo.st_mode & S_IFDIR || remove(toRemove.c_str()) != 0)
+		this->_statusCode = BAD_REQUEST;
+		// return ("400 Bad Request\r\nContent-Type: text/html\r\nContent-Length: 12\r\n\r\nBad request\n");
+	std::cout << "DELETE SUCCESSFUL!\n" << std::endl;
+	this->_statusCode = OK;
+	this->_filePath = "data/www/deleted.html";
+	// return ("204 Deleted\r\n");
+}
+
+void	Response::prepareResponsePOST(void)
 {
 	PostCGI	cgi(this->_req);
 	
-	cgi.prepareEnv();
-	cgi.prepareArg();
-	cgi.run();
+	cgi.prepareEnv(this->_location->getCgiScriptName());
+	cgi.prepareArg(this->_location->getCgiScriptName());
+	cgi.run(*this);
 	// std::cout << "about to send response >" << cgi.getResponse() << "<" << std::endl;
 	// send(this->_req.getConnFD(), cgi.getResponse().c_str(), cgi.getResponse().length(), 0);
 
@@ -69,12 +90,18 @@ void	Response::prepareResponsePOST()
  * @param server a reference to the server that was identified to respond to this
  * request
  */
-void	Response::prepareResponseGET()
+void	Response::sendResponse(void)
 {
 	this->_fileLength = this->getFileSize(this->_filePath);
-	sendFirstLine();
-	sendHeaders(this->_location->getRoot());
-	sendContent();
+	// change these into "composeFirstLine" etc into response->_fullResponse (change it to std::string)
+	if (this->_req.getMethod() == "GET" || this->_req.getMethod() == "DELETE")
+	{
+		prepareFirstLine();
+		prepareHeaders(this->_location->getRoot());
+		prepareContent();
+	}
+	send(this->_req.getConnFD(), this->_fullResponse.c_str(), this->_fullResponse.length(), 0);
+
 }
 
 void	Response::prepareTargetURI(Server const & server)
@@ -88,9 +115,12 @@ void	Response::prepareTargetURI(Server const & server)
 		try 
 		{
 			this->_location = findLocationMatch(targetUri, server.getLocations());
-			if (targetUri[targetUri.length() - 1] == '/' && !this->_location->getIndexes().empty())
+			if (targetUri[targetUri.length() - 1] == '/')
 			{
-				targetUri = findIndexPage(this->_location);
+				if (this->_req.getMethod() == "GET" && !this->_location->getIndexes().empty())
+					targetUri = findIndexPage(this->_location);
+				else if (this->_req.getMethod() == "POST")
+					targetUri = "/uploaded.html";
 				continue;
 			}
 			else
@@ -287,17 +317,17 @@ void	Response::checkWhetherFileExists()
  * 
  * @param response the buffer into which the response is written
  */
-void	Response::sendFirstLine(void)
+void	Response::prepareFirstLine(void)
 {
-	uint8_t	response[RESPONSELINE + 1];
+	char	responseBuffer[RESPONSELINE + 1];
 	
-	std::memset(response, 0, RESPONSELINE);
-	snprintf((char *)response, RESPONSELINE, \
+	std::memset(responseBuffer, 0, RESPONSELINE + 1);
+	snprintf(responseBuffer, RESPONSELINE, \
 	"%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, \
 	this->_responseCodes.at(this->_statusCode).c_str());
-	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
-
-	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+	printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
+	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
+	// send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
 
 /**
@@ -308,22 +338,24 @@ void	Response::sendFirstLine(void)
  * @param root the root directory (from the location block; used to distinguish
  * between the file types that are to be returned - to determine Content Type)
  */
-void	Response::sendHeaders(std::string const & root)
+void	Response::prepareHeaders(std::string const & root)
 {
-	uint8_t	response[RESPONSELINE + 1];
+	char			responseBuffer[RESPONSELINE + 1];
 	std::string		contentType;
 
 	contentType = root == "data" ? \
 	"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
 	std::string::npos) : "text/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1);
-	std::memset(response, 0, RESPONSELINE);
-	snprintf((char *)response, RESPONSELINE, \
+	std::memset(responseBuffer, 0, RESPONSELINE);
+	snprintf(responseBuffer, RESPONSELINE, \
 	"Content-Type: %s\r\nContent-Length: %zu\r\n\r\n", contentType.c_str(), this->_fileLength);
-	printf("\n\nFILEPATH: [%s]\n\n", this->_filePath.c_str());
-	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
-	printf("\n\nCONTENT TYPE: [%s]\n\n", contentType.c_str());
+	// printf("\n\nFILEPATH: [%s]\n\n", this->_filePath.c_str());
+	// printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
+	// printf("\n\nCONTENT TYPE: [%s]\n\n", contentType.c_str());
 
-	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
+
+	// send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
 
 
@@ -335,35 +367,21 @@ void	Response::sendHeaders(std::string const & root)
  * 
  * @param response the buffer into which the response is written
  */
-void	Response::sendContent(void)
+void	Response::prepareContent(void)
 {
-	uint8_t			response[RESPONSELINE];
 	std::ifstream	file;
-	std::filebuf	*fileBuf;
+	std::string		body;
 	
-	std::memset(response, 0, RESPONSELINE);
 	file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
 	if (!file.is_open())
 	{
 		this->_statusCode = FORBIDDEN;
 		throw std::ios_base::failure("Error when opening a file");
 	}
-	fileBuf = file.rdbuf();
-	for (size_t i = 0; i < this->_fileLength; i++)
-	{
-		
-		response[i % RESPONSELINE] = fileBuf->sbumpc();
-		if (i % RESPONSELINE == RESPONSELINE - 1)
-		{
-			send(this->_req.getConnFD(), (char*)response, RESPONSELINE, 0);
-			std::memset(response, 0, RESPONSELINE);
-		}
-	}
-	send(this->_req.getConnFD(), (char*)response, this->_fileLength % RESPONSELINE, 0);
-	std::memset(response, 0, RESPONSELINE);
-	send(this->_req.getConnFD(), (char*)response, 0, 0);
+	body = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+	this->_fullResponse.append(body);
 	file.close();
-	std::cout << "End of the sendContent function" << std::endl;
+
 }
 
 /* UTILS */

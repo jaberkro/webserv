@@ -1,5 +1,4 @@
 #include "PostCGI.hpp"
-#include "Request.hpp"
 #include <iostream>
 #include <unistd.h>	// for pipe, fork, execve
 #include <cstring>	// for strdup
@@ -20,10 +19,10 @@ PostCGI::~PostCGI()
 	delete[] this->_arg;
 }
 
-void	PostCGI::prepareArg()
+void	PostCGI::prepareArg(std::string const & scriptName)
 {
 	this->_arg = new char*[2];
-	this->_arg[0] = strdup(this->_req.getTarget().substr(1).c_str()); // DM: this was hardcoded "cgi-bin/uploadFile.py"
+	this->_arg[0] = strdup(scriptName.c_str()); // DM: this was hardcoded "cgi-bin/uploadFile.py"
 	this->_arg[1] = NULL;
 
 	std::cout << "* ARGUMENTS *" << std::endl;
@@ -32,7 +31,7 @@ void	PostCGI::prepareArg()
 		std::cout << this->_arg[i++] << std::endl;
 }
 
-void	PostCGI::prepareEnv()
+void	PostCGI::prepareEnv(std::string const & scriptName)
 {
 	size_t									sizeEnv = 0;
 	size_t									i;
@@ -49,8 +48,8 @@ void	PostCGI::prepareEnv()
 	this->_env[i++] = strdup(("CONTENT_TYPE=" + reqHeaders["Content-Type"]).c_str());
 	this->_env[i++] = strdup("GATEWAY_INTERFACE=CGI/1.1");
 	this->_env[i++] = strdup(("REMOTE_HOST=" + reqHeaders["Host"]).c_str());
-	this->_env[i++] = strdup(("SCRIPT_FILENAME=" + this->_req.getTarget()).c_str());	// DM: this was "SCRIPT_FILENAME=cgi-bin/uploadFile.py"
-	this->_env[i++] = strdup(("SCRIPT_NAME=" + this->_req.getTarget()).c_str());	// DM: this was "SCRIPT_NAME=uploadFile.py"
+	this->_env[i++] = strdup(("SCRIPT_FILENAME=" + scriptName).c_str());	// DM: this was "SCRIPT_FILENAME=cgi-bin/uploadFile.py"
+	this->_env[i++] = strdup(("SCRIPT_NAME=" + scriptName).c_str());	// DM: this was "SCRIPT_NAME=uploadFile.py"
 	this->_env[i++] = strdup(("REQUEST_METHOD=" + this->_req.getMethod()).c_str());	// DM: this was "REQUEST_METHOD=POST"
 	this->_env[i++] = strdup("UPLOAD_DIR=data/uploads/");
 	//Should check and adjust the env following
@@ -71,7 +70,7 @@ void	PostCGI::prepareEnv()
 }
 
 
-void	PostCGI::run()
+void	PostCGI::run(Response & response)
 {
 	char	buf[RESPONSELINE];
 	ssize_t	bytesRead = 0;
@@ -100,11 +99,9 @@ void	PostCGI::run()
 		}
 		else
 		{
-			std::string body = this->_req.getBody();
+			std::string const & body = this->_req.getBody();
 			// MAKE THEM NON-BLOCKING
 			
-			std::cout << "PARENT - BODY length of " << this->_req.getBodyLength() << " split into " << body.size() << " chunks" << std::endl;
-			// std::cout << " ==============================BODY========================\n\n" << _req.getBody() << "\n\n==================================================================\n\n" <<std::endl;
 			write(_webservToScript[W], _req.getBody().c_str(), _req.getBody().size());
 			close(this->_scriptToWebserv[W]);
 			close(this->_webservToScript[R]);
@@ -112,11 +109,10 @@ void	PostCGI::run()
 			while ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) > 0)
 			{
 				std::string	chunk(buf, bytesRead);
-				this->_response.append(chunk);
+				response.addToFullResponse(chunk);
 			}
-			std::cout << "Parent received this response: [" << this->_response << "]" << std::endl;
+			std::cout << "Parent received this response: [" << response.getFullResponse() << "]" << std::endl;
 			close(this->_scriptToWebserv[R]);
-			send(this->_req.getConnFD(), this->_response.c_str(), this->_response.length(), 0);
 			waitpid(id, &(this->_exitCode), 0);
 			if (WIFEXITED(this->_exitCode))
 				std::cout << "Script exited with exit code " << this->_exitCode << std::endl;
@@ -125,6 +121,7 @@ void	PostCGI::run()
 	catch (std::runtime_error &re)
 	{
 		std::cerr << re.what() << std::endl;
+		response.setStatusCode(INTERNAL_SERVER_ERROR);
 	}
 }
 

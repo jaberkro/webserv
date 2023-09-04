@@ -4,10 +4,11 @@
 #include <unistd.h>
 #include <iostream>
 #include "Request.hpp"
+#include "Response.hpp"
+
 
 #define R 0
 #define W 1
-#define LEN 200
 
 class PostCGI
 {
@@ -23,9 +24,9 @@ class PostCGI
 	public:
 		PostCGI(Request & req);
 		~PostCGI();
-		void	run();
-		void	prepareArg();
-		void	prepareEnv();
+		void	run(Response & response);
+		void	prepareArg(std::string const & scriptName);
+		void	prepareEnv(std::string const & scriptName);
 
 		std::string	getResponse();
 };

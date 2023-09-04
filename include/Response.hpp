@@ -18,20 +18,23 @@ class Response {
 		
 		/* functions */
 		void	prepareTargetURI(Server const & server);
-		void	prepareResponseGET();
-		void	prepareResponsePOST();
-		void	prepareResponseDELETE(Server const & server);
+		void	sendResponse(void);
+		void	prepareResponsePOST(void);
+		void	prepareResponseDELETE(void);
+		void	deleteFile(void);
 		
 		/* getters */
 		size_t											getFileLength(void) const;
 		Request &										getRequest(void);
 		bool											getIsReady(void);
 		int												getStatusCode(void);
+		void											setStatusCode(int code);
 		std::string	&									getFilePath(void);
 		void											setFilePath(std::string path);
 		std::vector<Location>::const_iterator	const & getLocation(void) const;
-		uint8_t			*								getFullResponse(void);
-		void											setFullResponse(uint8_t * response);
+		std::string										getFullResponse(void);
+		void											addToFullResponse(char *response, size_t length);
+		void											addToFullResponse(std::string chunk);
 
 		/* utils */
 		void	splitUri(std::string const & uri, std::vector<std::string> & chunks);
@@ -41,13 +44,11 @@ class Response {
 
 		Request									_req;
 		int										_statusCode;
-		// std::map<std::string, std::string>		_headers; // currently unused
-		// std::string								_content; // currently unused
 		size_t									_fileLength;
 		std::string								_filePath;
 		bool									_isReady;
 		std::vector<Location>::const_iterator	_location;
-		uint8_t		*							_fullResponse;
+		std::string								_fullResponse;
 		static std::map<int, std::string>		_responseCodes;
 		
 		size_t									getFileSize(std::string filePath);
@@ -57,12 +58,14 @@ class Response {
 		std::vector<Location>::const_iterator	findClosestLocationMatch(std::string target, std::vector<Location> const & locations);
 		std::string								findIndexPage(std::vector<Location>::const_iterator itLoc);
 		void									checkWhetherFileExists(void);
-		void									sendFirstLine(void);
-		void									sendHeaders(std::string const & root);
-		void									sendContent(void);
+		void									prepareFirstLine(void);
+		void									prepareHeaders(std::string const & root);
+		void									prepareContent(void);
 };
 
-std::string	deleteFile(Request request, std::vector<Location>::const_iterator const & location);
+// std::string	deleteFile(Request request, std::vector<Location>::const_iterator const & location);
+bool allowedToDelete(std::string toRemove, std::vector<Location>::const_iterator const & location);
+
 
 /* 
 RE CONTENT

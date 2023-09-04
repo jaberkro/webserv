@@ -17,6 +17,7 @@ void	storeValuesInLocation(t_values values, Location &location)
 	location.setAllowed(values.allowed);
 	location.setDenied(values.denied);
 	location.setReturn(values.returnCode, values.returnText);
+	location.setCgiScriptName(values.CGI);
 	if (values.uploadDir != "")
 		location.setUploadDir(values.uploadDir);
 	else

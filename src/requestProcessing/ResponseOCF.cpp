@@ -28,7 +28,8 @@ _req (r.getRequest()), \
 _statusCode (r.getStatusCode()), \
 _fileLength (r.getFileLength()), \
 _isReady (r.getIsReady()), \
-_location () {}
+_location (), \
+_fullResponse (r.getFullResponse()) {}
 
 /**
  * @brief Response copy assignment operator
@@ -42,5 +43,6 @@ Response &	Response::operator=(Response & r)
 	this->_statusCode = r.getStatusCode();
 	this->_fileLength = r.getFileLength();
 	this->_isReady = r.getIsReady();
+	this->_fullResponse = r.getFullResponse();
 	return (*this);
 }
