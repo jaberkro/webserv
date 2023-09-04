@@ -6,7 +6,7 @@ Connection::Connection()
 {
 	this->_newReq = nullptr;
 	this->_newResp = nullptr;
-	this->_handler = nullptr;
+	this->_handlingServer = nullptr;
 	this->_address = "";
 	this->_port = 0;
 	// std::cout << "Default constructor called on Connection" << std::endl;
@@ -21,7 +21,7 @@ Connection::Connection(int listenfd, Socket sckt) : _listenfd(listenfd)
 {
 	this->_newReq = nullptr;
 	this->_newResp = nullptr;
-	this->_handler = nullptr;
+	this->_handlingServer = nullptr;
 	this->_address = sckt.getAddress();
 	this->_port = sckt.getPort();
 	// std::cout << "Parametric constructor called on Connection" << std::endl;
@@ -37,7 +37,7 @@ Connection& Connection::operator=(const Connection &src)
 {
 	this->_newReq = src._newReq;
 	this->_newResp = src._newResp;
-	this->_handler = src._handler;
+	this->_handlingServer = src._handlingServer;
 	this->_listenfd = src._listenfd;
 	this->_address = src._address;
 	this->_port = src._port;
@@ -57,10 +57,10 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 		std::cout << "After Request constructor" << std::endl;
 		this->_newReq->processReq();
 		this->_newReq->printRequest();
-		this->_handler = new Server(this->_newReq->identifyServer(servers)); //BS: hier kun je het IP e.d. meenemen uit de Connection class
-		std::cout << "_Handler info: host: [" << this->_handler->getPort(0) << "], port: [" << this->_handler->getHost(0) << "]" << std::endl;
+		this->_handlingServer = new Server(this->_newReq->identifyServer(servers)); //BS: hier kun je het IP e.d. meenemen uit de Connection class
+		std::cout << "_Handler info: host: [" << this->_handlingServer->getPort(0) << "], port: [" << this->_handlingServer->getHost(0) << "]" << std::endl;
 		std::cout << "Responsible server is " << \
-		this->_handler->getServerName(0) << std::endl;
+		this->_handlingServer->getServerName(0) << std::endl;
 	}
 	catch(const std::exception& e)
 	{
@@ -87,7 +87,7 @@ void	Connection::handleResponse()
 	try
 	{
 		this->_newResp = new Response(*this->_newReq);
-		this->_newResp->prepareTargetURI(*this->_handler);
+		this->_newResp->prepareTargetURI(*this->_handlingServer);
 
 		if (!allowedInLocation(this->_newReq->getMethod(), this->_newResp->getLocation()))
 		{
@@ -107,20 +107,19 @@ void	Connection::handleResponse()
 			this->_newReq->getTarget() == "/deleted.html" && \
 			this->_newReq->getQueryString() != ""))
 		{
-			this->_newResp->prepareResponseDELETE(*this->_handler);
+			this->_newResp->prepareResponseDELETE();
 		}	
-		else if (this->_newReq->getMethod() == "GET")
+		else if (this->_newReq->getMethod() != "GET")
 		{
-			;
-		}
-		else
-		{
-			std::cout << "I can't handle the "" method, sorry!" << std::endl;
+			std::cout << "I can't handle the \"" << this->_newReq->getMethod() << "\" method, sorry!" << std::endl;
+			return;
 		}
 
 		//RETURN CHECK
 		if (this->_newReq->getMethod() == "GET" || this->_newReq->getMethod() == "DELETE")
 		{
+			// DM: I think if there's return then you just need to overwrite this->_newResp->_statusCode and make sure that the this->_newResp->_filePath is correct. The assembling of the response is taken care of in the function sendResponse() called below
+			
 			// if (this->_newResp->getLocation()->getReturn().first != 0)
 			// {
 			// 	std::cout << "RETURN!!!!!!!!!!" << std::endl;
@@ -129,21 +128,13 @@ void	Connection::handleResponse()
 
 			// 	// snprintf((char *)response, MAXLINE, "%s 301 %s\r\n", this->_newReq->getProtocolVersion().c_str(), /*this->_newResp->getLocation()->getReturn().first,*/ (this->_newResp->getLocation()->getReturn().second).c_str());
 			// 	// std::cout << "Return about to send: " << (char*)response << std::endl;
-			// 	// send(this->_newReq->getConnFD(), (char*)response, std::strlen((char *)response), 0);
 			// }
-			// else
-			// {
-				if (this->_newReq->getMethod() == "GET")
-				{
-					this->_newResp->prepareResponseGET();
-				}
-				else
-					send(this->_newReq->getConnFD(), (char*)this->_newResp->getFullResponse(), std::strlen((char *)this->_newResp->getFullResponse()), 0);
-			// }
+
 		}
+		this->_newResp->sendResponse();
 		this->_newReq->setState(OVERWRITE);
 		delete this->_newResp;
-		delete this->_handler;
+		delete this->_handlingServer;
 	}
 	catch(const std::exception& e)
 	{

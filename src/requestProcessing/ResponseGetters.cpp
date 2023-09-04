@@ -35,13 +35,28 @@ int	Response::getStatusCode(void)
 	return (this->_statusCode);
 }
 
-uint8_t *	Response::getFullResponse(void)
+void	Response::setStatusCode(int code)
+{
+	this->_statusCode = code;
+}
+
+std::string	Response::getFullResponse(void)
 {
 	return (this->_fullResponse);
 }
 
-void	Response::setFullResponse(uint8_t *response)
+#include <iostream>
+
+void	Response::addToFullResponse(char *response, size_t length)
 {
-	this->_fullResponse = response;
+	std::string	chunk(response, length);
+	std::cerr << "[add to full response:] response is " << response << "; len is " << length << std::endl;
+	std::cerr << "chunk is " << chunk << std::endl;
+	this->_fullResponse.append(chunk);
+}
+
+void	Response::addToFullResponse(std::string chunk)
+{
+	this->_fullResponse.append(chunk);
 }
 
