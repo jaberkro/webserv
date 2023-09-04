@@ -93,7 +93,7 @@ void	PostCGI::run()
 			close(this->_webservToScript[R]);
 			dup2(this->_scriptToWebserv[W], STDOUT_FILENO);
 			close(this->_scriptToWebserv[W]);
-			std::cout << "trying to run script: [" << this->_arg[0] << "]" << std::endl;
+			std::cerr << "trying to run script: [" << this->_arg[0] << "]" << std::endl;
 			if (execve(this->_arg[0], this->_arg, this->_env) < 0)
 				std::cerr << strerror(errno) << std::endl;
 			std::cout << "FAIL: script: [" << this->_arg[0] << "]" << std::endl;
