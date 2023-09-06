@@ -5,6 +5,7 @@
 # include "Request.hpp"
 # include "responseCodes.hpp"
 # include "Location.hpp"
+// # include "Webserver.hpp"
 
 class Response {
 
@@ -16,52 +17,55 @@ class Response {
 		Response &	operator=(Response &);
 		
 		/* functions */
-		void									prepareTargetURI(Server const & server);
-		void									prepareResponseGET(Server const &);
-		void									prepareResponsePOST(Server const & server);
-		void									prepareResponseDELETE(Server const & server);
-		std::string								identifyErrorPage(std::vector<Location>::const_iterator itLoc);
-		std::vector<Location>::const_iterator 	findMatch(std::string target, std::vector<Location> const & locations);
-		std::vector<Location>::const_iterator	findExactMatch(std::string target, std::vector<Location> const & locations);
-		std::vector<Location>::const_iterator	findClosestMatch(std::string target, std::vector<Location> const & locations);
-		std::string								findIndexPage(std::vector<Location>::const_iterator itLoc);
-		void									checkFile(void);
-		void									retrieveFile(std::string const & root);
-		void									sendFirstLine(void);
-		void									sendHeaders(std::string const & root);
-		void									sendContentInChunks(void);
-
-		/* utils */
-		void	splitUri(std::string const & uri, std::vector<std::string> & chunks);
-		void	printResponse(void) const;	// for debugging purposes
-
+		void	prepareTargetURI(Server const & server);
+		void	sendResponse(void);
+		void	prepareResponsePOST(void);
+		void	prepareResponseDELETE(void);
+		void	deleteFile(void);
+		
 		/* getters */
 		size_t											getFileLength(void) const;
 		Request &										getRequest(void);
 		bool											getIsReady(void);
 		int												getStatusCode(void);
+		void											setStatusCode(int code);
 		std::string	&									getFilePath(void);
+		void											setFilePath(std::string path);
 		std::vector<Location>::const_iterator	const & getLocation(void) const;
+		std::string										getFullResponse(void);
+		void											addToFullResponse(char *response, size_t length);
+		void											addToFullResponse(std::string chunk);
+
+		/* utils */
+		void	splitUri(std::string const & uri, std::vector<std::string> & chunks);
+		void	printResponse(void) const;	// for debugging purposes
 
 	private:
 
 		Request									_req;
 		int										_statusCode;
-		std::map<std::string, std::string>		_headers; // currently unused
-		std::string								_content; // currently unused
 		size_t									_fileLength;
 		std::string								_filePath;
 		bool									_isReady;
 		std::vector<Location>::const_iterator	_location;
-		// std::map<std::string, std::string>	_trailers;
-		size_t	getFileSize(std::string filePath);
-		static std::map<int, std::string> 	_responseCodes;
-
+		std::string								_fullResponse;
+		static std::map<int, std::string>		_responseCodes;
+		
+		size_t									getFileSize(std::string filePath);
+		std::string								identifyErrorPage(std::map<int, std::string> const & errorPages);
+		std::vector<Location>::const_iterator 	findLocationMatch(std::string target, std::vector<Location> const & locations);
+		std::vector<Location>::const_iterator	findExactLocationMatch(std::string target, std::vector<Location> const & locations);
+		std::vector<Location>::const_iterator	findClosestLocationMatch(std::string target, std::vector<Location> const & locations);
+		std::string								findIndexPage(std::vector<Location>::const_iterator itLoc);
+		void									checkWhetherFileExists(void);
+		void									prepareFirstLine(void);
+		void									prepareHeaders(std::string const & root);
+		void									prepareContent(void);
 };
 
-std::string	deleteFile(Request request, std::vector<Location>::const_iterator const & location);
+// std::string	deleteFile(Request request, std::vector<Location>::const_iterator const & location);
+bool allowedToDelete(std::string toRemove, std::vector<Location>::const_iterator const & location);
 
-# define CHUNK_SIZE 100
 
 /* 
 RE CONTENT

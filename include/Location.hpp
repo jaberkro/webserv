@@ -49,6 +49,9 @@ class Location
 		void								setUploadDir(std::string uploadDir);
 		std::string							getUploadDir() const;
 
+		void								setCgiScriptName(std::string cgiScriptName);
+		std::string							getCgiScriptName() const;
+
 	private:
 		std::string											_locationMatch;
 		std::string											_locationModifier;
@@ -63,6 +66,7 @@ class Location
 		std::vector<std::string>							_denied;
 		std::pair<int, std::string>							_return;
 		std::string											_uploadDir;
+		std::string											_cgiScriptName;
 };
 
 #endif

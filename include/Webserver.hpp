@@ -1,6 +1,8 @@
 #ifndef WEBSERVER_HPP
 # define WEBSERVER_HPP
 
+// # define MAXLINE 60000 //which value should this be? // JMA: now in request.hpp
+
 #include <iostream>
 #include <algorithm>
 #include <vector>
@@ -12,8 +14,6 @@
 #include <map>
 
 class Socket;
-
-# define MAXLINE 60000 //which value should this be?
 
 class Webserver
 {

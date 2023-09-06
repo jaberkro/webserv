@@ -37,7 +37,10 @@ t_values	parseReturn(std::string line, t_values values)
 	line = protectedSubstr(line, firstSpace, line.size() - firstSpace);
 	line = ltrim(line);
 	if (!quotedArgument(line))
+	{
 		checkOneArgumentOnly(line, "return text parameter");
+		checkNotPreviousDirectory(line, "return");
+	}
 	else
 		line = protectedSubstr(line, 1, line.size() - 2);
 	values.returnText = line;
