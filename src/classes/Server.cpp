@@ -64,7 +64,10 @@ const std::vector<std::string> Server::getServerNames(void) const
 
 const std::string Server::getServerName(int i) const
 {
-	return (this->_serverNames.at(i));
+	if (this->_serverNames.size() > 0)
+		return (this->_serverNames.at(i));
+	else
+		return ("< Server has no name >");
 }
 
 const std::vector<Location> & Server::getLocations(void) const
