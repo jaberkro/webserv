@@ -7,6 +7,8 @@
 # include "Location.hpp"
 // # include "Webserver.hpp"
 
+#define DEFAULT_ERROR_PAGE "/defaultError.html"
+
 class Response {
 
 	public:
@@ -33,6 +35,7 @@ class Response {
 		void											setFilePath(std::string path);
 		std::vector<Location>::const_iterator	const & getLocation(void) const;
 		std::string										getFullResponse(void);
+		std::string										getMessage(void);
 		void											addToFullResponse(char *response, size_t length);
 		void											addToFullResponse(std::string chunk);
 
@@ -49,6 +52,7 @@ class Response {
 		bool									_isReady;
 		std::vector<Location>::const_iterator	_location;
 		std::string								_fullResponse;
+		std::string								_message;
 		static std::map<int, std::string>		_responseCodes;
 		
 		size_t									getFileSize(std::string filePath);

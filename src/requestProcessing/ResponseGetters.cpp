@@ -45,6 +45,11 @@ std::string	Response::getFullResponse(void)
 	return (this->_fullResponse);
 }
 
+std::string	Response::getMessage(void)
+{
+	return (this->_message);
+}
+
 #include <iostream>
 
 void	Response::addToFullResponse(char *response, size_t length)

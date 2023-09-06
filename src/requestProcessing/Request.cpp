@@ -23,7 +23,7 @@ void		Request::readFirstLineAndHeaders(void)
 	ssize_t		bytesRead = 0;
 	bool		firstLineComplete = false;
 
-	while (this->_state == READHEADERS && (bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0)
+	if (this->_state == READHEADERS && (bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0)
 	{
 		std::string	chunk(socketBuffer, bytesRead);
 		processingBuffer += chunk;
