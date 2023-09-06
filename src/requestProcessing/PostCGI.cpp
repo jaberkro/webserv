@@ -77,7 +77,6 @@ void	PostCGI::run(Response & response)
 
 	try 
 	{
-
 		if (pipe(this->_webservToScript) < 0 || pipe(this->_scriptToWebserv) < 0)
 			throw std::runtime_error("Pipe failed");
 		id = fork();

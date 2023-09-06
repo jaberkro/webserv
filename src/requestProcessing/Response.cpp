@@ -36,9 +36,12 @@ void	Response::prepareResponseDELETE(void)
 
 	std::memset(response, 0, RESPONSELINE);
 	this->deleteFile();
-	if (this->_req.getMethod() == "GET" && this->_statusCode != DELETED)
+	if (this->_statusCode != DELETED)
 	{
-		this->_filePath = "data/www/deleteFailed.html";
+		if (this->_req.getMethod() == "GET")
+			this->_filePath = "data/www/deleteFailed.html";
+		else
+			this->_filePath = "";
 	}
 }
 
@@ -61,12 +64,17 @@ void	Response::deleteFile(void)
 		this->_statusCode = BAD_REQUEST;
 	else
 	{
-		std::cout << "DELETE SUCCESSFUL!\n" << std::endl;
-		this->_statusCode = DELETED;
-		if (this->_req.getMethod() == "GET")
-			this->_filePath = "data/www/deleted.html";
-		else
+		std::cout << "DELETE SUCCESSFUL!\n" << this->_req.getHeaders()["User-Agent"] << "\n" << std::endl;
+		if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
+		{
+			this->_statusCode = DELETED;
 			this->_filePath = "";
+		}
+		else
+		{
+			this->_statusCode = OK;
+			this->_filePath = "data/www/deleted.html";
+		}
 	}
 }
 
@@ -74,11 +82,18 @@ void	Response::prepareResponsePOST(void)
 {
 	PostCGI	cgi(this->_req);
 
-	if (this->getLocation()->getMaxBodySize() > (unsigned int)this->getRequest().getBodyLength()) // JMA: this is the mxa_body_check
-	{
-		this->_statusCode = CONTENT_TOO_LARGE;
-		return ;
-	}
+	// JMA: below is the code for client_max_body_size. Right now it gives a pointer being freed wat not allocated error so it is outcommented
+	// if (this->getLocation()->getMaxBodySize() > (unsigned int)(this->getRequest().getBodyLength()))
+	// {
+	// 	// JMA: this is the max_body_check
+	// 	std::cout << "POST not allowed: Content Too Large." << std::endl;
+	// 	this->_statusCode = CONTENT_TOO_LARGE;
+	// 	// if (this->_req.getHeaders()["User-Agent"].find("curl") != 0)
+	// 	// {
+	// 	// 	this->_filePath = "data/www/postFailed.html";
+	// 	// }
+	// 	return ;
+	// }
 	cgi.prepareEnv(this->_location->getCgiScriptName());
 	cgi.prepareArg(this->_location->getCgiScriptName());
 	cgi.run(*this);
