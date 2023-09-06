@@ -5,7 +5,7 @@
 #include <iostream>
 #include <sys/stat.h>
 
-static bool forbiddenFileOrFolder(std::string toRemove)
+bool forbiddenToDeleteFileOrFolder(std::string toRemove)
 {
 	if (toRemove.find("../") != std::string::npos || \
 		toRemove.find("./") == 0 || \
@@ -28,24 +28,22 @@ static bool forbiddenFileOrFolder(std::string toRemove)
 	return (0);
 }
 
-bool allowedToDelete(std::string toRemove, std::vector<Location>::const_iterator const & location)
-{
-	int	allowCount = 0;
+// bool allowedToDelete(std::string toRemove, std::vector<Location>::const_iterator const & location)
+// {
+// 	int	allowCount = 0;
 
-	if (forbiddenFileOrFolder(toRemove))
-		return (0);
-	for (size_t i = 0; i < location->getAllowed().size(); i++)
-	{
-		if (location->getAllow(i) == "DELETE")
-			allowCount++;
-	}
-	for (size_t i = 0; i < location->getDenied().size(); i++)
-	{
-		if (location->getDeny(i) == "DELETE" || (allowCount == 0 && location->getDeny(i) == "all"))
-			return (0);
-	}
-	return (1);
-}
+// 	for (size_t i = 0; i < location->getAllowed().size(); i++)
+// 	{
+// 		if (location->getAllow(i) == "DELETE")
+// 			allowCount++;
+// 	}
+// 	for (size_t i = 0; i < location->getDenied().size(); i++)
+// 	{
+// 		if (location->getDeny(i) == "DELETE" || (allowCount == 0 && location->getDeny(i) == "all"))
+// 			return (0);
+// 	}
+// 	return (1);
+// }
 
 // DM: function deleteFile moved to the Response class (that made it easier to amend the status codes necessary for preparation of the response)
 

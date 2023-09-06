@@ -21,24 +21,25 @@
 std::map<int, std::string> 	Response::_responseCodes = 
 {
 	{OK, "OK"},
+	{DELETED, "Deleted"},
 	{BAD_REQUEST, "Bad Request"},
 	{FORBIDDEN, "Forbidden"},
 	{NOT_FOUND, "Not Found"},
+	{NOT_ALLOWED, "Not Allowed"},
+	{CONTENT_TOO_LARGE, "Content Too Large"},
 	{INTERNAL_SERVER_ERROR, "Internal Server Error"}
 };
 
 void	Response::prepareResponseDELETE(void)
 {
 	uint8_t		response[RESPONSELINE + 1];
-	// std::string	message;
 
 	std::memset(response, 0, RESPONSELINE);
 	this->deleteFile();
-	// if (this->_req.getMethod() == "GET")
-	// {
-		if (this->_statusCode != OK)
-			this->_filePath = "data/www/deleteFailed.html";
-	// }
+	if (this->_req.getMethod() == "GET" && this->_statusCode != DELETED)
+	{
+		this->_filePath = "data/www/deleteFailed.html";
+	}
 }
 
 void	Response::deleteFile(void)
@@ -52,25 +53,32 @@ void	Response::deleteFile(void)
 	else
 		toRemove = this->_location->getRoot() + this->_req.getTarget();
 	std::cout << "DELETE path: " << toRemove << "; TO REMOVE IS " << toRemove << std::endl;
-	if (!allowedToDelete(toRemove, this->_location))
+	if (forbiddenToDeleteFileOrFolder(toRemove))
 		this->_statusCode = FORBIDDEN;
-		// return ("403 Not allowed\r\nContent-Type: text/html\r\nContent-Length: 12\r\n\r\nNot allowed\n");
-	if (stat(toRemove.c_str(), &fileInfo) != 0)	// DM: this seems not to be working
+	else if (stat(toRemove.c_str(), &fileInfo) != 0)	// DM: this seems not to be working
 		this->_statusCode = NOT_FOUND;
-		// return ("404 Not Found\r\nContent-Type: text/html\r\nContent-Length: 10\r\n\r\nNot found\n");
-	if (fileInfo.st_mode & S_IFDIR || remove(toRemove.c_str()) != 0)
+	else if (fileInfo.st_mode & S_IFDIR || remove(toRemove.c_str()) != 0)
 		this->_statusCode = BAD_REQUEST;
-		// return ("400 Bad Request\r\nContent-Type: text/html\r\nContent-Length: 12\r\n\r\nBad request\n");
-	std::cout << "DELETE SUCCESSFUL!\n" << std::endl;
-	this->_statusCode = OK;
-	this->_filePath = "data/www/deleted.html";
-	// return ("204 Deleted\r\n");
+	else
+	{
+		std::cout << "DELETE SUCCESSFUL!\n" << std::endl;
+		this->_statusCode = DELETED;
+		if (this->_req.getMethod() == "GET")
+			this->_filePath = "data/www/deleted.html";
+		else
+			this->_filePath = "";
+	}
 }
 
 void	Response::prepareResponsePOST(void)
 {
 	PostCGI	cgi(this->_req);
-	
+
+	if (this->getLocation()->getMaxBodySize() > (unsigned int)this->getRequest().getBodyLength()) // JMA: this is the mxa_body_check
+	{
+		this->_statusCode = CONTENT_TOO_LARGE;
+		return ;
+	}
 	cgi.prepareEnv(this->_location->getCgiScriptName());
 	cgi.prepareArg(this->_location->getCgiScriptName());
 	cgi.run(*this);
@@ -101,7 +109,6 @@ void	Response::sendResponse(void)
 		prepareContent();
 	}
 	send(this->_req.getConnFD(), this->_fullResponse.c_str(), this->_fullResponse.length(), 0);
-
 }
 
 void	Response::prepareTargetURI(Server const & server)
@@ -381,7 +388,6 @@ void	Response::prepareContent(void)
 	body = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
 	this->_fullResponse.append(body);
 	file.close();
-
 }
 
 /* UTILS */

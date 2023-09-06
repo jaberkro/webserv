@@ -64,7 +64,8 @@ class Response {
 };
 
 // std::string	deleteFile(Request request, std::vector<Location>::const_iterator const & location);
-bool allowedToDelete(std::string toRemove, std::vector<Location>::const_iterator const & location);
+// bool allowedToDelete(std::string toRemove, std::vector<Location>::const_iterator const & location);
+bool forbiddenToDeleteFileOrFolder(std::string toRemove);
 
 
 /* 

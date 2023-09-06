@@ -84,53 +84,53 @@ static bool	allowedInLocation(std::string method, std::vector<Location>::const_i
 
 void	Connection::handleResponse()
 {
+	std::string method;
+
 	try
 	{
 		this->_newResp = new Response(*this->_newReq);
 		this->_newResp->prepareTargetURI(*this->_handlingServer);
 
-		if (!allowedInLocation(this->_newReq->getMethod(), this->_newResp->getLocation()))
+		method = this->_newReq->getMethod();
+		if (method == "GET" && this->_newReq->getTarget() == "/deleted.html" && this->_newReq->getQueryString() != "")
+			method = "DELETE";
+		if (!allowedInLocation(method, this->_newResp->getLocation())) //what about GET /deleted.html?
 		{
-			std::cout << "BOOOOH not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl;
-			this->_newResp->setFilePath("data/www/defaultError.html");
-			this->_newReq->setMethod("GET");//should be removed 
+			std::cout << "Method not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl;
+			
+			this->_newResp->setFilePath("data/www/defaultError.html"); // JMA: only when request is from browser, otherwise ""
+			this->_newResp->setStatusCode(NOT_ALLOWED);
 			//this should be something that overwrites all variables that matter for the response sending
 		}
-		//insert tests of allowed methods
-
-		if (this->_newReq->getMethod() == "POST")
+		else
 		{
-			this->_newResp->prepareResponsePOST();
-		}
-		else if (this->_newReq->getMethod() == "DELETE" || \
-			(this->_newReq->getMethod() == "GET" && \
-			this->_newReq->getTarget() == "/deleted.html" && \
-			this->_newReq->getQueryString() != ""))
-		{
-			this->_newResp->prepareResponseDELETE();
-		}	
-		else if (this->_newReq->getMethod() != "GET")
-		{
-			std::cout << "I can't handle the \"" << this->_newReq->getMethod() << "\" method, sorry!" << std::endl;
-			return;
+			if (this->_newReq->getMethod() == "POST")
+			{
+				this->_newResp->prepareResponsePOST();
+			}
+			else if (method == "DELETE")
+			{
+				this->_newResp->prepareResponseDELETE();
+			}	
+			else if (this->_newReq->getMethod() != "GET")
+			{
+				std::cout << "I can't handle the \"" << this->_newReq->getMethod() << "\" method, sorry!" << std::endl;
+				return;
+			}
 		}
 
 		//RETURN CHECK
-		if (this->_newReq->getMethod() == "GET" || this->_newReq->getMethod() == "DELETE")
-		{
-			// DM: I think if there's return then you just need to overwrite this->_newResp->_statusCode and make sure that the this->_newResp->_filePath is correct. The assembling of the response is taken care of in the function sendResponse() called below
-			
-			// if (this->_newResp->getLocation()->getReturn().first != 0)
-			// {
-			// 	std::cout << "RETURN!!!!!!!!!!" << std::endl;
-			// 	// uint8_t	response[MAXLINE + 1];
-			// 	// std::memset(response, 0, MAXLINE);
+		// if (this->_newReq->getMethod() == "GET" || this->_newReq->getMethod() == "DELETE")
+		// {			
+			if (this->_newResp->getLocation()->getReturn().first != 0)
+			{
+				std::cout << "RETURN!!!!!!!!!!" << std::endl;
+				this->_newResp->setStatusCode(this->_newResp->getLocation()->getReturn().first);
+				//this->_newResp->setMessage(this->_newResp->getLocation()->getReturn().second)// JMA: where do I store the return message? This still needs to be done
+				this->_newResp->setFilePath("");
+			}
 
-			// 	// snprintf((char *)response, MAXLINE, "%s 301 %s\r\n", this->_newReq->getProtocolVersion().c_str(), /*this->_newResp->getLocation()->getReturn().first,*/ (this->_newResp->getLocation()->getReturn().second).c_str());
-			// 	// std::cout << "Return about to send: " << (char*)response << std::endl;
-			// }
-
-		}
+		// }
 		this->_newResp->sendResponse();
 		this->_newReq->setState(OVERWRITE);
 		delete this->_newResp;
