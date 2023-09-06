@@ -46,6 +46,14 @@ void	Webserver::eofEvent(/*int connfd, */int ident)
 		throw Webserver::CloseError();
 }
 
+// bool	timeout()
+// {
+// 	long int	time = static_cast<long int>(std::time(NULL));
+	//error handling for std::time inbouwen!
+	// if (startTime > MAX_DURATION)
+	// 	return (true);
+// }
+
 /**
  * @brief Starts and runs the loop of the webserver that checks for events
  * 
@@ -65,6 +73,8 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 		running = true;//weg?
 		if ((nev = kevent(_kq, NULL, 0, &evList, 1, NULL)) < 0) //<0 [WAS 1] because the return value is the num of events place in queue
 			throw Webserver::KeventError();
+		// if (timeout())
+		// 	continue ;
 		if (evList.flags & EV_EOF)
 			eofEvent(evList.ident);
 		else if ((eventSocket = comparefd((int)evList.ident)) > -1)
