@@ -4,6 +4,7 @@
 
 import cgi, sys, os #, urllib.parse
 import cgitb # for debugging messages
+import time # for testing
 
 print("hoooooi", file=sys.stderr)
 
@@ -15,7 +16,6 @@ def sendResponseSuccess(fileName):
 		responseBody = uploaded.read()
 		response = "{} 302 Found\r\nContent-Type: text/html\r\nContent-Length: {}\r\nLocation: {}\r\n\r\n".format(os.environ["SERVER_PROTOCOL"], len(responseBody), redirect_url) + responseBody # Location to be fixed! And content type
 	sys.stdout.buffer.write(response.encode())
-
 
 uploadDir = os.getenv("UPLOAD_DIR")
 contentLen = os.getenv("CONTENT_LENGTH")
