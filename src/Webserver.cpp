@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <sys/event.h>
+#include <sys/time.h> //for kqueue timer
 #include <fstream>
 #include <fcntl.h>
 #include <csignal>
@@ -52,6 +53,12 @@ void	Webserver::eofEvent(/*int connfd, */int ident)
  * @param servers 
  */
 
+void	handleTimeOut()//int timeoutFd)
+{
+	std::cout << "Timer is triggered" << std::endl;
+	//delete read event, add write event and send a 408!
+}
+
 void	Webserver::runWebserver(std::vector<Server> servers)
 {
 	int nev, connfd;
@@ -60,13 +67,37 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 	socklen_t socklen = sizeof(addr);
 	int	eventSocket;
 
+	struct kevent timerEvent;
+	struct timespec timeout;
+	timeout.tv_sec = 5;
+	timeout.tv_nsec = 0;
+
+
+	// struct context
+	// {
+	// 	void (*handler)(struct context *timer);
+	// };
+	// struct context	timer = {};
+	// timer.handler = timer_handler;
+	// int period_ms = 3000;
+	// EV_SET(&evList, connfd, EVFILT_TIMER, EV_ADD | EV_ENABLE, 0, period_ms, &obj);
+	// if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
+	// 	throw Webserver::KeventError();
+
 	while (1)
 	{
+		struct timespec *timeout = NULL;
 		running = true;//weg?
-		if ((nev = kevent(_kq, NULL, 0, &evList, 1, NULL)) < 0) //<0 [WAS 1] because the return value is the num of events place in queue
+		if ((nev = kevent(_kq, NULL, 0, &evList, 1, timeout)) < 0) //<0 [WAS 1] because the return value is the num of events place in queue
 			throw Webserver::KeventError();
+		// struct context *timecheck = evList.udata;
+		if (evList.filter == EVFILT_TIMER)
+			handleTimeOut();//evList.ident);
+		// timer->handler(timecheck);
 		if (evList.flags & EV_EOF)
+		{
 			eofEvent(evList.ident);
+		}
 		else if ((eventSocket = comparefd((int)evList.ident)) > -1)
 		{
 			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~Connection accepted~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
@@ -82,15 +113,16 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 			EV_SET(&evList, connfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 			if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
 				throw Webserver::KeventError();
-			// if ((close(connfd)) < 0)
-			// 	throw Webserver::CloseError(); //Advice Swaan
-			//Als ik dit if-statement uitcomment: pagina blijft laden na "Uploaden succesvol"
 		}
 		else if (evList.filter == EVFILT_READ)
 		{
 			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
 
 			//At each call ofthis event, add a oneshot event for the timeout event (EVFILT_TIMER)!
+			EV_SET(&timerEvent, (int)evList.ident, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_ONESHOT, 0, 5000, &timeout);//, &timer);
+			if (kevent(_kq, &timerEvent, 1, NULL, 0, NULL) == -1)
+				throw Webserver::KeventError();
+
 			_connections[(int)evList.ident].handleRequest(evList.ident, servers);//, handler, newReq);
 			if (_connections[(int)evList.ident].getRequest()->getState() == WRITE)
 			{
@@ -108,6 +140,9 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 			_connections[(int)evList.ident].handleResponse();//newReq, newResp, handler);//;connfd, servers); //of moet connfd hier wel evList.ident zijn?
 			EV_SET(&evList, (int)evList.ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
 			if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
+				throw Webserver::KeventError();
+			EV_SET(&timerEvent, (int)evList.ident, EVFILT_TIMER, EV_DELETE, 0, 5000, &timeout);//, &timer);
+			if (kevent(_kq, &timerEvent, 1, NULL, 0, NULL) == -1)
 				throw Webserver::KeventError();
 
 		}
