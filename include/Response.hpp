@@ -22,6 +22,7 @@ class Response {
 		void	prepareTargetURI(Server const & server);
 		void	sendResponse(void);
 		void	prepareResponsePOST(void);
+		void	prepareResponseGET(void);
 		void	prepareResponseDELETE(void);
 		void	deleteFile(void);
 		

@@ -27,6 +27,13 @@ std::map<int, std::string> 	Response::_responseCodes =
 	{INTERNAL_SERVER_ERROR, "Internal Server Error"}
 };
 
+void	Response::prepareResponseGET(void) 
+{
+	std::cerr << "prepGET - cgi script name is " << this->_location->getCgiScriptName() << std::endl;
+	if (this->_location->getCgiScriptName().size() > 0)
+		this->prepareResponsePOST();
+}
+
 void	Response::prepareResponseDELETE(void)
 {
 	uint8_t		response[RESPONSELINE + 1];
@@ -71,6 +78,8 @@ void	Response::prepareResponsePOST(void)
 {
 	PostCGI	cgi(this->_req);
 	
+	std::cerr << "prep POST triggered" << std::endl;
+	
 	cgi.prepareEnv(this->_location->getCgiScriptName());
 	cgi.prepareArg(this->_location->getCgiScriptName());
 	cgi.run(*this);
@@ -94,7 +103,8 @@ void	Response::sendResponse(void)
 {
 	this->_fileLength = this->getFileSize(this->_filePath);
 	// change these into "composeFirstLine" etc into response->_fullResponse (change it to std::string)
-	if (this->_req.getMethod() == "GET" || this->_req.getMethod() == "DELETE")
+	// if (this->_req.getMethod() == "GET" || this->_req.getMethod() == "DELETE")
+	if (this->_fullResponse.empty())
 	{
 		prepareFirstLine();
 		prepareHeaders(this->_location->getRoot());

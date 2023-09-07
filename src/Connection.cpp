@@ -86,6 +86,9 @@ void	Connection::handleResponse()
 {
 	if (this->_newReq->getMethod() == "")
 		return;
+
+	// if unknown response type, return BAD REQUEST
+
 	try
 	{
 		this->_newResp = new Response(*this->_newReq);
@@ -100,9 +103,14 @@ void	Connection::handleResponse()
 		}
 		//insert tests of allowed methods
 
+		std::cerr << "method is " << this->_newReq->getMethod() << std::endl;
 		if (this->_newReq->getMethod() == "POST")
 		{
 			this->_newResp->prepareResponsePOST();
+		}
+		else if (this->_newReq->getMethod() == "GET")
+		{	
+			this->_newResp->prepareResponseGET();
 		}
 		else if (this->_newReq->getMethod() == "DELETE" || \
 			(this->_newReq->getMethod() == "GET" && \
