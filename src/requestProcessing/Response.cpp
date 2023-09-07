@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <unistd.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 #include <vector>
 
@@ -26,80 +27,56 @@ std::map<int, std::string> 	Response::_responseCodes =
 	{INTERNAL_SERVER_ERROR, "Internal Server Error"}
 };
 
-/**
- * @brief Construct a new Response:: Response object
- * 
- * @param req reference to a Request instance
- */
-Response::Response(Request & req) : \
-_req (req), \
-_statusCode (req.getStatusCode()), \
-_fileLength (0), \
-_isReady (false), \
-_location () {}
-
-/**
- * @brief Destroy the Response:: Response object
- * 
- */
-Response::~Response(void) {}
-
-/**
- * @brief Construct a new Response:: Response object
- * 
- * @param r reference to a Response instance to be copied
- */
-Response::Response(Response &r) : \
-_req (r.getRequest()), \
-_statusCode (r.getStatusCode()), \
-_fileLength (r.getFileLength()), \
-_isReady (r.getIsReady()), \
-_location () {}
-
-/**
- * @brief Response copy assignment operator
- * 
- * @param r reference to a Response instance to be copied
- * @return Response& 
- */
-Response &	Response::operator=(Response & r)
+void	Response::prepareResponseDELETE(void)
 {
-	this->_req = r.getRequest();
-	this->_statusCode = r.getStatusCode();
-	this->_fileLength = r.getFileLength();
-	this->_isReady = r.getIsReady();
-	return (*this);
-}
+	uint8_t		response[RESPONSELINE + 1];
+	// std::string	message;
 
-void	Response::prepareResponseDELETE(Server const & server)
-{
-	uint8_t	response[MAXLINE + 1];
-	std::string message;
-
-	std::memset(response, 0, MAXLINE);
-	message = deleteFile(this->_req, findMatch(this->_req.getTarget(), server.getLocations()));
-	if (this->_req.getMethod() == "GET")
-	{
-		if (message.find("204") != 0)
+	std::memset(response, 0, RESPONSELINE);
+	this->deleteFile();
+	// if (this->_req.getMethod() == "GET")
+	// {
+		if (this->_statusCode != OK)
 			this->_filePath = "data/www/deleteFailed.html";
-		this->retrieveFile(this->_location->getRoot());
-	}
-	else
-	{
-		snprintf((char *)response, MAXLINE, "%s %s\r\n", this->_req.getProtocolVersion().c_str(), message.c_str());
-		send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
-	}
+	// }
 }
 
-void	Response::prepareResponsePOST(Server const & server)
+void	Response::deleteFile(void)
 {
-	
-	Server tmp(server); //BS: dit is temporary, om compiler error over unused var. te silencen
+	std::string	toRemove;
+	struct stat fileInfo;
 
+	std::cout << "\nATTEMPT TO DELETE RIGHT NOW!!!" << std::endl;
+	if (this->_req.getMethod() == "GET")
+		toRemove = this->_location->getUploadDir() + "/" + this->_req.getQueryString().substr(this->_req.getQueryString().find_last_of("=") + 1);
+	else
+		toRemove = this->_location->getRoot() + this->_req.getTarget();
+	std::cout << "DELETE path: " << toRemove << "; TO REMOVE IS " << toRemove << std::endl;
+	if (!allowedToDelete(toRemove, this->_location))
+		this->_statusCode = FORBIDDEN;
+		// return ("403 Not allowed\r\nContent-Type: text/html\r\nContent-Length: 12\r\n\r\nNot allowed\n");
+	if (stat(toRemove.c_str(), &fileInfo) != 0)	// DM: this seems not to be working
+		this->_statusCode = NOT_FOUND;
+		// return ("404 Not Found\r\nContent-Type: text/html\r\nContent-Length: 10\r\n\r\nNot found\n");
+	if (fileInfo.st_mode & S_IFDIR || remove(toRemove.c_str()) != 0)
+		this->_statusCode = BAD_REQUEST;
+		// return ("400 Bad Request\r\nContent-Type: text/html\r\nContent-Length: 12\r\n\r\nBad request\n");
+	std::cout << "DELETE SUCCESSFUL!\n" << std::endl;
+	this->_statusCode = OK;
+	this->_filePath = "data/www/deleted.html";
+	// return ("204 Deleted\r\n");
+}
+
+void	Response::prepareResponsePOST(void)
+{
 	PostCGI	cgi(this->_req);
-	cgi.prepareEnv();
-	cgi.prepareArg();
-	cgi.run();
+	
+	cgi.prepareEnv(this->_location->getCgiScriptName());
+	cgi.prepareArg(this->_location->getCgiScriptName());
+	cgi.run(*this);
+	// std::cout << "about to send response >" << cgi.getResponse() << "<" << std::endl;
+	// send(this->_req.getConnFD(), cgi.getResponse().c_str(), cgi.getResponse().length(), 0);
+
 }
 
 /**
@@ -113,36 +90,43 @@ void	Response::prepareResponsePOST(Server const & server)
  * @param server a reference to the server that was identified to respond to this
  * request
  */
-void	Response::prepareResponseGET(Server const & )
+void	Response::sendResponse(void)
 {
-	this->retrieveFile(this->_location->getRoot());
+	this->_fileLength = this->getFileSize(this->_filePath);
+	// change these into "composeFirstLine" etc into response->_fullResponse (change it to std::string)
+	if (this->_req.getMethod() == "GET" || this->_req.getMethod() == "DELETE")
+	{
+		prepareFirstLine();
+		prepareHeaders(this->_location->getRoot());
+		prepareContent();
+	}
+	send(this->_req.getConnFD(), this->_fullResponse.c_str(), this->_fullResponse.length(), 0);
+
 }
 
 void	Response::prepareTargetURI(Server const & server)
 {
-	std::vector<Location>::const_iterator	itLoc;
-	std::string								targetUri = \
-	this->_req.getTarget().substr(0, this->_req.getTarget().find_first_of('?'));
-	int	rounds = 0;
+	std::string	targetUri = this->_req.getTarget().substr(0, \
+	this->_req.getTarget().find_first_of('?'));
+	int			rounds = 0; // to be deleted (is for debugging)
 
-	std::cout << "Responsible SERVER size is " << \
-	server.getServerNames().size() << std::endl;
-
-	while (!this->_isReady && rounds++ < 6) // rounds moeten weg (is voor debugging)
+	while (!this->_isReady && rounds++ < 6) // rounds to be deleted (used only for debugging)
 	{
 		try 
 		{
-			itLoc = findMatch(targetUri, server.getLocations());
-			if (targetUri[targetUri.length() - 1] == '/' && !itLoc->getIndexes().empty())
+			this->_location = findLocationMatch(targetUri, server.getLocations());
+			if (targetUri[targetUri.length() - 1] == '/')
 			{
-				targetUri = findIndexPage(itLoc);
+				if (this->_req.getMethod() == "GET" && !this->_location->getIndexes().empty())
+					targetUri = findIndexPage(this->_location);
+				else if (this->_req.getMethod() == "POST")
+					targetUri = "/uploaded.html";
 				continue;
 			}
 			else
 			{
-				this->_filePath = itLoc->getRoot() + targetUri;
-				this->checkFile();
-				this->_location = itLoc;
+				this->_filePath = this->_location->getRoot() + targetUri;
+				this->checkWhetherFileExists();
 				this->_isReady = true;
 			}
 		}
@@ -150,18 +134,16 @@ void	Response::prepareTargetURI(Server const & server)
 		{
 			std::cerr << "IOS exception caught (something went wrong with opening the file " << this->_filePath << "): ";
 			std::cerr << f.what() << std::endl;
-			targetUri = identifyErrorPage(itLoc);
+			targetUri = identifyErrorPage(this->_location->getErrorPages());
 		}
 		catch(const std::range_error &re)
 		{
-			std::cerr << "Range exception caught (no location match found for target " << this->_req.getTarget() << "): ";
+			std::cerr << "Range exception caught: (no location match found for target " << this->_req.getTarget() << "): ";
 			std::cerr << re.what() << std::endl;
-			
-			// TO BE ADDED: try to find a corresponding error page (BAD REQUEST) in the SERVER block;
-			targetUri = "/defaultError.html";
+			targetUri = identifyErrorPage(server.getErrorPages());
 		}
 		if (rounds == 6)	// moet straks weg
-			std::cout << "--> loop ended after 6 rounds <--" << std::endl;
+			std::cout << "--> loop ended after 6 rounds so SOMETHING IS PROBABLY WRONG <--" << std::endl;
 	}
 }
 
@@ -174,16 +156,17 @@ void	Response::prepareTargetURI(Server const & server)
  * closest match for the target
  * @return std::string filename of the error page to be returned
  */
-std::string	Response::identifyErrorPage(std::vector<Location>::const_iterator itLoc)
+std::string	Response::identifyErrorPage(std::map<int, std::string> const & errorPages)
 {
 	try
 	{
-		return (itLoc->getErrorPages().at(this->_statusCode));
+		return (errorPages.at(this->_statusCode));
 	}
 	catch(const std::out_of_range& oor)
 	{
 		std::cerr << "No custom error page provided for status code " << this->_statusCode << ")";
-		return("/defaultError.html");
+		this->_statusCode = NOT_FOUND;
+		return("/defaultError.html"); // THIS NEEDS TO BE A RETURN STATEMENT
 	}
 }
 
@@ -195,14 +178,14 @@ std::string	Response::identifyErrorPage(std::vector<Location>::const_iterator it
  * @return std::vector<Location>::iterator pointing to a Location instance that 
  * is either the exact match for the target, if available, or the closest one.
  */
-std::vector<Location>::const_iterator Response::findMatch(std::string target, \
+std::vector<Location>::const_iterator Response::findLocationMatch(std::string target, \
 std::vector<Location> const & locations)
 {
 	std::vector<Location>::const_iterator	itLoc;
 
-	itLoc = findExactMatch(target, locations);
+	itLoc = findExactLocationMatch(target, locations);
 	if (itLoc == locations.end())
-		itLoc = findClosestMatch(target, locations);
+		itLoc = findClosestLocationMatch(target, locations);
 	if (itLoc == locations.end())
 	{
 		this->_statusCode = INTERNAL_SERVER_ERROR;
@@ -221,7 +204,7 @@ std::vector<Location> const & locations)
  * is the exact match for the target. If no exact match was found, an iterator
  * pointing to the end of the locations vector is returned.
  */
-std::vector<Location>::const_iterator	Response::findExactMatch(std::string target, \
+std::vector<Location>::const_iterator	Response::findExactLocationMatch(std::string target, \
 std::vector<Location> const & locations)
 {
 	std::vector<Location>::const_iterator it;
@@ -247,7 +230,7 @@ std::vector<Location> const & locations)
  * is the closest match for the target. If no location is found, iterator to the
  * end of the locations vector is returned.
  */
-std::vector<Location>::const_iterator	Response::findClosestMatch(std::string target, \
+std::vector<Location>::const_iterator	Response::findClosestLocationMatch(std::string target, \
 std::vector<Location> const & locations)
 {
 	size_t									overlap = 0;
@@ -273,8 +256,10 @@ std::vector<Location> const & locations)
 				break;
 			}
 		}
+		std::cout << "checking match: " << it->getMatch() << "\tidx: " << idx << std::endl;
 		if (idx > overlap)
 		{
+			std::cout << "better match found: " << it->getMatch() << "overlap: " << overlap << std::endl;
 			overlap = idx;
 			longest = it;
 		}
@@ -295,14 +280,14 @@ std::vector<Location> const & locations)
  */
 std::string	Response::findIndexPage(std::vector<Location>::const_iterator itLoc)
 {
-	std::string							filePath;
-	std::vector<std::string>			indexes = itLoc->getIndexes();
+	std::string					filePath;
+	std::vector<std::string>	indexes = itLoc->getIndexes();
 
 	for (auto itIdx = indexes.begin(); itIdx != indexes.end(); itIdx++)
 	{
-		std::cout<< "itIdx: [" << *itIdx << "]" << std::endl;
+		// std::cout<< "itIdx: [" << *itIdx << "]" << std::endl;
 		filePath = itLoc->getRoot() + *itIdx;
-		std::cout<< "Filepath: [" << filePath << "]" << std::endl;
+		// std::cout<< "Filepath: [" << filePath << "]" << std::endl;
 
 		if (access(filePath.c_str(), F_OK) == 0)
 			return (*itIdx);
@@ -316,32 +301,14 @@ std::string	Response::findIndexPage(std::vector<Location>::const_iterator itLoc)
  * 
  * @param response the buffer into which the response is written
  */
-void	Response::checkFile()
+void	Response::checkWhetherFileExists()
 {
-	this->_fileLength = this->getFileSize(this->_filePath);
+	// this->_fileLength = this->getFileSize(this->_filePath);
 	if (access(this->_filePath.c_str(), F_OK | R_OK) < 0)
 	{
 		this->_statusCode = NOT_FOUND;
 		throw std::ios_base::failure("File not found: " + this->_filePath);
 	}
-}
-
-/**
- * @brief retrieves a file or throws an exception, if file is not found.
- * 
- * @param response the buffer into which the response is written
- */
-void	Response::retrieveFile(std::string const & root)
-{
-	this->_fileLength = this->getFileSize(this->_filePath);
-	if (access(this->_filePath.c_str(), F_OK | R_OK) < 0)
-	{
-		this->_statusCode = NOT_FOUND;
-		throw std::ios_base::failure("File not found: " + this->_filePath);
-	}
-	sendFirstLine();
-	sendHeaders(root);
-	sendContentInChunks();
 }
 
 /**
@@ -350,17 +317,17 @@ void	Response::retrieveFile(std::string const & root)
  * 
  * @param response the buffer into which the response is written
  */
-void	Response::sendFirstLine(void)
+void	Response::prepareFirstLine(void)
 {
-	uint8_t	response[MAXLINE + 1];
+	char	responseBuffer[RESPONSELINE + 1];
 	
-	std::memset(response, 0, MAXLINE);
-	snprintf((char *)response, MAXLINE, \
+	std::memset(responseBuffer, 0, RESPONSELINE + 1);
+	snprintf(responseBuffer, RESPONSELINE, \
 	"%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, \
 	this->_responseCodes.at(this->_statusCode).c_str());
-	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
-
-	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+	printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
+	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
+	// send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
 
 /**
@@ -371,62 +338,50 @@ void	Response::sendFirstLine(void)
  * @param root the root directory (from the location block; used to distinguish
  * between the file types that are to be returned - to determine Content Type)
  */
-void	Response::sendHeaders(std::string const & root)
+void	Response::prepareHeaders(std::string const & root)
 {
-	uint8_t	response[MAXLINE + 1];
+	char			responseBuffer[RESPONSELINE + 1];
 	std::string		contentType;
 
 	contentType = root == "data" ? \
 	"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
 	std::string::npos) : "text/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1);
-	std::memset(response, 0, MAXLINE);
-	snprintf((char *)response, MAXLINE, \
+	std::memset(responseBuffer, 0, RESPONSELINE);
+	snprintf(responseBuffer, RESPONSELINE, \
 	"Content-Type: %s\r\nContent-Length: %zu\r\n\r\n", contentType.c_str(), this->_fileLength);
-	printf("\n\nFILEPATH: [%s]\n\n", this->_filePath.c_str());
-	printf("\n\nRESPONSE: [%s]\n\n", (char*)response);
-	printf("\n\nCONTENT TYPE: [%s]\n\n", contentType.c_str());
+	// printf("\n\nFILEPATH: [%s]\n\n", this->_filePath.c_str());
+	// printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
+	// printf("\n\nCONTENT TYPE: [%s]\n\n", contentType.c_str());
 
-	send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
+
+	// send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
 
 
 /**
  * @brief copy-pastes the content of the target file into the response buffer
- * in chunks of CHUNK_SIZE characters and sends each chunk to the client. After sending, 
- * the buffer is cleared with std::memset(). If the file cannot be opened, an
- * exception is thrown.
+ * in chunks of RESPONSELINE characters and sends each chunk to the client. 
+ * After sending, the buffer is cleared with std::memset(). If the file cannot 
+ * be opened, an exception is thrown.
  * 
  * @param response the buffer into which the response is written
  */
-void	Response::sendContentInChunks(void)
+void	Response::prepareContent(void)
 {
-	uint8_t			response[CHUNK_SIZE + 1];
 	std::ifstream	file;
-	std::filebuf	*fileBuf;
+	std::string		body;
 	
-	std::memset(response, 0, CHUNK_SIZE);
 	file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
 	if (!file.is_open())
 	{
 		this->_statusCode = FORBIDDEN;
 		throw std::ios_base::failure("Error when opening a file");
 	}
-	fileBuf = file.rdbuf();
-	for ( size_t i = 0; i < this->_fileLength; i++ )
-	{
-		
-		response[i % CHUNK_SIZE] = fileBuf->sbumpc();
-		if (i % CHUNK_SIZE == CHUNK_SIZE - 1)
-		{
-			send(this->_req.getConnFD(), (char*)response, CHUNK_SIZE, 0);
-			std::memset(response, 0, CHUNK_SIZE);
-		}
-	}
-	send(this->_req.getConnFD(), (char*)response, this->_fileLength % CHUNK_SIZE, 0);
-	std::memset(response, 0, CHUNK_SIZE);
-	send(this->_req.getConnFD(), (char*)response, 0, 0);
+	body = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+	this->_fullResponse.append(body);
 	file.close();
-	std::cout << "End of the sendContentInChunks function" << std::endl;
+
 }
 
 /* UTILS */
@@ -472,38 +427,6 @@ void	Response::splitUri(std::string const & uri, std::vector<std::string> & chun
 		chunks.push_back(uri.substr(begin, end - begin));
 		begin = end;
 	}
-}
-
-/* GETTERS */
-
-size_t	Response::getFileLength( void ) const
-{
-	return (this->_fileLength);
-}
-
-std::string	& Response::getFilePath(void)
-{
-	return (this->_filePath);
-}
-
-bool	Response::getIsReady(void)
-{
-	return (this->_isReady);
-}
-
-std::vector<Location>::const_iterator	const & Response::getLocation(void) const
-{
-	return (this->_location);
-}
-
-Request &	Response::getRequest(void)
-{
-	return (this->_req);
-}
-
-int	Response::getStatusCode(void)
-{
-	return (this->_statusCode);
 }
 
 /* TO BE DELETED */

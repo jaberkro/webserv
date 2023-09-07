@@ -123,7 +123,7 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 			if (kevent(_kq, &timerEvent, 1, NULL, 0, NULL) == -1)
 				throw Webserver::KeventError();
 
-			_connections[(int)evList.ident].handleRequest(evList.ident, servers);//, handler, newReq);
+			_connections[(int)evList.ident].handleRequest(evList.ident, servers);//, handlingServer, newReq);
 			if (_connections[(int)evList.ident].getRequest()->getState() == WRITE)
 			{
 				std::cout << "~~~~~~~~~~~~~~~~~~WRITE event filter added for conn fd " << (int)evList.ident << " with state " << _connections[(int)evList.ident].getRequest()->getState() << "~~~~~~~~~~~~~~~~\n\n" << std::endl;
@@ -137,7 +137,7 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 		{
 			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~WRITE EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
 			//send response content that you bind to your request class. When all data is sent, delete TIMEOUT events and close conn
-			_connections[(int)evList.ident].handleResponse();//newReq, newResp, handler);//;connfd, servers); //of moet connfd hier wel evList.ident zijn?
+			_connections[(int)evList.ident].handleResponse();//newReq, newResp, handlingServer);//;connfd, servers); //of moet connfd hier wel evList.ident zijn?
 			EV_SET(&evList, (int)evList.ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
 			if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
 				throw Webserver::KeventError();

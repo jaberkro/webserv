@@ -26,6 +26,7 @@ t_values	parseErrorPage(std::string line, t_values values)
 	line = protectedSubstr(line, 10);
 	line = ltrim(line);
 	checkEmptyString(line, "error_page", reason + " <code> <file>");
+	checkNotPreviousDirectory(line, "error_page");
 	// values.errorPages.clear(); //use if error_page should overwrite itself
 	lastWhitespace = line.find_last_of(" \t\v\b") + 1;
 	file = protectedSubstr(line, lastWhitespace, line.size() - lastWhitespace);
