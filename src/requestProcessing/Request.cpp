@@ -316,6 +316,6 @@ void	Request::printRequest()
 	for (std::map<std::string,std::string>::iterator it = this->_headers.begin(); \
 	it != this->_headers.end(); it++)
 		std::cout << "\t" << it->first << ": " << it->second << std::endl;
-	std::cout << "Body length: " << this->getBodyLength() << std::endl;
+	std::cout << "\tBody length: " << this->getBodyLength() << std::endl;
 	std::cout << "\t***\n" << std::endl;
 }

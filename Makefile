@@ -17,6 +17,7 @@ SRC = 	main.cpp \
 		requestProcessing/ResponseGetters.cpp \
 		requestProcessing/PostCGI.cpp \
 		requestProcessing/delete.cpp \
+		requestProcessing/autoindex.cpp \
 		requestProcessing/utils.cpp \
 		Socket.cpp \
 		Connection.cpp \

@@ -21,9 +21,12 @@
 std::map<int, std::string> 	Response::_responseCodes = 
 {
 	{OK, "OK"},
+	{DELETED, "Deleted"},
 	{BAD_REQUEST, "Bad Request"},
 	{FORBIDDEN, "Forbidden"},
 	{NOT_FOUND, "Not Found"},
+	{NOT_ALLOWED, "Not Allowed"},
+	{CONTENT_TOO_LARGE, "Content Too Large"},
 	{INTERNAL_SERVER_ERROR, "Internal Server Error"}
 };
 
@@ -37,48 +40,71 @@ void	Response::prepareResponseGET(void)
 	// redesign it so that a runCgiScript() function gets called from both prepareGET and preparePOST.
 }
 
-void	Response::prepareResponseDELETE(void)
+void	Response::prepareResponseDELETE(void)	
 {
 	uint8_t		response[RESPONSELINE + 1];
-	// std::string	message;
 
 	std::memset(response, 0, RESPONSELINE);
 	this->deleteFile();
-	// if (this->_req.getMethod() == "GET")
-	// {
-		if (this->_statusCode != OK)
+	if (this->_statusCode != OK && this->_statusCode != DELETED)
+	{
+		if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
+			this->_filePath.clear();
+		else
 			this->_filePath = "data/www/deleteFailed.html";
-	// }
+	}
 }
 
+/**
+ * @brief execute the DELETE method on the target defined in the request.
+ * Sets the _statusCode based on the result. OK or DELETED means that the
+ * DELETE is executed succesfully.
+ */
 void	Response::deleteFile(void)
 {
 	std::string	toRemove;
 	struct stat fileInfo;
 
 	std::cout << "\nATTEMPT TO DELETE RIGHT NOW!!!" << std::endl;
-	if (this->_req.getMethod() == "GET")
-		toRemove = this->_location->getUploadDir() + "/" + this->_req.getQueryString().substr(this->_req.getQueryString().find_last_of("=") + 1);
-	else
+	if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
 		toRemove = this->_location->getRoot() + this->_req.getTarget();
+	else
+		toRemove = this->_location->getUploadDir() + "/" + this->_req.getQueryString().substr(this->_req.getQueryString().find_last_of("=") + 1);
 	std::cout << "DELETE path: " << toRemove << "; TO REMOVE IS " << toRemove << std::endl;
-	if (!allowedToDelete(toRemove, this->_location))
+	if (forbiddenToDeleteFileOrFolder(toRemove))
 		this->_statusCode = FORBIDDEN;
-		// return ("403 Not allowed\r\nContent-Type: text/html\r\nContent-Length: 12\r\n\r\nNot allowed\n");
-	if (stat(toRemove.c_str(), &fileInfo) != 0)	// DM: this seems not to be working
+	else if (stat(toRemove.c_str(), &fileInfo) != 0)	// DM: this seems not to be working
 		this->_statusCode = NOT_FOUND;
-		// return ("404 Not Found\r\nContent-Type: text/html\r\nContent-Length: 10\r\n\r\nNot found\n");
-	if (fileInfo.st_mode & S_IFDIR || remove(toRemove.c_str()) != 0)
+	else if (fileInfo.st_mode & S_IFDIR || remove(toRemove.c_str()) != 0)
 		this->_statusCode = BAD_REQUEST;
-		// return ("400 Bad Request\r\nContent-Type: text/html\r\nContent-Length: 12\r\n\r\nBad request\n");
-	std::cout << "DELETE SUCCESSFUL!\n" << std::endl;
-	this->_statusCode = OK;
-	this->_filePath = "data/www/deleted.html";
-	// return ("204 Deleted\r\n");
+	else
+	{
+		std::cout << "DELETE SUCCESSFUL!\n" << this->_req.getHeaders()["User-Agent"] << "\n" << std::endl;
+		if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
+		{
+			this->_statusCode = DELETED;
+			this->_filePath.clear();
+		}
+		else
+			this->_statusCode = OK;
+	}
 }
 
 void	Response::prepareResponsePOST(void)
 {
+	// std::cout << "Checking if POST is allowed based om the client_max_body_size..." << std::endl;
+	// std::cout << "max size: " << this->getLocation()->getMaxBodySize() << " and body length: " << this->getRequest().getBodyLength() << std::endl;
+	if (this->getRequest().getBodyLength() > this->getLocation()->getMaxBodySize()) // JMA: this counts for POST but not for GET!
+	{
+		std::cout << "POST not allowed: Content Too Large." << std::endl;
+		this->_statusCode = CONTENT_TOO_LARGE;
+		if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
+			this->_filePath.clear();
+		else
+			this->_filePath = "data/www/postFailed.html";
+		return ;
+	}
+
 	PostCGI	cgi(this->_req);
 	
 	std::cerr << "prep POST triggered" << std::endl;
@@ -146,6 +172,10 @@ void	Response::prepareTargetURI(Server const & server)
 				{
 					// HERE COMES THE AUTOINDEX CODE
 					// tbd what to return if a directory is requested and there is no index and autoindex is off
+					// hier message vullen en statuscode en IETS in de filepath zetten OF JUIST NIET?
+					this->_message = createAutoindex();
+					this->_statusCode = NOT_FOUND;
+					this->_filePath = "_";
 					std::cerr << "The target is a directory" << std::endl;
 					this->_isReady = true;
 				}
@@ -299,10 +329,10 @@ std::vector<Location> const & locations)
 				break;
 			}
 		}
-		std::cout << "checking match: " << it->getMatch() << "\tidx: " << idx << std::endl;
+		// std::cout << "checking match: " << it->getMatch() << "\tidx: " << idx << std::endl;
 		if (idx > overlap)
 		{
-			std::cout << "better match found: " << it->getMatch() << "overlap: " << overlap << std::endl;
+			// std::cout << "better match found: " << it->getMatch() << "overlap: " << overlap << std::endl;
 			overlap = idx;
 			longest = it;
 		}
@@ -365,11 +395,20 @@ void	Response::prepareFirstLine(void)
 	char	responseBuffer[RESPONSELINE + 1];
 	
 	std::memset(responseBuffer, 0, RESPONSELINE + 1);
-	snprintf(responseBuffer, RESPONSELINE, \
-	"%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, \
-	this->_responseCodes.at(this->_statusCode).c_str());
+	if (this->_filePath == "") // JMA: this is implemented for return messages
+	{
+		snprintf(responseBuffer, RESPONSELINE, \
+		"%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, \
+		this->_message.c_str());
+	}
+	else
+	{
+		snprintf(responseBuffer, RESPONSELINE, \
+		"%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, \
+		this->_responseCodes.at(this->_statusCode).c_str());
+	}
 	printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
-	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
+	this->addToFullResponse(&responseBuffer[0]);//, std::strlen(responseBuffer)); //JMA: last variable outcommented because of merge conflict
 }
 
 /**
@@ -385,7 +424,7 @@ void	Response::prepareHeaders(std::string const & root)
 	char			responseBuffer[RESPONSELINE + 1];
 	std::string		contentType;
 
-	if (!this->_filePath.empty())
+	if (!this->_filePath.empty()) //JMA: hier moet iets voor autoindex om het te laten werken
 	{
 		contentType = root == "data" ? \
 		"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
@@ -393,15 +432,15 @@ void	Response::prepareHeaders(std::string const & root)
 		std::memset(responseBuffer, 0, RESPONSELINE);
 		snprintf(responseBuffer, RESPONSELINE, "Content-Type: %s\r\n", contentType.c_str());
 	}
-	if (this->_fileLength == 0 && this->_message.length() > 0)
-		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_message.length());
+	if (this->_fileLength == 0 && this->_message.length() > 0) // JMA: autoindex moet hier ook in komen
+		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_message.length()); // JMA: this might have to be different
 	else
 		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_fileLength);
 	// printf("\n\nFILEPATH: [%s]\n\n", this->_filePath.c_str());
 	// printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
 	// printf("\n\nCONTENT TYPE: [%s]\n\n", contentType.c_str());
 
-	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
+	this->addToFullResponse(&responseBuffer[0]);//, std::strlen(responseBuffer)); //JMA: last variable outcommented because of merge conflict
 }
 
 
@@ -421,21 +460,23 @@ void	Response::prepareContent(void)
 	// DM: add first check whether _filePath is empty, zo ja, plak message in body
 	// also check response codes die geen body mogen hebben (dat er geen body komt)
 	
-	if (this->_filePath.empty())
+	if (this->_filePath.empty() || this->_filePath == "_") // JMA: this "_" is for autoindex, maybe it can become more fancy later
 	{
-		this->_fullResponse.append(this->_message);
+		this->_fullResponse.append(this->_message); //JMA: this might have to be different
 		return;
 	}
-	file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
-	if (!file.is_open())
+	else
 	{
-		this->_statusCode = FORBIDDEN;
-		throw std::ios_base::failure("Error when opening a file");
+		file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
+		if (!file.is_open())
+		{
+			this->_statusCode = FORBIDDEN;
+			throw std::ios_base::failure("Error when opening a file");
+		}
+		body = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+		this->_fullResponse.append(body);
+		file.close();
 	}
-	body = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-	this->_fullResponse.append(body);
-	file.close();
-
 }
 
 /* UTILS */

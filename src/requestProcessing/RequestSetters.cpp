@@ -50,4 +50,3 @@ void	Request::setState(size_t state)
 {
 	this->_state = state;
 }
-

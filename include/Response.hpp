@@ -43,6 +43,7 @@ class Response {
 		std::vector<Location>::const_iterator	const & getLocation(void) const;
 		std::string										getFullResponse(void);
 		std::string										getMessage(void);
+		void											setMessage(std::string);
 		size_t	const & 								getState() const;
 		void											addToFullResponse(char *response, size_t length);
 		void											addToFullResponse(std::string chunk);
@@ -77,7 +78,9 @@ class Response {
 };
 
 // std::string	deleteFile(Request request, std::vector<Location>::const_iterator const & location);
-bool allowedToDelete(std::string toRemove, std::vector<Location>::const_iterator const & location);
+// bool allowedToDelete(std::string toRemove, std::vector<Location>::const_iterator const & location);
+bool		forbiddenToDeleteFileOrFolder(std::string toRemove);
+std::string	createAutoindex(void);
 
 
 /* 
