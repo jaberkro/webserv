@@ -10,6 +10,7 @@
 #include <fstream>
 #include <fcntl.h>
 #include <csignal>
+#include <thread> //for multithreading for the timer
 
 #include "Request.hpp"
 #include "Response.hpp"
@@ -53,9 +54,17 @@ void	Webserver::eofEvent(/*int connfd, */int ident)
  * @param servers 
  */
 
-void	handleTimeOut()//int timeoutFd)
+void	handleTimeOut(struct kevent evList)
 {
-	std::cout << "Timer is triggered" << std::endl;
+	std::cout << "===TIMER THREAD ACTIVATED===" << std::endl;
+	while (1)
+	{
+		if (evList.filter == EVFILT_TIMER)
+		{
+			std::cout << "Timer is triggered" << std::endl;
+		}
+	}
+
 	//delete read event, add write event and send a 408!
 }
 
@@ -72,6 +81,7 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 	timeout.tv_sec = 5;
 	timeout.tv_nsec = 0;
 
+	std::thread timerThread(handleTimeOut, evList);
 
 	// struct context
 	// {
@@ -91,8 +101,8 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 		if ((nev = kevent(_kq, NULL, 0, &evList, 1, timeout)) < 0) //<0 [WAS 1] because the return value is the num of events place in queue
 			throw Webserver::KeventError();
 		// struct context *timecheck = evList.udata;
-		if (evList.filter == EVFILT_TIMER)
-			handleTimeOut();//evList.ident);
+		// if (evList.filter == EVFILT_TIMER)
+		// 	handleTimeOut();//evList.ident);
 		// timer->handler(timecheck);
 		if (evList.flags & EV_EOF)
 		{
