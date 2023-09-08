@@ -91,60 +91,67 @@ void	Connection::handleResponse()
 
 	try
 	{
-		this->_newResp = new Response(*this->_newReq);
-		this->_newResp->prepareTargetURI(*this->_handlingServer);
-
-		if (!allowedInLocation(this->_newReq->getMethod(), this->_newResp->getLocation()))
+		if (this->_newResp == nullptr)
 		{
-			std::cout << "BOOOOH not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl;
-			this->_newResp->setFilePath("data/www/defaultError.html");
-			this->_newReq->setMethod("GET");//should be removed 
-			//this should be something that overwrites all variables that matter for the response sending
-		}
-		//insert tests of allowed methods
+			this->_newResp = new Response(*this->_newReq);
+			this->_newResp->prepareTargetURI(*this->_handlingServer);
 
-		std::cerr << "method is " << this->_newReq->getMethod() << std::endl;
-		if (this->_newReq->getMethod() == "POST")
-		{
-			this->_newResp->prepareResponsePOST();
-		}
-		else if (this->_newReq->getMethod() == "GET")
-		{	
-			this->_newResp->prepareResponseGET();
-		}
-		else if (this->_newReq->getMethod() == "DELETE" || \
-			(this->_newReq->getMethod() == "GET" && \
-			this->_newReq->getTarget() == "/deleted.html" && \
-			this->_newReq->getQueryString() != ""))
-		{
-			this->_newResp->prepareResponseDELETE();
-		}	
-		else if (this->_newReq->getMethod() != "GET")
-		{
-			std::cout << "I can't handle the \"" << this->_newReq->getMethod() << "\" method, sorry!" << std::endl;
-			return;
-		}
+			if (!allowedInLocation(this->_newReq->getMethod(), this->_newResp->getLocation()))
+			{
+				std::cout << "BOOOOH not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl;
+				this->_newResp->setFilePath("data/www/defaultError.html");
+				this->_newReq->setMethod("GET");//should be removed 
+				//this should be something that overwrites all variables that matter for the response sending
+			}
+			//insert tests of allowed methods
 
-		//RETURN CHECK
-		if (this->_newReq->getMethod() == "GET" || this->_newReq->getMethod() == "DELETE")
-		{
-			// DM: I think if there's return then you just need to overwrite this->_newResp->_statusCode and make sure that the this->_newResp->_filePath is correct. The assembling of the response is taken care of in the function sendResponse() called below
-			
-			// if (this->_newResp->getLocation()->getReturn().first != 0)
-			// {
-			// 	std::cout << "RETURN!!!!!!!!!!" << std::endl;
-			// 	// uint8_t	response[MAXLINE + 1];
-			// 	// std::memset(response, 0, MAXLINE);
+			std::cerr << "method is " << this->_newReq->getMethod() << std::endl;
+			if (this->_newReq->getMethod() == "POST")
+			{
+				this->_newResp->prepareResponsePOST();
+			}
+			else if (this->_newReq->getMethod() == "GET")
+			{	
+				this->_newResp->prepareResponseGET();
+			}
+			else if (this->_newReq->getMethod() == "DELETE" || \
+				(this->_newReq->getMethod() == "GET" && \
+				this->_newReq->getTarget() == "/deleted.html" && \
+				this->_newReq->getQueryString() != ""))
+			{
+				this->_newResp->prepareResponseDELETE();
+			}	
+			else if (this->_newReq->getMethod() != "GET")
+			{
+				std::cout << "I can't handle the \"" << this->_newReq->getMethod() << "\" method, sorry!" << std::endl;
+				return;
+			}
 
-			// 	// snprintf((char *)response, MAXLINE, "%s 301 %s\r\n", this->_newReq->getProtocolVersion().c_str(), /*this->_newResp->getLocation()->getReturn().first,*/ (this->_newResp->getLocation()->getReturn().second).c_str());
-			// 	// std::cout << "Return about to send: " << (char*)response << std::endl;
-			// }
+			//RETURN CHECK
+			if (this->_newReq->getMethod() == "GET" || this->_newReq->getMethod() == "DELETE")
+			{
+				// DM: I think if there's return then you just need to overwrite this->_newResp->_statusCode and make sure that the this->_newResp->_filePath is correct. The assembling of the response is taken care of in the function sendResponse() called below
+				
+				// if (this->_newResp->getLocation()->getReturn().first != 0)
+				// {
+				// 	std::cout << "RETURN!!!!!!!!!!" << std::endl;
+				// 	// uint8_t	response[MAXLINE + 1];
+				// 	// std::memset(response, 0, MAXLINE);
 
+				// 	// snprintf((char *)response, MAXLINE, "%s 301 %s\r\n", this->_newReq->getProtocolVersion().c_str(), /*this->_newResp->getLocation()->getReturn().first,*/ (this->_newResp->getLocation()->getReturn().second).c_str());
+				// 	// std::cout << "Return about to send: " << (char*)response << std::endl;
+				// }
+
+			}
 		}
 		this->_newResp->sendResponse();
-		this->_newReq->setState(OVERWRITE);
-		delete this->_newResp;
-		delete this->_handlingServer;
+		if (this->_newResp->getState() == DONE)
+		{
+			this->_newReq->setState(OVERWRITE);
+			delete this->_newResp;
+			this->_newResp = nullptr;
+			delete this->_handlingServer;
+		}
 	}
 	catch(const std::exception& e)
 	{
@@ -160,4 +167,9 @@ void	Connection::setRequest(Request *request)
 Request *	Connection::getRequest(void)
 {
 	return (this->_newReq);
+}
+
+Response *	Connection::getResponse(void)
+{
+	return (this->_newResp);
 }

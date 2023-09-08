@@ -65,3 +65,7 @@ void	Response::addToFullResponse(std::string chunk)
 	this->_fullResponse.append(chunk);
 }
 
+size_t	const & Response::getState() const
+{
+	return (this->_state);
+}

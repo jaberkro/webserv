@@ -86,9 +86,6 @@ void	Response::prepareResponsePOST(void)
 	cgi.prepareEnv(this->_location->getCgiScriptName());
 	cgi.prepareArg(this->_location->getCgiScriptName());
 	cgi.run(*this);
-	// std::cout << "about to send response >" << cgi.getResponse() << "<" << std::endl;
-	// send(this->_req.getConnFD(), cgi.getResponse().c_str(), cgi.getResponse().length(), 0);
-
 }
 
 /**
@@ -104,14 +101,30 @@ void	Response::prepareResponsePOST(void)
  */
 void	Response::sendResponse(void)
 {
-	this->_fileLength = this->getFileSize(this->_filePath);
-	if (this->_fullResponse.empty()) // here we check whether response was already prepared by a CGI script
+	if (this->_state == PENDING)
 	{
-		prepareFirstLine();
-		prepareHeaders(this->_location->getRoot());
-		prepareContent();
+		this->_fileLength = this->getFileSize(this->_filePath);
+		if (this->_fullResponse.empty()) // here we check whether response was already prepared by a CGI script
+		{
+			prepareFirstLine();
+			prepareHeaders(this->_location->getRoot());
+			prepareContent();
+		}
+		this->_state = SENDING;
 	}
-	send(this->_req.getConnFD(), this->_fullResponse.c_str(), this->_fullResponse.length(), 0);
+	ssize_t bytesSent;
+	ssize_t chunkSize = std::min(_fullResponse.length(), static_cast<size_t>(MAXLINE));
+	// std::cout << "Chunksize is " << _fullResponse.length() << " or " << static_cast<size_t>(MAXLINE) << std::endl;
+	if (this->_state == SENDING)
+	{
+		bytesSent = send(this->_req.getConnFD(), this->_fullResponse.c_str(), chunkSize, 0);
+		if (bytesSent < 0)
+			std::cout << "BytesSent error, send 500 internal error" << std::endl;
+		_fullResponse.erase(0, bytesSent);
+		if (_fullResponse.size() == 0 || bytesSent == 0)
+			this->_state = DONE;
+		// std::cout << "State is " << this->_state << ", bytesSent = " << bytesSent << ", response leftover size is " << _fullResponse.size() << ", chunkSize = " << chunkSize << std::endl;
+	}
 }
 
 void	Response::prepareTargetURI(Server const & server)
@@ -357,7 +370,6 @@ void	Response::prepareFirstLine(void)
 	this->_responseCodes.at(this->_statusCode).c_str());
 	printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
 	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
-	// send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
 
 /**

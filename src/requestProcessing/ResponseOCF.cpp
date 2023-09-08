@@ -10,7 +10,8 @@ _req (req), \
 _statusCode (req.getStatusCode()), \
 _fileLength (0), \
 _isReady (false), \
-_location () {}
+_location (), \
+_state(PENDING) {}
 
 /**
  * @brief Destroy the Response:: Response object
