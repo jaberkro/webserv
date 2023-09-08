@@ -67,6 +67,7 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 		std::cerr << "!!! PROBABLY STH NEEDS TO BE ADDED TO CONFIG FILE - " << e.what() << '\n';
 	}
 }
+
 static bool	allowedInLocation(std::string method, std::vector<Location>::const_iterator location)
 {
 	for (size_t i = 0; i < location->getAllowed().size(); i++)
@@ -84,7 +85,6 @@ static bool	allowedInLocation(std::string method, std::vector<Location>::const_i
 
 void	Connection::handleResponse()
 {
-	std::string method;
 	if (this->_newReq->getMethod() == "")
 		return;
 
@@ -95,14 +95,19 @@ void	Connection::handleResponse()
 		this->_newResp = new Response(*this->_newReq);
 		this->_newResp->prepareTargetURI(*this->_handlingServer);
 
-		method = this->_newReq->getMethod();
-		if (method == "GET" && this->_newReq->getTarget() == "/deleted.html" && this->_newReq->getQueryString() != "")
-			method = "DELETE";
-		if (!allowedInLocation(method, this->_newResp->getLocation())) //what about GET /deleted.html?
+		if (this->_newReq->getMethod() == "GET" && this->_newReq->getTarget() == "/deleted.html" && this->_newReq->getQueryString() != "")
+			this->_newReq->setMethod("DELETE");
+		if (!allowedInLocation(this->_newReq->getMethod(), this->_newResp->getLocation()))
 		{
 			std::cout << "Method not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl;
-			
-			this->_newResp->setFilePath("data/www/defaultError.html"); // JMA: only when request is from browser, otherwise ""
+			if (this->_newResp->getRequest().getHeaders()["User-Agent"].find("curl") == 0)
+			{
+				this->_newResp->setFilePath("");
+			}
+			else
+			{
+				this->_newResp->setFilePath("data/www/defaultError.html");
+			}
 			this->_newResp->setStatusCode(NOT_ALLOWED);
 			//this should be something that overwrites all variables that matter for the response sending
 		}
@@ -112,7 +117,7 @@ void	Connection::handleResponse()
 			{
 				this->_newResp->prepareResponsePOST();
 			}
-			else if (method == "DELETE")
+			else if (this->_newReq->getMethod() == "DELETE")
 			{
 				this->_newResp->prepareResponseDELETE();
 			}	
@@ -123,18 +128,14 @@ void	Connection::handleResponse()
 			}
 		}
 
-		//RETURN CHECK
-		// if (this->_newReq->getMethod() == "GET" || this->_newReq->getMethod() == "DELETE")
-		// {			
-			if (this->_newResp->getLocation()->getReturn().first != 0)
-			{
-				std::cout << "RETURN!!!!!!!!!!" << std::endl;
-				this->_newResp->setStatusCode(this->_newResp->getLocation()->getReturn().first);
-				//this->_newResp->setMessage(this->_newResp->getLocation()->getReturn().second)// JMA: where do I store the return message? This still needs to be done
-				this->_newResp->setFilePath("");
-			}
-
-		// }
+		if (this->_newResp->getLocation()->getReturn().first != 0)
+		{
+			std::cout << "RETURN!!!!!!!!!! " << this->_newResp->getLocation()->getReturn().first << " " << this->_newResp->getLocation()->getReturn().second << std::endl;
+			this->_newResp->setStatusCode(this->_newResp->getLocation()->getReturn().first);
+			this->_newResp->setMessage(this->_newResp->getLocation()->getReturn().second);
+			this->_newResp->setFilePath("");
+			std::cout << "done return overwriting. JMA: I think it should be sent below differently, let's discuss this" << std::endl;
+		}
 		this->_newResp->sendResponse();
 		this->_newReq->setState(OVERWRITE);
 		delete this->_newResp;

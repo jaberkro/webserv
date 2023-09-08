@@ -5,6 +5,13 @@
 #include <iostream>
 #include <sys/stat.h>
 
+/**
+ * @brief predefined directories and files that are not accessible for delete
+ * 
+ * @param toRemove the file that the user wants to remove
+ * @return true it is forbidden to delete this, based on location
+ * @return false it is not forbidden to delete this, based on location
+ */
 bool forbiddenToDeleteFileOrFolder(std::string toRemove)
 {
 	if (toRemove.find("../") != std::string::npos || \

@@ -40,31 +40,36 @@ void	Response::prepareResponseGET(void)
 	// redesign it so that a runCgiScript() function gets called from both prepareGET and preparePOST.
 }
 
-void	Response::prepareResponseDELETE(void)
+void	Response::prepareResponseDELETE(void)	
 {
 	uint8_t		response[RESPONSELINE + 1];
 
 	std::memset(response, 0, RESPONSELINE);
 	this->deleteFile();
-	if (this->_statusCode != DELETED)
+	if (this->_statusCode != OK && this->_statusCode != DELETED)
 	{
-		if (this->_req.getMethod() == "GET")
-			this->_filePath = "data/www/deleteFailed.html";
+		if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
+			this->_filePath.clear();
 		else
-			this->_filePath = "";
+			this->_filePath = "data/www/deleteFailed.html";
 	}
 }
 
+/**
+ * @brief execute the DELETE method on the target defined in the request.
+ * Sets the _statusCode based on the result. OK or DELETED means that the
+ * DELETE is executed succesfully.
+ */
 void	Response::deleteFile(void)
 {
 	std::string	toRemove;
 	struct stat fileInfo;
 
 	std::cout << "\nATTEMPT TO DELETE RIGHT NOW!!!" << std::endl;
-	if (this->_req.getMethod() == "GET")
-		toRemove = this->_location->getUploadDir() + "/" + this->_req.getQueryString().substr(this->_req.getQueryString().find_last_of("=") + 1);
-	else
+	if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
 		toRemove = this->_location->getRoot() + this->_req.getTarget();
+	else
+		toRemove = this->_location->getUploadDir() + "/" + this->_req.getQueryString().substr(this->_req.getQueryString().find_last_of("=") + 1);
 	std::cout << "DELETE path: " << toRemove << "; TO REMOVE IS " << toRemove << std::endl;
 	if (forbiddenToDeleteFileOrFolder(toRemove))
 		this->_statusCode = FORBIDDEN;
@@ -78,41 +83,37 @@ void	Response::deleteFile(void)
 		if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
 		{
 			this->_statusCode = DELETED;
-			this->_filePath = "";
+			this->_filePath.clear();
 		}
 		else
-		{
 			this->_statusCode = OK;
-			this->_filePath = "data/www/deleted.html";
-		}
 	}
 }
 
 void	Response::prepareResponsePOST(void)
 {
-	PostCGI	cgi(this->_req);
+	// std::cout << "Checking if POST is allowed based om the client_max_body_size..." << std::endl;
+	// std::cout << "max size: " << this->getLocation()->getMaxBodySize() << " and body length: " << this->getRequest().getBodyLength() << std::endl;
+	if (this->getRequest().getBodyLength() > this->getLocation()->getMaxBodySize()) // JMA: this counts for POST but not for GET!
+	{
+		std::cout << "POST not allowed: Content Too Large." << std::endl;
+		this->_statusCode = CONTENT_TOO_LARGE;
+		if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
+			this->_filePath.clear();
+		else
+			this->_filePath = "data/www/postFailed.html";
+		return ;
+	}
 
-	// JMA: below is the code for client_max_body_size. Right now it gives a pointer being freed wat not allocated error so it is outcommented
-	// if (this->getLocation()->getMaxBodySize() > (unsigned int)(this->getRequest().getBodyLength()))
-	// {
-	// 	// JMA: this is the max_body_check
-	// 	std::cout << "POST not allowed: Content Too Large." << std::endl;
-	// 	this->_statusCode = CONTENT_TOO_LARGE;
-	// 	// if (this->_req.getHeaders()["User-Agent"].find("curl") != 0)
-	// 	// {
-	// 	// 	this->_filePath = "data/www/postFailed.html";
-	// 	// }
-	// 	return ;
-	// }
+	PostCGI	cgi(this->_req);
 	
 	std::cerr << "prep POST triggered" << std::endl;
 	
 	cgi.prepareEnv(this->_location->getCgiScriptName());
 	cgi.prepareArg(this->_location->getCgiScriptName());
 	cgi.run(*this);
-	// std::cout << "about to send response >" << cgi.getResponse() << "<" << std::endl;
-	// send(this->_req.getConnFD(), cgi.getResponse().c_str(), cgi.getResponse().length(), 0);
-
+	// std::cout << "about to send response >" << cgi.getResponse() << "<" << std::endl; // JMA: this can be removed now
+	// send(this->_req.getConnFD(), cgi.getResponse().c_str(), cgi.getResponse().length(), 0); // JMA: this can be removed now
 }
 
 /**
@@ -310,10 +311,10 @@ std::vector<Location> const & locations)
 				break;
 			}
 		}
-		std::cout << "checking match: " << it->getMatch() << "\tidx: " << idx << std::endl;
+		// std::cout << "checking match: " << it->getMatch() << "\tidx: " << idx << std::endl;
 		if (idx > overlap)
 		{
-			std::cout << "better match found: " << it->getMatch() << "overlap: " << overlap << std::endl;
+			// std::cout << "better match found: " << it->getMatch() << "overlap: " << overlap << std::endl;
 			overlap = idx;
 			longest = it;
 		}
@@ -376,12 +377,21 @@ void	Response::prepareFirstLine(void)
 	char	responseBuffer[RESPONSELINE + 1];
 	
 	std::memset(responseBuffer, 0, RESPONSELINE + 1);
-	snprintf(responseBuffer, RESPONSELINE, \
-	"%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, \
-	this->_responseCodes.at(this->_statusCode).c_str());
+	if (this->_filePath == "") // JMA: this is implemented for return messages
+	{
+		snprintf(responseBuffer, RESPONSELINE, \
+		"%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, \
+		this->_message.c_str());
+	}
+	else
+	{
+		snprintf(responseBuffer, RESPONSELINE, \
+		"%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, \
+		this->_responseCodes.at(this->_statusCode).c_str());
+	}
 	printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
 	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
-	// send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
+	// send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0); // JMA: not needed anymore, this is done in Connection::handleResponse()
 }
 
 /**
@@ -406,7 +416,7 @@ void	Response::prepareHeaders(std::string const & root)
 		snprintf(responseBuffer, RESPONSELINE, "Content-Type: %s\r\n", contentType.c_str());
 	}
 	if (this->_fileLength == 0 && this->_message.length() > 0)
-		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_message.length());
+		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_message.length()); // JMA: this might have to be different
 	else
 		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_fileLength);
 	// printf("\n\nFILEPATH: [%s]\n\n", this->_filePath.c_str());
@@ -435,18 +445,21 @@ void	Response::prepareContent(void)
 	
 	if (this->_filePath.empty())
 	{
-		this->_fullResponse.append(this->_message);
+		this->_fullResponse.append(this->_message); //JMA: this might have to be different
 		return;
 	}
-	file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
-	if (!file.is_open())
+	else
 	{
-		this->_statusCode = FORBIDDEN;
-		throw std::ios_base::failure("Error when opening a file");
+		file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
+		if (!file.is_open())
+		{
+			this->_statusCode = FORBIDDEN;
+			throw std::ios_base::failure("Error when opening a file");
+		}
+		body = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+		this->_fullResponse.append(body);
+		file.close();
 	}
-	body = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-	this->_fullResponse.append(body);
-	file.close();
 }
 
 /* UTILS */

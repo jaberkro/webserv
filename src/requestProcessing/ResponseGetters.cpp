@@ -65,3 +65,7 @@ void	Response::addToFullResponse(std::string chunk)
 	this->_fullResponse.append(chunk);
 }
 
+void	Response::setMessage(std::string message)
+{
+	this->_message = message;
+}

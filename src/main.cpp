@@ -12,7 +12,7 @@ void	func_atexit(void)
 int	main(int argc, char **argv)
 {
 	std::vector<Server> servers;
-	char	*defaultFile = strdup("config/nginx.conf");
+	char	*defaultFile = strdup("config/new.conf");
 
 	if (argc > 2)
 	{
