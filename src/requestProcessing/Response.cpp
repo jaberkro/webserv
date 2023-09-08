@@ -493,3 +493,4 @@ void	Response::printResponse(void) const
 	std::cout << "\tConnection FD: " << this->_req.getConnFD() << std::endl;
 	std::cout << "******" << std::endl;
 }
+

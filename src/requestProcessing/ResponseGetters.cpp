@@ -69,3 +69,8 @@ size_t	const & Response::getState() const
 {
 	return (this->_state);
 }
+
+void	Response::setState(size_t state)
+{
+	this->_state = state;
+}

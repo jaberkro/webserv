@@ -12,7 +12,9 @@
 enum {
 	PENDING,
 	SENDING,
-	DONE
+	DONE,
+	WRITE_CGI,
+	READ_CGI
 };
 
 class Response {
@@ -44,6 +46,7 @@ class Response {
 		std::string										getFullResponse(void);
 		std::string										getMessage(void);
 		size_t	const & 								getState() const;
+		void											setState(size_t state);
 		void											addToFullResponse(char *response, size_t length);
 		void											addToFullResponse(std::string chunk);
 
