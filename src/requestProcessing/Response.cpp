@@ -32,6 +32,9 @@ void	Response::prepareResponseGET(void)
 	std::cerr << "prepGET - cgi script name is " << this->_location->getCgiScriptName() << std::endl;
 	if (this->_location->getCgiScriptName().size() > 0)
 		this->prepareResponsePOST();
+
+	// DM: I will rewrite this. Now I'm just calling the prepareResponsePOST function but will 
+	// redesign it so that a runCgiScript() function gets called from both prepareGET and preparePOST.
 }
 
 void	Response::prepareResponseDELETE(void)
@@ -102,9 +105,7 @@ void	Response::prepareResponsePOST(void)
 void	Response::sendResponse(void)
 {
 	this->_fileLength = this->getFileSize(this->_filePath);
-	// change these into "composeFirstLine" etc into response->_fullResponse (change it to std::string)
-	// if (this->_req.getMethod() == "GET" || this->_req.getMethod() == "DELETE")
-	if (this->_fullResponse.empty())
+	if (this->_fullResponse.empty()) // here we check whether response was already prepared by a CGI script
 	{
 		prepareFirstLine();
 		prepareHeaders(this->_location->getRoot());
@@ -128,9 +129,16 @@ void	Response::prepareTargetURI(Server const & server)
 			{
 				if (this->_req.getMethod() == "GET" && !this->_location->getIndexes().empty())
 					targetUri = findIndexPage(this->_location);
+				else 
+				{
+					// HERE COMES THE AUTOINDEX CODE
+					// tbd what to return if a directory is requested and there is no index and autoindex is off
+					std::cerr << "The target is a directory" << std::endl;
+					this->_isReady = true;
+				}
 				// DM the below two lines are wrong and need to be removed
-				else if (this->_req.getMethod() == "POST")
-					targetUri = "/uploaded.html";
+				// else if (this->_req.getMethod() == "POST")
+				// 	targetUri = "/uploaded.html";
 				continue;
 			}
 			// DM here we need another option of proceeding with the target being a directory
@@ -365,14 +373,17 @@ void	Response::prepareHeaders(std::string const & root)
 	char			responseBuffer[RESPONSELINE + 1];
 	std::string		contentType;
 
-	contentType = root == "data" ? \
-	"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
-	std::string::npos) : "text/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1);
-	std::memset(responseBuffer, 0, RESPONSELINE);
-	snprintf(responseBuffer, RESPONSELINE, "Content-Type: %s\r\n", contentType.c_str());
+	if (!this->_filePath.empty())
+	{
+		contentType = root == "data" ? \
+		"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
+		std::string::npos) : "text/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1);
+		std::memset(responseBuffer, 0, RESPONSELINE);
+		snprintf(responseBuffer, RESPONSELINE, "Content-Type: %s\r\n", contentType.c_str());
+	}
 	if (this->_fileLength == 0 && this->_message.length() > 0)
 		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_message.length());
-	else if (this->_fileLength > 0)
+	else
 		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_fileLength);
 	// printf("\n\nFILEPATH: [%s]\n\n", this->_filePath.c_str());
 	// printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
@@ -398,7 +409,7 @@ void	Response::prepareContent(void)
 	// DM: add first check whether _filePath is empty, zo ja, plak message in body
 	// also check response codes die geen body mogen hebben (dat er geen body komt)
 	
-	if (this->_filePath.empty() || this->_filePath == "")
+	if (this->_filePath.empty())
 	{
 		this->_fullResponse.append(this->_message);
 		return;
