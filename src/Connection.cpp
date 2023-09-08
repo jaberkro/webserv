@@ -84,14 +84,11 @@ static bool	allowedInLocation(std::string method, std::vector<Location>::const_i
 
 void	Connection::handleResponse()
 {
-<<<<<<< HEAD
 	std::string method;
-=======
 	if (this->_newReq->getMethod() == "")
 		return;
 
 	// if unknown response type, return BAD REQUEST
->>>>>>> 06dffc7313bd2c98766f8c8e7e31fa2e2b3bb2e2
 
 	try
 	{
@@ -109,25 +106,7 @@ void	Connection::handleResponse()
 			this->_newResp->setStatusCode(NOT_ALLOWED);
 			//this should be something that overwrites all variables that matter for the response sending
 		}
-<<<<<<< HEAD
 		else
-=======
-		//insert tests of allowed methods
-
-		std::cerr << "method is " << this->_newReq->getMethod() << std::endl;
-		if (this->_newReq->getMethod() == "POST")
-		{
-			this->_newResp->prepareResponsePOST();
-		}
-		else if (this->_newReq->getMethod() == "GET")
-		{	
-			this->_newResp->prepareResponseGET();
-		}
-		else if (this->_newReq->getMethod() == "DELETE" || \
-			(this->_newReq->getMethod() == "GET" && \
-			this->_newReq->getTarget() == "/deleted.html" && \
-			this->_newReq->getQueryString() != ""))
->>>>>>> 06dffc7313bd2c98766f8c8e7e31fa2e2b3bb2e2
 		{
 			if (this->_newReq->getMethod() == "POST")
 			{
