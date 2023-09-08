@@ -23,7 +23,7 @@ void		Request::readFirstLineAndHeaders(void)
 	ssize_t		bytesRead = 0;
 	bool		firstLineComplete = false;
 
-	while (this->_state == READHEADERS && (bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0)
+	if (this->_state == READHEADERS && (bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0)
 	{
 		std::string	chunk(socketBuffer, bytesRead);
 		processingBuffer += chunk;
@@ -57,7 +57,8 @@ void		Request::readBody()
 	ssize_t	bytesRead = 0;
 	std::memset(socketBuffer, 0, MAXLINE);
 
-	while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && this->_state != WRITE)
+	//while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && this->_state != WRITE)
+	if ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && this->_state != WRITE)
 	{
 		std::cout << "Read " << bytesRead << " bytes, total is now " << this->_bodyLength << std::endl;
 		std::string	chunk(socketBuffer, bytesRead);

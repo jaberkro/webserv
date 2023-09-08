@@ -25,7 +25,7 @@ Location& Location::operator=(const Location &src)
 	this->_return = src._return;
 	this->_root = src._root;
 	this->_uploadDir = src._uploadDir;
-	this->_cgiScriptName = src.getCgiScriptName();
+	this->_cgiScriptName = src._cgiScriptName;
 	// std::cout << "Copy assignment operator called on Location" << std::endl;
 	return (*this);
 }

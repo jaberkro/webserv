@@ -54,17 +54,17 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 			delete this->_newReq;
 			this->_newReq = new Request(connfd, this->_address);
 		}
-		std::cout << "After Request constructor" << std::endl;
+		// std::cout << "After Request constructor" << std::endl;
 		this->_newReq->processReq();
 		this->_newReq->printRequest();
-		this->_handlingServer = new Server(this->_newReq->identifyServer(servers)); //BS: hier kun je het IP e.d. meenemen uit de Connection class
+		this->_handlingServer = new Server(this->_newReq->identifyServer(servers));
 		std::cout << "_Handler info: host: [" << this->_handlingServer->getPort(0) << "], port: [" << this->_handlingServer->getHost(0) << "]" << std::endl;
 		std::cout << "Responsible server is " << \
 		this->_handlingServer->getServerName(0) << std::endl;
 	}
 	catch(const std::exception& e)
 	{
-		std::cerr << "!!! " << e.what() << '\n';
+		std::cerr << "!!! PROBABLY STH NEEDS TO BE ADDED TO CONFIG FILE - " << e.what() << '\n';
 	}
 }
 static bool	allowedInLocation(std::string method, std::vector<Location>::const_iterator location)
@@ -84,6 +84,11 @@ static bool	allowedInLocation(std::string method, std::vector<Location>::const_i
 
 void	Connection::handleResponse()
 {
+	if (this->_newReq->getMethod() == "")
+		return;
+
+	// if unknown response type, return BAD REQUEST
+
 	try
 	{
 		this->_newResp = new Response(*this->_newReq);
@@ -98,9 +103,14 @@ void	Connection::handleResponse()
 		}
 		//insert tests of allowed methods
 
+		std::cerr << "method is " << this->_newReq->getMethod() << std::endl;
 		if (this->_newReq->getMethod() == "POST")
 		{
 			this->_newResp->prepareResponsePOST();
+		}
+		else if (this->_newReq->getMethod() == "GET")
+		{	
+			this->_newResp->prepareResponseGET();
 		}
 		else if (this->_newReq->getMethod() == "DELETE" || \
 			(this->_newReq->getMethod() == "GET" && \
