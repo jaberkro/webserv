@@ -107,16 +107,17 @@ void	Connection::handleResponse()
 		this->_newResp->prepareTargetURI(*this->_handlingServer);
 
 		if (getIsActuallyDelete(this->_newReq))
-		{
 			this->_newReq->setMethod("DELETE");
-		}
 		if (!allowedInLocation(this->_newReq->getMethod(), this->_newResp->getLocation()))
 		{
 			std::cout << "Method not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl; // JMA: remove later?
 			if (this->_newResp->getRequest().getHeaders()["User-Agent"].find("curl") == 0)
 				this->_newResp->setFilePath("");
 			else
+			{
 				this->_newResp->setFilePath("data/www/defaultError.html");
+				// JMA: we have to add something here to find the location and root of this new error page. And because of that we haveto check if in that new location GET is allowed
+			}
 			this->_newResp->setStatusCode(NOT_ALLOWED);
 			//this should be something that overwrites all variables that matter for the response sending
 		}

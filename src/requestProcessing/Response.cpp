@@ -158,6 +158,10 @@ void	Response::prepareTargetURI(Server const & server)
 				{
 					// HERE COMES THE AUTOINDEX CODE
 					// tbd what to return if a directory is requested and there is no index and autoindex is off
+					// hier message vullen en statuscode en IETS in de filepath zetten OF JUIST NIET?
+					this->_message = createAutoindex();
+					this->_statusCode = NOT_FOUND;
+					this->_filePath = "_";
 					std::cerr << "The target is a directory" << std::endl;
 					this->_isReady = true;
 				}
@@ -391,7 +395,6 @@ void	Response::prepareFirstLine(void)
 	}
 	printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
 	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
-	// send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0); // JMA: not needed anymore, this is done in Connection::handleResponse()
 }
 
 /**
@@ -407,7 +410,7 @@ void	Response::prepareHeaders(std::string const & root)
 	char			responseBuffer[RESPONSELINE + 1];
 	std::string		contentType;
 
-	if (!this->_filePath.empty())
+	if (!this->_filePath.empty()) //JMA: hier moet iets voor autoindex om het te laten werken
 	{
 		contentType = root == "data" ? \
 		"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
@@ -415,7 +418,7 @@ void	Response::prepareHeaders(std::string const & root)
 		std::memset(responseBuffer, 0, RESPONSELINE);
 		snprintf(responseBuffer, RESPONSELINE, "Content-Type: %s\r\n", contentType.c_str());
 	}
-	if (this->_fileLength == 0 && this->_message.length() > 0)
+	if (this->_fileLength == 0 && this->_message.length() > 0) // JMA: autoindex moet hier ook in komen
 		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_message.length()); // JMA: this might have to be different
 	else
 		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_fileLength);
@@ -443,7 +446,7 @@ void	Response::prepareContent(void)
 	// DM: add first check whether _filePath is empty, zo ja, plak message in body
 	// also check response codes die geen body mogen hebben (dat er geen body komt)
 	
-	if (this->_filePath.empty())
+	if (this->_filePath.empty() || this->_filePath == "_") // JMA: this "_" is for autoindex, maybe it can become more fancy later
 	{
 		this->_fullResponse.append(this->_message); //JMA: this might have to be different
 		return;
