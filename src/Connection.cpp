@@ -83,10 +83,21 @@ static bool	allowedInLocation(std::string method, std::vector<Location>::const_i
 	return (true);
 }
 
+static bool getIsActuallyDelete(Request *request)
+{
+	if (request->getMethod() == "GET" && \
+		request->getTarget() == "/deleted.html" && \
+		request->getQueryString() != "")
+	{
+		return (1);
+	}
+	return (0);
+}
+
 void	Connection::handleResponse()
 {
 	if (this->_newReq->getMethod() == "")
-		return;
+		return; // JMA: we return here but that means we will also not send or delete the response. Is that a problem?
 
 	// if unknown response type, return BAD REQUEST
 
@@ -95,46 +106,40 @@ void	Connection::handleResponse()
 		this->_newResp = new Response(*this->_newReq);
 		this->_newResp->prepareTargetURI(*this->_handlingServer);
 
-		if (this->_newReq->getMethod() == "GET" && this->_newReq->getTarget() == "/deleted.html" && this->_newReq->getQueryString() != "")
+		if (getIsActuallyDelete(this->_newReq))
+		{
 			this->_newReq->setMethod("DELETE");
+		}
 		if (!allowedInLocation(this->_newReq->getMethod(), this->_newResp->getLocation()))
 		{
-			std::cout << "Method not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl;
+			std::cout << "Method not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl; // JMA: remove later?
 			if (this->_newResp->getRequest().getHeaders()["User-Agent"].find("curl") == 0)
-			{
 				this->_newResp->setFilePath("");
-			}
 			else
-			{
 				this->_newResp->setFilePath("data/www/defaultError.html");
-			}
 			this->_newResp->setStatusCode(NOT_ALLOWED);
 			//this should be something that overwrites all variables that matter for the response sending
 		}
 		else
 		{
 			if (this->_newReq->getMethod() == "POST")
-			{
 				this->_newResp->prepareResponsePOST();
-			}
 			else if (this->_newReq->getMethod() == "DELETE")
-			{
-				this->_newResp->prepareResponseDELETE();
-			}	
+				this->_newResp->prepareResponseDELETE();	
 			else if (this->_newReq->getMethod() != "GET")
 			{
 				std::cout << "I can't handle the \"" << this->_newReq->getMethod() << "\" method, sorry!" << std::endl;
-				return;
+				return; // JMA: we return here but that means we will also not send or delete the response. Is that a problem?
 			}
 		}
 
 		if (this->_newResp->getLocation()->getReturn().first != 0)
 		{
-			std::cout << "RETURN!!!!!!!!!! " << this->_newResp->getLocation()->getReturn().first << " " << this->_newResp->getLocation()->getReturn().second << std::endl;
+			std::cout << "RETURN!!!!!!!!!! " << this->_newResp->getLocation()->getReturn().first << " " << this->_newResp->getLocation()->getReturn().second << std::endl; // JMA: remove later?
 			this->_newResp->setStatusCode(this->_newResp->getLocation()->getReturn().first);
 			this->_newResp->setMessage(this->_newResp->getLocation()->getReturn().second);
 			this->_newResp->setFilePath("");
-			std::cout << "done return overwriting. JMA: I think it should be sent below differently, let's discuss this" << std::endl;
+			std::cout << "done return overwriting. JMA: I think it should be sent below differently, let's discuss this" << std::endl; // JMA: remove later
 		}
 		this->_newResp->sendResponse();
 		this->_newReq->setState(OVERWRITE);
