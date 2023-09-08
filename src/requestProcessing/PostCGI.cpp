@@ -111,7 +111,7 @@ void	PostCGI::run(Response & response)
 				std::string	chunk(buf, bytesRead);
 				response.addToFullResponse(chunk);
 			}
-			std::cout << "Parent received this response: [" << response.getFullResponse() << "]" << std::endl;
+			// std::cout << "Parent received this response: [" << response.getFullResponse() << "]" << std::endl;
 			close(this->_scriptToWebserv[R]);
 			waitpid(id, &(this->_exitCode), 0);
 			if (WIFEXITED(this->_exitCode))

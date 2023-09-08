@@ -27,6 +27,16 @@ std::map<int, std::string> 	Response::_responseCodes =
 	{INTERNAL_SERVER_ERROR, "Internal Server Error"}
 };
 
+void	Response::prepareResponseGET(void) 
+{
+	std::cerr << "prepGET - cgi script name is " << this->_location->getCgiScriptName() << std::endl;
+	if (this->_location->getCgiScriptName().size() > 0)
+		this->prepareResponsePOST();
+
+	// DM: I will rewrite this. Now I'm just calling the prepareResponsePOST function but will 
+	// redesign it so that a runCgiScript() function gets called from both prepareGET and preparePOST.
+}
+
 void	Response::prepareResponseDELETE(void)
 {
 	uint8_t		response[RESPONSELINE + 1];
@@ -71,6 +81,8 @@ void	Response::prepareResponsePOST(void)
 {
 	PostCGI	cgi(this->_req);
 	
+	std::cerr << "prep POST triggered" << std::endl;
+	
 	cgi.prepareEnv(this->_location->getCgiScriptName());
 	cgi.prepareArg(this->_location->getCgiScriptName());
 	cgi.run(*this);
@@ -93,15 +105,13 @@ void	Response::prepareResponsePOST(void)
 void	Response::sendResponse(void)
 {
 	this->_fileLength = this->getFileSize(this->_filePath);
-	// change these into "composeFirstLine" etc into response->_fullResponse (change it to std::string)
-	if (this->_req.getMethod() == "GET" || this->_req.getMethod() == "DELETE")
+	if (this->_fullResponse.empty()) // here we check whether response was already prepared by a CGI script
 	{
 		prepareFirstLine();
 		prepareHeaders(this->_location->getRoot());
 		prepareContent();
 	}
 	send(this->_req.getConnFD(), this->_fullResponse.c_str(), this->_fullResponse.length(), 0);
-
 }
 
 void	Response::prepareTargetURI(Server const & server)
@@ -119,10 +129,19 @@ void	Response::prepareTargetURI(Server const & server)
 			{
 				if (this->_req.getMethod() == "GET" && !this->_location->getIndexes().empty())
 					targetUri = findIndexPage(this->_location);
-				else if (this->_req.getMethod() == "POST")
-					targetUri = "/uploaded.html";
+				else 
+				{
+					// HERE COMES THE AUTOINDEX CODE
+					// tbd what to return if a directory is requested and there is no index and autoindex is off
+					std::cerr << "The target is a directory" << std::endl;
+					this->_isReady = true;
+				}
+				// DM the below two lines are wrong and need to be removed
+				// else if (this->_req.getMethod() == "POST")
+				// 	targetUri = "/uploaded.html";
 				continue;
 			}
+			// DM here we need another option of proceeding with the target being a directory
 			else
 			{
 				this->_filePath = this->_location->getRoot() + targetUri;
@@ -134,7 +153,18 @@ void	Response::prepareTargetURI(Server const & server)
 		{
 			std::cerr << "IOS exception caught (something went wrong with opening the file " << this->_filePath << "): ";
 			std::cerr << f.what() << std::endl;
+			if (this->_statusCode < 400)
+				this->_statusCode = NOT_FOUND;
+			if (targetUri == DEFAULT_ERROR_PAGE)
+			{
+				this->_filePath.clear();
+				this->_message = this->_responseCodes.at(this->_statusCode).c_str();
+				this->_isReady = true;			
+			}
 			targetUri = identifyErrorPage(this->_location->getErrorPages());
+			if (access(targetUri.c_str(), F_OK | R_OK) < 0)
+				targetUri = DEFAULT_ERROR_PAGE;
+
 		}
 		catch(const std::range_error &re)
 		{
@@ -166,7 +196,7 @@ std::string	Response::identifyErrorPage(std::map<int, std::string> const & error
 	{
 		std::cerr << "No custom error page provided for status code " << this->_statusCode << ")";
 		this->_statusCode = NOT_FOUND;
-		return("/defaultError.html"); // THIS NEEDS TO BE A RETURN STATEMENT
+		return(DEFAULT_ERROR_PAGE);
 	}
 }
 
@@ -301,7 +331,7 @@ std::string	Response::findIndexPage(std::vector<Location>::const_iterator itLoc)
  * 
  * @param response the buffer into which the response is written
  */
-void	Response::checkWhetherFileExists()
+void	Response::checkWhetherFileExists() // maybe move into utils and also use for error pages?
 {
 	// this->_fileLength = this->getFileSize(this->_filePath);
 	if (access(this->_filePath.c_str(), F_OK | R_OK) < 0)
@@ -343,19 +373,23 @@ void	Response::prepareHeaders(std::string const & root)
 	char			responseBuffer[RESPONSELINE + 1];
 	std::string		contentType;
 
-	contentType = root == "data" ? \
-	"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
-	std::string::npos) : "text/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1);
-	std::memset(responseBuffer, 0, RESPONSELINE);
-	snprintf(responseBuffer, RESPONSELINE, \
-	"Content-Type: %s\r\nContent-Length: %zu\r\n\r\n", contentType.c_str(), this->_fileLength);
+	if (!this->_filePath.empty())
+	{
+		contentType = root == "data" ? \
+		"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
+		std::string::npos) : "text/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1);
+		std::memset(responseBuffer, 0, RESPONSELINE);
+		snprintf(responseBuffer, RESPONSELINE, "Content-Type: %s\r\n", contentType.c_str());
+	}
+	if (this->_fileLength == 0 && this->_message.length() > 0)
+		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_message.length());
+	else
+		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_fileLength);
 	// printf("\n\nFILEPATH: [%s]\n\n", this->_filePath.c_str());
 	// printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
 	// printf("\n\nCONTENT TYPE: [%s]\n\n", contentType.c_str());
 
 	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
-
-	// send(this->_req.getConnFD(), (char*)response, std::strlen((char *)response), 0);
 }
 
 
@@ -372,6 +406,14 @@ void	Response::prepareContent(void)
 	std::ifstream	file;
 	std::string		body;
 	
+	// DM: add first check whether _filePath is empty, zo ja, plak message in body
+	// also check response codes die geen body mogen hebben (dat er geen body komt)
+	
+	if (this->_filePath.empty())
+	{
+		this->_fullResponse.append(this->_message);
+		return;
+	}
 	file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
 	if (!file.is_open())
 	{
