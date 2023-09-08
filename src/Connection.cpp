@@ -103,49 +103,62 @@ void	Connection::handleResponse()
 
 	try
 	{
-		this->_newResp = new Response(*this->_newReq);
-		this->_newResp->prepareTargetURI(*this->_handlingServer);
-
-		if (getIsActuallyDelete(this->_newReq))
-			this->_newReq->setMethod("DELETE");
-		if (!allowedInLocation(this->_newReq->getMethod(), this->_newResp->getLocation()))
+		if (this->_newResp == nullptr)
 		{
-			std::cout << "Method not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl; // JMA: remove later?
-			if (this->_newResp->getRequest().getHeaders()["User-Agent"].find("curl") == 0)
-				this->_newResp->setFilePath("");
+			this->_newResp = new Response(*this->_newReq);
+			this->_newResp->prepareTargetURI(*this->_handlingServer);
+
+			if (getIsActuallyDelete(this->_newReq))
+				this->_newReq->setMethod("DELETE");
+			if (!allowedInLocation(this->_newReq->getMethod(), this->_newResp->getLocation()))
+			{
+				std::cout << "Method not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl; // JMA: remove later?
+				if (this->_newResp->getRequest().getHeaders()["User-Agent"].find("curl") == 0)
+					this->_newResp->setFilePath("");
+				else
+				{
+					this->_newResp->setFilePath("data/www/defaultError.html");
+					// JMA: we have to add something here to find the location and root of this new error page. And because of that we haveto check if in that new location GET is allowed
+				}
+				this->_newResp->setStatusCode(NOT_ALLOWED);
+				//this should be something that overwrites all variables that matter for the response sending
+			}
+			//insert tests of allowed methods
+
+
 			else
 			{
-				this->_newResp->setFilePath("data/www/defaultError.html");
-				// JMA: we have to add something here to find the location and root of this new error page. And because of that we haveto check if in that new location GET is allowed
+				std::cerr << "method is " << this->_newReq->getMethod() << std::endl;
+				if (this->_newReq->getMethod() == "POST")
+					this->_newResp->prepareResponsePOST();
+				else if (this->_newReq->getMethod() == "DELETE")
+					this->_newResp->prepareResponseDELETE();
+				else if (this->_newReq->getMethod() == "GET")
+					this->_newResp->prepareResponseGET();
+				else if (this->_newReq->getMethod() != "GET")
+				{
+					std::cout << "I can't handle the \"" << this->_newReq->getMethod() << "\" method, sorry!" << std::endl;
+					return; // JMA: we return here but that means we will also not send or delete the response. Is that a problem?
+				}
 			}
-			this->_newResp->setStatusCode(NOT_ALLOWED);
-			//this should be something that overwrites all variables that matter for the response sending
-		}
-		else
-		{
-			if (this->_newReq->getMethod() == "POST")
-				this->_newResp->prepareResponsePOST();
-			else if (this->_newReq->getMethod() == "DELETE")
-				this->_newResp->prepareResponseDELETE();	
-			else if (this->_newReq->getMethod() != "GET")
-			{
-				std::cout << "I can't handle the \"" << this->_newReq->getMethod() << "\" method, sorry!" << std::endl;
-				return; // JMA: we return here but that means we will also not send or delete the response. Is that a problem?
-			}
-		}
 
-		if (this->_newResp->getLocation()->getReturn().first != 0)
-		{
-			std::cout << "RETURN!!!!!!!!!! " << this->_newResp->getLocation()->getReturn().first << " " << this->_newResp->getLocation()->getReturn().second << std::endl; // JMA: remove later?
-			this->_newResp->setStatusCode(this->_newResp->getLocation()->getReturn().first);
-			this->_newResp->setMessage(this->_newResp->getLocation()->getReturn().second);
-			this->_newResp->setFilePath("");
-			std::cout << "done return overwriting. JMA: I think it should be sent below differently, let's discuss this" << std::endl; // JMA: remove later
+			if (this->_newResp->getLocation()->getReturn().first != 0)
+			{
+				std::cout << "RETURN!!!!!!!!!! " << this->_newResp->getLocation()->getReturn().first << " " << this->_newResp->getLocation()->getReturn().second << std::endl; // JMA: remove later?
+				this->_newResp->setStatusCode(this->_newResp->getLocation()->getReturn().first);
+				this->_newResp->setMessage(this->_newResp->getLocation()->getReturn().second);
+				this->_newResp->setFilePath("");
+				std::cout << "done return overwriting. JMA: I think it should be sent below differently, let's discuss this" << std::endl; // JMA: remove later
+			}
 		}
 		this->_newResp->sendResponse();
-		this->_newReq->setState(OVERWRITE);
-		delete this->_newResp;
-		delete this->_handlingServer;
+		if (this->_newResp->getState() == DONE)
+		{
+			this->_newReq->setState(OVERWRITE);
+			delete this->_newResp;
+			this->_newResp = nullptr;
+			delete this->_handlingServer;
+		}
 	}
 	catch(const std::exception& e)
 	{
@@ -161,4 +174,9 @@ void	Connection::setRequest(Request *request)
 Request *	Connection::getRequest(void)
 {
 	return (this->_newReq);
+}
+
+Response *	Connection::getResponse(void)
+{
+	return (this->_newResp);
 }

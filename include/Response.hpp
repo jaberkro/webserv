@@ -9,6 +9,12 @@
 
 #define DEFAULT_ERROR_PAGE "/defaultError.html"
 
+enum {
+	PENDING,
+	SENDING,
+	DONE
+};
+
 class Response {
 
 	public:
@@ -38,6 +44,7 @@ class Response {
 		std::string										getFullResponse(void);
 		std::string										getMessage(void);
 		void											setMessage(std::string);
+		size_t	const & 								getState() const;
 		void											addToFullResponse(char *response, size_t length);
 		void											addToFullResponse(std::string chunk);
 
@@ -56,6 +63,7 @@ class Response {
 		std::string								_fullResponse;
 		std::string								_message;
 		static std::map<int, std::string>		_responseCodes;
+		size_t									_state;
 		
 		size_t									getFileSize(std::string filePath);
 		std::string								identifyErrorPage(std::map<int, std::string> const & errorPages);
