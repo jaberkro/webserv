@@ -1,7 +1,6 @@
 #!/usr/local/bin/python3
 #!/usr/bin/python3
 
-
 import cgi, sys, os #, urllib.parse
 import cgitb # for debugging messages
 
