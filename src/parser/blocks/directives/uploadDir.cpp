@@ -4,7 +4,8 @@
 
 static bool allowedDir(std::string line)
 {
-	if (line == "/www" || line == "/images")
+	if (line == "/www" || line == "/images" || \
+		line.find("..") != std::string::npos) // ".." --> should this added everywhere of in a generic check? Or not be checked at all?
 		return (false);
 	return (true);
 }
