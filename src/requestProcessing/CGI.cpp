@@ -107,14 +107,17 @@ void	CGI::run(Response & response, std::string & fullResponse)
 			// MAKE THEM NON-BLOCKING
 			
 			write(_webservToScript[W], body.c_str(), body.size());
+			// CHECK IF WRITE FAILS --> <0 ? INTERNAL_SERVER_ERROR STATUSCODE
 			close(this->_scriptToWebserv[W]);
 			close(this->_webservToScript[R]);
 			close(this->_webservToScript[W]);
-			if ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) != 0)
+			// CHECK IF CLOSE FAILS
+			if ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) > 0)
 			{
 				std::string	chunk(buf, bytesRead);
 				response.addToFullResponse(chunk);
 			}
+			//ELSE IF < 0 ? INTERNAL_SERVER_ERROR STATUSCODE
 			// std::cout << "Parent received this response: [" << response.getFullResponse() << "]\n full response is: " << response.getFullResponse() << std::endl;
 			waitpid(id, &(this->_exitCode), 0);
 			if (WIFEXITED(this->_exitCode))
