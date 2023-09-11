@@ -31,6 +31,7 @@ class Response {
 		void	prepareResponseGET(void);
 		void	prepareResponseDELETE(void);
 		void	deleteFile(void);
+		void	identifyErrorPage(Server const & server);
 		
 		/* getters */
 		size_t											getFileLength(void) const;
@@ -69,13 +70,11 @@ class Response {
 		std::string								_pathInfo;
 		
 		size_t									getFileSize(std::string filePath);
-		std::string								identifyErrorPage(std::map<int, std::string> const & errorPages);
 		std::vector<Location>::const_iterator 	findLocationMatch(std::string target, std::vector<Location> const & locations);
 		std::vector<Location>::const_iterator	findExactLocationMatch(std::string target, std::vector<Location> const & locations);
 		std::vector<Location>::const_iterator	findWildcardLocationMatch(std::string target, std::vector<Location> const & locations);
 		std::vector<Location>::const_iterator	findClosestLocationMatch(std::string target, std::vector<Location> const & locations);
 		std::string								findIndexPage(std::vector<Location>::const_iterator itLoc);
-		void									checkWhetherFileExists(void);
 		void									extractPathInfo(std::string & targetUri);
 		void									prepareFirstLine(void);
 		void									prepareHeaders(std::string const & root);
@@ -88,6 +87,8 @@ class Response {
 // bool allowedToDelete(std::string toRemove, std::vector<Location>::const_iterator const & location);
 bool		forbiddenToDeleteFileOrFolder(std::string toRemove);
 std::string	createAutoindex(void);
+bool		hasReadPermission(std::string filePath);
+
 
 
 /* 

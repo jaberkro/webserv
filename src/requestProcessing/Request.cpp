@@ -166,7 +166,6 @@ Server const &	Request::identifyServer(std::vector<Server> const & servers)
 		case 0:
 			if (zero < 0){
 				this->_statusCode = INTERNAL_SERVER_ERROR;
-				throw std::runtime_error("ERROR: No matching server, not even a default 0.0.0.0 found");
 			}
 			return (servers[zero]);
 		case 1:

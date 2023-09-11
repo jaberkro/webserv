@@ -7,7 +7,6 @@
 #include "Webserver.hpp"
 #include "CGI.hpp"
 #include <cstdio>
-#include <unistd.h>
 #include <stdio.h>
 #include <sys/stat.h>
 
@@ -25,7 +24,7 @@ std::map<int, std::string> 	Response::_responseCodes =
 	{BAD_REQUEST, "Bad Request"},
 	{FORBIDDEN, "Forbidden"},
 	{NOT_FOUND, "Not Found"},
-	{NOT_ALLOWED, "Not Allowed"},
+	{METHOD_NOT_ALLOWED, "Method Not Allowed"},
 	{CONTENT_TOO_LARGE, "Content Too Large"},
 	{INTERNAL_SERVER_ERROR, "Internal Server Error"},
 	{NOT_IMPLEMENTED, "Not Implemented"}
@@ -93,7 +92,7 @@ void	Response::prepareResponsePOST(void)
 {
 	std::cout << "Checking if POST is allowed based om the client_max_body_size..." << std::endl;
 	std::cout << "max size: " << this->getLocation()->getMaxBodySize() << " and body length: " << this->getRequest().getBodyLength() << std::endl;
-	if (this->getRequest().getBodyLength() > this->getLocation()->getMaxBodySize() && this->getLocation()->getMaxBodySize() > 0) // JMA: this counts for POST but not for GET! --> DM: done
+	if (this->getRequest().getBodyLength() > this->getLocation()->getMaxBodySize() && this->getLocation()->getMaxBodySize() > 0)
 	{
 		std::cout << "POST not allowed: Content Too Large. Max body size is " << this->getLocation()->getMaxBodySize() << std::endl;
 		this->_statusCode = CONTENT_TOO_LARGE;
@@ -166,9 +165,8 @@ void	Response::prepareTargetURI(Server const & server)
 {
 	std::string	targetUri = this->_req.getTarget().substr(0, \
 	this->_req.getTarget().find_first_of('?'));
-	int			rounds = 0; // to be deleted (is for debugging)
 
-	while (!this->_isReady && rounds++ < 6) // rounds to be deleted (used only for debugging)
+	while (!this->_isReady)
 	{
 		try 
 		{
@@ -182,24 +180,18 @@ void	Response::prepareTargetURI(Server const & server)
 					// HERE COMES THE AUTOINDEX CODE
 					// tbd what to return if a directory is requested and there is no index and autoindex is off
 					// hier message vullen en statuscode en IETS in de filepath zetten OF JUIST NIET?
-					this->_message = createAutoindex();
+					this->_message = createAutoindex();	// DM: perhaps move autoindex to the end?
 					this->_statusCode = NOT_FOUND;
 					this->_filePath = "_";
-					std::cerr << "The target is a directory" << std::endl;
 					this->_isReady = true;
 				}
-				// DM the below two lines are wrong and need to be removed
-				// else if (this->_req.getMethod() == "POST")
-				// 	targetUri = "/uploaded.html";
-				continue;
 			}
-			// DM here we need another option of proceeding with the target being a directory
 			else
 			{
 				this->extractPathInfo(targetUri);
 				this->_filePath = this->_location->getRoot() + targetUri;
-				this->checkWhetherFileExists();
-				std::cerr << "[after extraction] filePath is " << this->_filePath << std::endl;
+				if (!hasReadPermission(this->_filePath))
+					this->_statusCode = NOT_FOUND;
 				this->_isReady = true;
 			}
 		}
@@ -207,50 +199,50 @@ void	Response::prepareTargetURI(Server const & server)
 		{
 			std::cerr << "IOS exception caught (something went wrong with opening the file " << this->_filePath << "): ";
 			std::cerr << f.what() << std::endl;
-			if (this->_statusCode < 400)
-				this->_statusCode = NOT_FOUND;
-			if (targetUri == DEFAULT_ERROR_PAGE)
-			{
-				this->_filePath.clear();
-				this->_message = this->_responseCodes.at(this->_statusCode).c_str();
-				this->_isReady = true;			
-			}
-			targetUri = identifyErrorPage(this->_location->getErrorPages());
-			if (access(targetUri.c_str(), F_OK | R_OK) < 0)
-				targetUri = DEFAULT_ERROR_PAGE;
-
+			this->_statusCode = NOT_FOUND;
 		}
 		catch(const std::range_error &re)
 		{
 			std::cerr << "Range exception caught: (no location match found for target " << this->_req.getTarget() << "): ";
 			std::cerr << re.what() << std::endl;
-			targetUri = identifyErrorPage(server.getErrorPages());
+			this->_statusCode = INTERNAL_SERVER_ERROR;
 		}
-		if (rounds == 6)	// moet straks weg
-			std::cout << "--> loop ended after 6 rounds so SOMETHING IS PROBABLY WRONG <--" << std::endl;
 	}
 }
 
-/**
- * @brief Returns the filename of the error page corresponding to the status code.
- * If no error page was provided in the config file for a specific status code,
- * the filename of the default error page is returned instead.
- * 
- * @param itLoc iterator to the relevant Location object that is the exact or 
- * closest match for the target
- * @return std::string filename of the error page to be returned
- */
-std::string	Response::identifyErrorPage(std::map<int, std::string> const & errorPages)
+void	Response::identifyErrorPage(Server const & server)
 {
-	try
+	std::map<int, std::string> const & errorPages = this->_location->getErrorPages();
+	std::string	targetUri;
+
+	std::cerr << "[identifyErrorPage] ";
+	try // checking whether there is a defined error page for this error code in this location
 	{
-		return (errorPages.at(this->_statusCode));
+		targetUri = errorPages.at(this->_statusCode);
 	}
-	catch(const std::out_of_range& oor)
+	catch(const std::out_of_range& oor) // if not, using the default one
 	{
-		std::cerr << "No custom error page provided for status code " << this->_statusCode << ")";
-		this->_statusCode = NOT_FOUND;
-		return(DEFAULT_ERROR_PAGE);
+		targetUri = DEFAULT_ERROR_PAGE;
+	}
+	this->_isReady = false;
+	
+	while (!this->_isReady)
+	{
+		std::cerr << "targetUri is " << targetUri;
+		this->_location = findLocationMatch(targetUri, server.getLocations());
+		std::cerr << ", location is " << this->_location->getMatch();
+		this->_filePath = this->_location->getRoot() + targetUri;
+		std::cerr << ", filePath is " << this->_filePath << std::endl;
+		if (!hasReadPermission(this->_filePath) && targetUri == DEFAULT_ERROR_PAGE)
+		{
+			this->_filePath.clear();
+			this->_message = this->_responseCodes.at(this->_statusCode).c_str();
+			this->_isReady = true;
+		}
+		else if (!hasReadPermission(this->_filePath))
+			targetUri = DEFAULT_ERROR_PAGE;
+		else
+			this->_isReady = true;
 	}
 }
 
@@ -423,21 +415,6 @@ void	Response::extractPathInfo(std::string & targetUri)
 }
 
 /**
- * @brief checks a file or throws an exception, if file is not found.
- * 
- * @param response the buffer into which the response is written
- */
-void	Response::checkWhetherFileExists() // maybe move into utils and also use for error pages?
-{
-	// this->_fileLength = this->getFileSize(this->_filePath);
-	if (access(this->_filePath.c_str(), F_OK | R_OK) < 0)
-	{
-		this->_statusCode = NOT_FOUND;
-		throw std::ios_base::failure("File not found: " + this->_filePath);
-	}
-}
-
-/**
  * @brief composes the first line of a response, writing it into the response buffer.
  * After sending the response, it clears the buffer with std::memset().
  * 
@@ -461,7 +438,7 @@ void	Response::prepareFirstLine(void)
 		this->_responseCodes.at(this->_statusCode).c_str());
 	}
 	printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
-	this->addToFullResponse(&responseBuffer[0]);//, std::strlen(responseBuffer)); //JMA: last variable outcommented because of merge conflict
+	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer)); //JMA: last variable outcommented because of merge conflict
 }
 
 /**
@@ -493,7 +470,7 @@ void	Response::prepareHeaders(std::string const & root)
 	// printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
 	// printf("\n\nCONTENT TYPE: [%s]\n\n", contentType.c_str());
 
-	this->addToFullResponse(&responseBuffer[0]);//, std::strlen(responseBuffer)); //JMA: last variable outcommented because of merge conflict
+	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer)); //JMA: last variable outcommented because of merge conflict
 }
 
 
