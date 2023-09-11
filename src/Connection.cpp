@@ -17,7 +17,7 @@ Connection::~Connection()
 	// std::cout << "Destructor called on Connection" << std::endl;
 }
 
-Connection::Connection(int listenfd, Socket sckt) : _listenfd(listenfd)
+Connection::Connection(int listenfd, Socket sckt) : _listenfd(listenfd) // ADD STATUSCODE
 {
 	this->_newReq = nullptr;
 	this->_newResp = nullptr;
@@ -113,12 +113,9 @@ void	Connection::handleResponse()
 				std::cout << "Method not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl; // JMA: remove later?
 				if (this->_newResp->getRequest().getHeaders()["User-Agent"].find("curl") == 0)
 					this->_newResp->setFilePath("");
-				
 				this->_newResp->setStatusCode(METHOD_NOT_ALLOWED);
 				//this should be something that overwrites all variables that matter for the response sending
 			}
-			//insert tests of allowed methods
-
 
 			else if (this->_newResp->getStatusCode() == OK) // DM: only do this if the status code is OK (200)
 			{
@@ -133,13 +130,12 @@ void	Connection::handleResponse()
 					this->_newResp->setStatusCode(NOT_IMPLEMENTED);
 			}
 			// DM: does the below belong in the scope of the else{} statement?
-			if (this->_newResp->getLocation()->getReturn().first != 0) // DM should we only do this for status codes < 500?
+			//JMA: maybe returnCode, returnLink and returnMessage? seperate, because the message can also be empty
+			if (this->_newResp->getLocation()->getReturnCode()) // DM should we only do this for status codes < 500?
 			{
-				std::cout << "RETURN!!!!!!!!!! " << this->_newResp->getLocation()->getReturn().first << " " << this->_newResp->getLocation()->getReturn().second << std::endl; // JMA: remove later?
-				this->_newResp->setStatusCode(this->_newResp->getLocation()->getReturn().first);
-				this->_newResp->setMessage(this->_newResp->getLocation()->getReturn().second);
+				this->_newResp->setStatusCode(this->_newResp->getLocation()->getReturnCode());
+				this->_newResp->setMessage(this->_newResp->getLocation()->getReturnMessage());
 				this->_newResp->setFilePath("");
-				std::cout << "done return overwriting. JMA: I think it should be sent below differently, let's discuss this" << std::endl; // JMA: remove later
 			}
 		}
 		if (this->_newResp->getStatusCode() >= 400)

@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string>
 
-static bool allowedDir(std::string line)
+static bool allowedDir(std::string line) // IS HTIS TOO HARDCODED?
 {
 	if (line == "/www" || line == "/images")
 		return (false);

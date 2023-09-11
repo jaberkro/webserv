@@ -24,8 +24,8 @@ static void checkNotImplementedHTTP(std::string line)
 		notImplementedError(line, "http", "location block");
 }
 
-static int parsedImplementedHTTPOnly(std::vector<Server> &servers, std::string line, \
-	std::fstream &file, t_values values)
+static int parsedImplementedHTTPOnly(std::vector<Server> &servers, \
+	std::string line, std::fstream &file, t_values values)
 {
 	if (line == "server {")
 			servers.push_back(parseServer(file, values));
@@ -52,7 +52,7 @@ void parseHTTP(std::vector<Server> &servers, std::fstream &file)
 			continue ;
 		else if (line == "}")
 			break ;
-		else if (!parsedImplementedHTTPOnly(servers, line, file, values)) // line == "server {"
+		else if (!parsedImplementedHTTPOnly(servers, line, file, values))
 		{
 			checkNotImplementedHTTP(line);
 			if (hasDirective(line) == -1)

@@ -77,6 +77,7 @@ void		noServerError(void);
 void		methodError(std::string line, std::string directive, std::string allowed);
 void		portError(std::string notPort);
 void		hostError(std::string notHost);
+void		rootError(std::string line, std::string reason);
 void 		tooBigError(std::string line, std::string directive, std::string max);
 void 		nanError(std::string line, std::string directive);
 

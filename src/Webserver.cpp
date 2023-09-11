@@ -43,7 +43,7 @@ void	Webserver::eofEvent(/*int connfd, */int ident)
 {
 	std::cout << "Disconnect" << std::endl;
 	if (close(ident) < 0)
-		throw Webserver::CloseError();
+		throw Webserver::CloseError();  // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
 }
 
 // bool	timeout()
@@ -70,9 +70,10 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 
 	while (1)
 	{
+		// TRY
 		running = true;//weg?
 		if ((nev = kevent(_kq, NULL, 0, &evList, 1, NULL)) < 0) //<0 [WAS 1] because the return value is the num of events place in queue
-			throw Webserver::KeventError();
+			throw Webserver::KeventError(); // STATE = ERROR, CHECK IF THERE ARE ANY CLIENTS
 		// if (timeout())
 		// 	continue ;
 		if (evList.flags & EV_EOF)
@@ -81,17 +82,17 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 		{
 			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~Connection accepted~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
 			if ((connfd = accept(evList.ident, (struct sockaddr *)&addr, &socklen)) < 0)
-				throw Webserver::AcceptError();
-			this->_connections[connfd] = Connection((int)evList.ident, _sckts.at(eventSocket));
+				throw Webserver::AcceptError(); // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
+			this->_connections[connfd] = Connection((int)evList.ident, _sckts.at(eventSocket)); // ADD STATUSCODE AS PARAMETER
 			this->_connections[connfd].setRequest(new Request(connfd, _sckts.at(eventSocket).getAddress()));
 			if (fcntl(connfd, F_SETFL, O_NONBLOCK) < 0)
 			{
-				perror("fctnl");
+				perror("fcntl");  // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
 				return ;
 			}
 			EV_SET(&evList, connfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 			if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
-				throw Webserver::KeventError();
+				throw Webserver::KeventError(); // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
 			// if ((close(connfd)) < 0)
 			// 	throw Webserver::CloseError(); //Advice Swaan
 			//Als ik dit if-statement uitcomment: pagina blijft laden na "Uploaden succesvol"
@@ -107,7 +108,7 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 				std::cout << "~~~~~~~~~~~~~~~~~~WRITE event filter added for conn fd " << (int)evList.ident << " with state " << _connections[(int)evList.ident].getRequest()->getState() << "~~~~~~~~~~~~~~~~\n\n" << std::endl;
 				EV_SET(&evList, (int)evList.ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 				if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
-					throw Webserver::KeventError();
+					throw Webserver::KeventError();  // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
 			}
 
 		}
@@ -123,7 +124,7 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 				std::cout << "~~~~~~~~~~~~~~~~~~WRITE event filter deleted for conn fd " << (int)evList.ident << "~~~~~~~~~~~~~~~~\n\n" << std::endl;
 				EV_SET(&evList, (int)evList.ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
 				if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
-					throw Webserver::KeventError();
+					throw Webserver::KeventError();  // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
 			}
 		}
 		// else if (evList.filter == EVFILT_TIMER)
@@ -133,6 +134,9 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 		// }
 		// else if (connfd != 0)
 		// 	close(connfd);
+
+		//CATCH
+		// KEVENT -> INTERNAL_SERVER_ERROR, NOT AN EXCEPTION
 		
 	}
 	running = false;
