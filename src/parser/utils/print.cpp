@@ -40,11 +40,13 @@ void	printLocation(Location location)
 		for (size_t k = 0; k < location.getDenied().size(); k++)
 			std::cout << " [" << location.getDeny(k) << "]";
 	}
-	if (location.getReturn().first)
+	if (location.getReturnCode() > 0)
 	{
-		std::cout << "\n\t\treturn: [" << location.getReturn().first << "]";
-		if (location.getReturn().second != "")
-			std::cout << " [" << location.getReturn().second << "]";
+		std::cout << "\n\t\treturn: [" << location.getReturnCode() << "]";
+		if (location.getReturnLink() != "")
+			std::cout << " [" << location.getReturnLink() << "]";
+		else if (location.getReturnLink() != "")
+			std::cout << " [" << location.getReturnLink() << "]";
 	}
 	if (location.getUploadDir().size() != 0)
 		std::cout << "\n\t\tupload_dir: [" << location.getUploadDir() << "]";

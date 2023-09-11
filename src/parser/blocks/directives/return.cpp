@@ -53,3 +53,6 @@ t_values	parseReturn(std::string line, t_values values)
 	values.returnText = line;
 	return (values);
 }
+
+// CHECK IF IT IS LINK: LINK HAS '.' OR '/' OR ':'
+// FILL CORRECT PAIR OF RETURN 

@@ -1,6 +1,6 @@
 #include "Location.hpp"
 
-Location::Location()
+Location::Location() // SET EVERYTHING TO 0 MANUALLY?
 {
 	// std::cout << "Default constructor called on Location" << std::endl;
 }
@@ -22,7 +22,9 @@ Location& Location::operator=(const Location &src)
 	this->_locationMatch = src._locationMatch;
 	this->_locationModifier = src._locationModifier;
 	this->_maxBodySize = src._maxBodySize;
-	this->_return = src._return;
+	this->_returnCode = src._returnCode;
+	this->_returnLink = src._returnLink;
+	this->_returnMessage = src._returnMessage;
 	this->_root = src._root;
 	this->_uploadDir = src._uploadDir;
 	this->_cgiScriptName = src._cgiScriptName;
@@ -144,12 +146,26 @@ std::string	Location::getDeny(size_t i) const
 
 void    Location::setReturn(int code, std::string text)
 {
-	this->_return = make_pair(code, text);
+	this->_returnCode = code;
+	if (text.find_first_of(".:/") != std::string::npos)
+		this->_returnLink = text;
+	else
+		this->_returnMessage = text;
 }
 
-const std::pair<int, std::string>    Location::getReturn(void) const
+int    Location::getReturnCode(void) const
 {
-	return (this->_return);
+	return (this->_returnCode);
+}
+
+const std::string    Location::getReturnLink(void) const
+{
+	return (this->_returnLink);
+}
+
+const std::string    Location::getReturnMessage(void) const
+{
+	return (this->_returnMessage);
 }
 
 void	Location::setUploadDir(std::string uploadDir)

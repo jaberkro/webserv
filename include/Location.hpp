@@ -44,7 +44,9 @@ class Location
 		std::string                 		getDeny(size_t i) const;
 
 		void                				setReturn(int code, std::string text);
-		const std::pair<int, std::string>   getReturn(void) const;
+		int									getReturnCode(void) const;
+		const std::string			   		getReturnLink(void) const;
+		const std::string			   		getReturnMessage(void) const;
 
 		void								setUploadDir(std::string uploadDir);
 		std::string							getUploadDir() const;
@@ -64,7 +66,9 @@ class Location
 		unsigned long long									_maxBodySize;
 		std::vector<std::string>							_allowed;
 		std::vector<std::string>							_denied;
-		std::pair<int, std::string>							_return;
+		int													_returnCode;
+		std::string											_returnLink;
+		std::string											_returnMessage;
 		std::string											_uploadDir;
 		std::string											_cgiScriptName;
 };
