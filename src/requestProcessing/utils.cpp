@@ -1,5 +1,6 @@
 #include <string>
 #include "Request.hpp"
+#include <unistd.h>
 
 /**
  * @brief removes the trailing spaces from the beginning and end of a string
@@ -142,3 +143,10 @@ void	splitServerName(std::string const & name, std::vector<std::string> & chunks
 	}
 }
 
+bool	hasReadPermission(std::string filePath)
+{
+	if (access(filePath.c_str(), F_OK | R_OK) < 0)
+		return (false);
+	else
+		return (true);
+}

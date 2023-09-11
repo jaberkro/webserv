@@ -113,18 +113,14 @@ void	Connection::handleResponse()
 				std::cout << "Method not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl; // JMA: remove later?
 				if (this->_newResp->getRequest().getHeaders()["User-Agent"].find("curl") == 0)
 					this->_newResp->setFilePath("");
-				else
-				{
-					this->_newResp->setFilePath("data/www/defaultError.html");
-					// JMA: we have to add something here to find the location and root of this new error page. And because of that we haveto check if in that new location GET is allowed
-				}
-				this->_newResp->setStatusCode(NOT_ALLOWED);
+				
+				this->_newResp->setStatusCode(METHOD_NOT_ALLOWED);
 				//this should be something that overwrites all variables that matter for the response sending
 			}
 			//insert tests of allowed methods
 
 
-			else // DM: only do this if the status code is OK (200)
+			else if (this->_newResp->getStatusCode() == OK) // DM: only do this if the status code is OK (200)
 			{
 				std::cerr << "method is " << this->_newReq->getMethod() << std::endl;
 				if (this->_newReq->getMethod() == "POST")
@@ -146,7 +142,8 @@ void	Connection::handleResponse()
 				std::cout << "done return overwriting. JMA: I think it should be sent below differently, let's discuss this" << std::endl; // JMA: remove later
 			}
 		}
-		// DM: here should be the function that looks up the correct error page
+		if (this->_newResp->getStatusCode() >= 400)
+			this->_newResp->identifyErrorPage(*this->_handlingServer); 
 		this->_newResp->sendResponse();
 		if (this->_newResp->getState() == DONE)
 		{
