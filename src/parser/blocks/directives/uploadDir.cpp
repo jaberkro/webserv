@@ -2,10 +2,9 @@
 #include <iostream>
 #include <string>
 
-static bool allowedDir(std::string line)
+static bool allowedDir(std::string line) // IS HTIS TOO HARDCODED?
 {
-	if (line == "/www" || line == "/images" || \
-		line.find("..") != std::string::npos) // ".." --> should this added everywhere of in a generic check? Or not be checked at all?
+	if (line == "/www" || line == "/images")
 		return (false);
 	return (true);
 }
