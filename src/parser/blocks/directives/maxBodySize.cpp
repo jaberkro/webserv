@@ -13,19 +13,9 @@ static unsigned int convertBodySize(std::string line, std::string directive)
 		multiplier = 1000000;
 	else if (!isdigit(line.back()))
 		nanError(line, directive);
-	if ((line.size() > 4 && line.back() == 'm') || \
-		(line.size() > 4 && line.back() == 'M') || \
-		(line.size() > 7 && line.back() == 'k') || \
-		(line.size() > 7 && line.back() == 'K') || \
-		line.size() > 9)
-	{
-		tooBigError(line, directive, "100MB");
-	}
 	if (multiplier != 1)
 		line.pop_back();
 	bodySize = stoull(line) * multiplier;
-	if (bodySize > 100000000)
-		tooBigError(std::to_string(bodySize), directive, "100MB");
 	return (bodySize);
 }
 
@@ -53,8 +43,10 @@ t_values		parseMaxBodySize(std::string line, t_values values)
 	}
 	catch(const std::exception& e)
 	{
-		std::cout << e.what() << std::endl;
-		exit(EXIT_FAILURE);
+		if (strcmp(e.what(), "stoull: out of range") == 0)
+			tooBigError(line, "client_max_body_size", "18446744073709551615");
+		else
+			nanError(line,"client_max_body_size");
 	}
 	return (values);
 }
