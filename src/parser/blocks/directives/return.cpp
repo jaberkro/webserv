@@ -1,6 +1,13 @@
 #include "parse.hpp"
 #include <string>
 
+/**
+ * @brief checks if argument is one quote startign and ending with '"'
+ * 
+ * @param text the text to check
+ * @return true if the text is one quote
+ * @return false if the text is not one quote
+ */
 static bool quotedArgument(std::string text)
 {
 	if (text.size() < 2 || text.at(0) != '"' || text.back() != '"')
