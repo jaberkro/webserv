@@ -63,3 +63,10 @@ void nanError(std::string line, std::string directive)
 	std::cerr << "[" << line << "]: not a number" << std::endl;
 	exit(EXIT_FAILURE);
 }
+
+void rootError(std::string line, std::string reason)
+{
+	std::cerr << "Error: can't parse root directive: ";
+	std::cerr << "[" << line << "]: " << reason << std::endl;
+	exit(EXIT_FAILURE);
+}

@@ -17,23 +17,18 @@ t_values		parseRoot(std::string line, t_values values)
 	line = ltrim(line);
 	checkEmptyString(line, "root", reason);
 	checkOneArgumentOnly(line, "root");
-	checkNotPreviousDirectory(line, "root"); // all paths should have this check
+	checkNotPreviousDirectory(line, "root");
 	if ((line.find("/") != 0 && line.find("\"") != 0) || \
 		(line.find("\"") == 0 && line.size() > 1 && \
 		(line.at(1) != '\"' || line.size() != 2)))
 	{
-		std::cerr << "Error: can't parse root: path should start with '/': ";
-		std::cerr << "[" << line << "]" << std::endl;
-		exit(EXIT_FAILURE);
+		rootError("path should start with '/'", line);
 	}
-	// if (line.size() == 0)
 	if (line.find("/") == 0)
 		line = protectedSubstr(line, 1, line.size() - 1);
 	if (line.size() > 0 && line.find_last_of("/") == line.size() - 1)
 	{
-		std::cerr << "Error: can't parse root: path should not end with '/': ";
-		std::cerr << "[" << line << "]" << std::endl;
-		exit(EXIT_FAILURE);
+		rootError("path should not end with '/'", line);
 	}
 	if (line == "")
 		line = ".";
