@@ -15,6 +15,16 @@ void	Response::setFilePath(std::string path)
 	this->_filePath = path;
 }
 
+std::string	& Response::getPathInfo(void)
+{
+	return (this->_pathInfo);
+}
+
+void	Response::setPathInfo(std::string pathInfo)
+{
+	this->_pathInfo = pathInfo;
+}
+
 bool	Response::getIsReady(void)
 {
 	return (this->_isReady);

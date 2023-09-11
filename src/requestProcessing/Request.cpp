@@ -56,7 +56,7 @@ void		Request::readBody()
 	char	socketBuffer[MAXLINE];
 	ssize_t	bytesRead = 0;
 	std::memset(socketBuffer, 0, MAXLINE);
-
+	
 	//while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && this->_state != WRITE)
 	if ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && this->_state != WRITE)
 	{
@@ -71,8 +71,8 @@ void		Request::readBody()
 	}
 	if (bytesRead < 0)
 	{
-		std::string lastpart = _body.substr(_body.size() - 42);
-		std::cerr << "[processReq] (read "  << this->_bodyLength << "/" << this->_contentLength << "), leaving loop. Last part of body is: [" << lastpart << "]" << std::endl;
+		// std::string lastpart = _body.substr(_body.size() - 42);
+		// std::cerr << "[processReq] (read "  << this->_bodyLength << "/" << this->_contentLength << "), leaving loop. Last part of body is: [" << lastpart << "]" << std::endl;
 		if (this->_bodyLength == this->_contentLength || this->_body.find((this->_boundary + "--")) < std::string::npos)
 			this->_state = WRITE;
 		else
@@ -124,7 +124,7 @@ void	Request::parseFieldLine(std::string &line)
 {
 	std::string	key, value;
 	std::map<std::string,std::string>::iterator	it;
-
+	
 	key = extractKey(line);
 	value = extractValue(line);
 	if (key == "Host")

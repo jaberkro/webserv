@@ -5,7 +5,7 @@
 #include <fstream>
 #include <unistd.h>
 #include "Webserver.hpp"
-#include "PostCGI.hpp"
+#include "CGI.hpp"
 #include <cstdio>
 #include <unistd.h>
 #include <stdio.h>
@@ -32,12 +32,10 @@ std::map<int, std::string> 	Response::_responseCodes =
 
 void	Response::prepareResponseGET(void) 
 {
-	std::cerr << "prepGET - cgi script name is " << this->_location->getCgiScriptName() << std::endl;
-	if (this->_location->getCgiScriptName().size() > 0)
-		this->prepareResponsePOST();
-
-	// DM: I will rewrite this. Now I'm just calling the prepareResponsePOST function but will 
-	// redesign it so that a runCgiScript() function gets called from both prepareGET and preparePOST.
+	// std::cerr << "prepGET - cgi script name is " << this->_location->getCgiScriptName() << std::endl;
+	if ((!this->_location->getCgiScriptName().empty() && !this->_req.getQueryString().empty()) || \
+	this->_location->getCgiScriptName().find('*') < std::string::npos)
+		this->executeCgiScript();
 }
 
 void	Response::prepareResponseDELETE(void)	
@@ -94,24 +92,32 @@ void	Response::prepareResponsePOST(void)
 {
 	// std::cout << "Checking if POST is allowed based om the client_max_body_size..." << std::endl;
 	// std::cout << "max size: " << this->getLocation()->getMaxBodySize() << " and body length: " << this->getRequest().getBodyLength() << std::endl;
-	if (this->getRequest().getBodyLength() > this->getLocation()->getMaxBodySize()) // JMA: this counts for POST but not for GET!
+	if (this->getRequest().getBodyLength() > this->getLocation()->getMaxBodySize() && this->getLocation()->getMaxBodySize() > 0) // JMA: this counts for POST but not for GET! --> DM: done
 	{
-		std::cout << "POST not allowed: Content Too Large." << std::endl;
+		std::cout << "POST not allowed: Content Too Large. Max body size is " << this->getLocation()->getMaxBodySize() << std::endl;
 		this->_statusCode = CONTENT_TOO_LARGE;
 		if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
 			this->_filePath.clear();
 		else
 			this->_filePath = "data/www/postFailed.html";
 		return ;
+		this->executeCgiScript();
 	}
 
-	PostCGI	cgi(this->_req);
-	
-	std::cerr << "prep POST triggered" << std::endl;
-	
-	cgi.prepareEnv(this->_location->getCgiScriptName());
-	cgi.prepareArg(this->_location->getCgiScriptName());
-	cgi.run(*this);
+}
+
+void	Response::executeCgiScript(void)
+{
+	CGI	cgi(this->_req);
+	std::string scriptName = this->_location->getCgiScriptName();
+	if (scriptName.find('*') < std::string::npos)
+		scriptName = this->_filePath;
+
+	std::cerr << "prep POST triggered; cgi script is " << scriptName;
+	cgi.prepareEnv(scriptName, this->_pathInfo);
+	cgi.prepareArg(scriptName);
+	cgi.run(*this, this->_fullResponse);
+
 }
 
 /**
@@ -130,11 +136,13 @@ void	Response::sendResponse(void)
 	if (this->_state == PENDING)
 	{
 		this->_fileLength = this->getFileSize(this->_filePath);
+		std::cout << "[sendResponse] fullResponse size is >" << this->_fullResponse.size() << "<" << std::endl;
 		if (this->_fullResponse.empty()) // here we check whether response was already prepared by a CGI script
 		{
 			prepareFirstLine();
 			prepareHeaders(this->_location->getRoot());
-			prepareContent();
+			if (this->_statusCode > 199 && this->_statusCode != DELETED && this->_statusCode != 304)
+				prepareContent();
 		}
 		this->_state = SENDING;
 	}
@@ -143,13 +151,14 @@ void	Response::sendResponse(void)
 	// std::cout << "Chunksize is " << _fullResponse.length() << " or " << static_cast<size_t>(MAXLINE) << std::endl;
 	if (this->_state == SENDING)
 	{
+		std::cerr << "[sendResponse] SENDING to fd " << this->_req.getConnFD() << std::endl;
 		bytesSent = send(this->_req.getConnFD(), this->_fullResponse.c_str(), chunkSize, 0);
 		if (bytesSent < 0)
 			std::cout << "BytesSent error, send 500 internal error" << std::endl;
 		_fullResponse.erase(0, bytesSent);
 		if (_fullResponse.size() == 0 || bytesSent == 0)
 			this->_state = DONE;
-		// std::cout << "State is " << this->_state << ", bytesSent = " << bytesSent << ", response leftover size is " << _fullResponse.size() << ", chunkSize = " << chunkSize << std::endl;
+		std::cout << "State is " << this->_state << ", bytesSent = " << bytesSent << ", response leftover size is " << _fullResponse.size() << ", chunkSize = " << chunkSize << std::endl;
 	}
 }
 
@@ -187,8 +196,10 @@ void	Response::prepareTargetURI(Server const & server)
 			// DM here we need another option of proceeding with the target being a directory
 			else
 			{
+				this->extractPathInfo(targetUri);
 				this->_filePath = this->_location->getRoot() + targetUri;
 				this->checkWhetherFileExists();
+				std::cerr << "[after extraction] filePath is " << this->_filePath << std::endl;
 				this->_isReady = true;
 			}
 		}
@@ -258,6 +269,8 @@ std::vector<Location> const & locations)
 
 	itLoc = findExactLocationMatch(target, locations);
 	if (itLoc == locations.end())
+		itLoc = findWildcardLocationMatch(target, locations);
+	if (itLoc == locations.end())
 		itLoc = findClosestLocationMatch(target, locations);
 	if (itLoc == locations.end())
 	{
@@ -288,6 +301,31 @@ std::vector<Location> const & locations)
 			continue;
 		if (target == it->getMatch())
 			return (it);
+	}
+	return (it);
+}
+
+std::vector<Location>::const_iterator	Response::findWildcardLocationMatch(std::string target, \
+std::vector<Location> const & locations)
+{
+	std::vector<Location>::const_iterator	it;
+	std::vector<std::string>				targetSplit;
+
+	for (it = locations.begin(); it != locations.end(); it++)
+	{
+		if (it->getModifier() != "=" && it->getMatch().find('*') == 0)
+		{
+			std::string	needle = it->getMatch().substr(1);
+			this->splitUri(target, targetSplit);
+			for (size_t i = 0; i < targetSplit.size(); i++)
+			{
+				if (targetSplit[i].find(needle) == targetSplit[i].length() - needle.length())
+				{
+					std::cerr << "Target is " << target << ", targetSplit[" << i << "] = " << targetSplit[i] << ", needle = " << needle << std::endl;
+					return (it);
+				}
+			}
+		}
 	}
 	return (it);
 }
@@ -367,6 +405,21 @@ std::string	Response::findIndexPage(std::vector<Location>::const_iterator itLoc)
 	}
 	this->_statusCode = NOT_FOUND;
 	throw std::ios_base::failure("Index file not found");
+}
+
+void	Response::extractPathInfo(std::string & targetUri)
+{
+	size_t		beginPathInfo = 0;
+	std::string	needle;
+
+	if (this->_location->getMatch()[0] == '*')
+	{
+		needle = this->_location->getMatch().substr(1);
+		beginPathInfo = targetUri.find(needle) + needle.length();
+		this->_pathInfo = targetUri.substr(beginPathInfo);
+		targetUri.erase(beginPathInfo);
+		std::cerr << "[pathInfo extraction] targetUri is " << targetUri << ", pathInfo is " << this->_pathInfo << std::endl;
+	}
 }
 
 /**
