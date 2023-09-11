@@ -27,7 +27,8 @@ std::map<int, std::string> 	Response::_responseCodes =
 	{NOT_FOUND, "Not Found"},
 	{NOT_ALLOWED, "Not Allowed"},
 	{CONTENT_TOO_LARGE, "Content Too Large"},
-	{INTERNAL_SERVER_ERROR, "Internal Server Error"}
+	{INTERNAL_SERVER_ERROR, "Internal Server Error"},
+	{NOT_IMPLEMENTED, "Not Implemented"}
 };
 
 void	Response::prepareResponseGET(void) 
@@ -90,8 +91,8 @@ void	Response::deleteFile(void)
 
 void	Response::prepareResponsePOST(void)
 {
-	// std::cout << "Checking if POST is allowed based om the client_max_body_size..." << std::endl;
-	// std::cout << "max size: " << this->getLocation()->getMaxBodySize() << " and body length: " << this->getRequest().getBodyLength() << std::endl;
+	std::cout << "Checking if POST is allowed based om the client_max_body_size..." << std::endl;
+	std::cout << "max size: " << this->getLocation()->getMaxBodySize() << " and body length: " << this->getRequest().getBodyLength() << std::endl;
 	if (this->getRequest().getBodyLength() > this->getLocation()->getMaxBodySize() && this->getLocation()->getMaxBodySize() > 0) // JMA: this counts for POST but not for GET! --> DM: done
 	{
 		std::cout << "POST not allowed: Content Too Large. Max body size is " << this->getLocation()->getMaxBodySize() << std::endl;
@@ -101,8 +102,8 @@ void	Response::prepareResponsePOST(void)
 		else
 			this->_filePath = "data/www/postFailed.html";
 		return ;
-		this->executeCgiScript();
 	}
+	this->executeCgiScript();
 
 }
 
@@ -136,7 +137,6 @@ void	Response::sendResponse(void)
 	if (this->_state == PENDING)
 	{
 		this->_fileLength = this->getFileSize(this->_filePath);
-		std::cout << "[sendResponse] fullResponse size is >" << this->_fullResponse.size() << "<" << std::endl;
 		if (this->_fullResponse.empty()) // here we check whether response was already prepared by a CGI script
 		{
 			prepareFirstLine();

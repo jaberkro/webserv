@@ -64,7 +64,7 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 	}
 	catch(const std::exception& e)
 	{
-		std::cerr << "!!! PROBABLY STH NEEDS TO BE ADDED TO CONFIG FILE - " << e.what() << '\n';
+		std::cerr << "!!! (MAYBE STH NEEDS TO BE ADDED TO CONFIG FILE?) - " << e.what() << '\n';
 	}
 }
 
@@ -99,8 +99,6 @@ void	Connection::handleResponse()
 	if (this->_newReq->getMethod() == "")
 		return; // JMA: we return here but that means we will also not send or delete the response. Is that a problem?
 
-	// if unknown response type, return BAD REQUEST
-
 	try
 	{
 		if (this->_newResp == nullptr)
@@ -126,7 +124,7 @@ void	Connection::handleResponse()
 			//insert tests of allowed methods
 
 
-			else
+			else // DM: only do this if the status code is OK (200)
 			{
 				std::cerr << "method is " << this->_newReq->getMethod() << std::endl;
 				if (this->_newReq->getMethod() == "POST")
@@ -135,14 +133,11 @@ void	Connection::handleResponse()
 					this->_newResp->prepareResponseDELETE();
 				else if (this->_newReq->getMethod() == "GET")
 					this->_newResp->prepareResponseGET();
-				else if (this->_newReq->getMethod() != "GET")
-				{
-					std::cout << "I can't handle the \"" << this->_newReq->getMethod() << "\" method, sorry!" << std::endl;
-					return; // JMA: we return here but that means we will also not send or delete the response. Is that a problem?
-				}
+				else
+					this->_newResp->setStatusCode(NOT_IMPLEMENTED);
 			}
-
-			if (this->_newResp->getLocation()->getReturn().first != 0)
+			// DM: does the below belong in the scope of the else{} statement?
+			if (this->_newResp->getLocation()->getReturn().first != 0) // DM should we only do this for status codes < 500?
 			{
 				std::cout << "RETURN!!!!!!!!!! " << this->_newResp->getLocation()->getReturn().first << " " << this->_newResp->getLocation()->getReturn().second << std::endl; // JMA: remove later?
 				this->_newResp->setStatusCode(this->_newResp->getLocation()->getReturn().first);
@@ -151,6 +146,7 @@ void	Connection::handleResponse()
 				std::cout << "done return overwriting. JMA: I think it should be sent below differently, let's discuss this" << std::endl; // JMA: remove later
 			}
 		}
+		// DM: here should be the function that looks up the correct error page
 		this->_newResp->sendResponse();
 		if (this->_newResp->getState() == DONE)
 		{
