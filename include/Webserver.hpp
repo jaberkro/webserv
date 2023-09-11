@@ -37,7 +37,7 @@ class Webserver
 			KeventError() : message(std::strerror(errno)) {}
 			const char*	what() const throw()
 			{
-				std::cout << "Kevent error: ";
+				std::cout << "Kevent error: "; // SERVER COULD NOT START BECAUSE OF: KQUEUE
 				return (message.c_str());
 			}
 		private:
