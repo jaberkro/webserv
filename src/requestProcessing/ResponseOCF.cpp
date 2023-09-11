@@ -31,7 +31,8 @@ _fileLength (r.getFileLength()), \
 _isReady (r.getIsReady()), \
 _location (), \
 _fullResponse (r.getFullResponse()),
-_message (r.getMessage()) {}
+_message (r.getMessage()), 
+_state (r.getState()) {}
 
 /**
  * @brief Response copy assignment operator
@@ -47,6 +48,7 @@ Response &	Response::operator=(Response & r)
 	this->_isReady = r.getIsReady();
 	this->_fullResponse = r.getFullResponse();
 	this->_message = r.getMessage();
+	this->_state = r.getState();
 
 	return (*this);
 }

@@ -9,5 +9,6 @@
 # define NOT_ALLOWED 405
 # define CONTENT_TOO_LARGE 413
 # define INTERNAL_SERVER_ERROR 500
+# define NOT_IMPLEMENTED 501
 
 #endif

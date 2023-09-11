@@ -40,6 +40,8 @@ class Response {
 		void											setStatusCode(int code);
 		std::string	&									getFilePath(void);
 		void											setFilePath(std::string path);
+		std::string	&									getPathInfo(void);
+		void											setPathInfo(std::string pathInfo);
 		std::vector<Location>::const_iterator	const & getLocation(void) const;
 		std::string										getFullResponse(void);
 		std::string										getMessage(void);
@@ -64,17 +66,22 @@ class Response {
 		std::string								_message;
 		static std::map<int, std::string>		_responseCodes;
 		size_t									_state;
+		std::string								_pathInfo;
 		
 		size_t									getFileSize(std::string filePath);
 		std::string								identifyErrorPage(std::map<int, std::string> const & errorPages);
 		std::vector<Location>::const_iterator 	findLocationMatch(std::string target, std::vector<Location> const & locations);
 		std::vector<Location>::const_iterator	findExactLocationMatch(std::string target, std::vector<Location> const & locations);
+		std::vector<Location>::const_iterator	findWildcardLocationMatch(std::string target, std::vector<Location> const & locations);
 		std::vector<Location>::const_iterator	findClosestLocationMatch(std::string target, std::vector<Location> const & locations);
 		std::string								findIndexPage(std::vector<Location>::const_iterator itLoc);
 		void									checkWhetherFileExists(void);
+		void									extractPathInfo(std::string & targetUri);
 		void									prepareFirstLine(void);
 		void									prepareHeaders(std::string const & root);
 		void									prepareContent(void);
+		void									executeCgiScript(void);
+
 };
 
 // std::string	deleteFile(Request request, std::vector<Location>::const_iterator const & location);
