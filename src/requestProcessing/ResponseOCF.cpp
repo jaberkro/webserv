@@ -6,12 +6,14 @@
  * @param req reference to a Request instance
  */
 Response::Response(Request & req) : \
+cgiOnKqueue(false), \
 _req (req), \
 _statusCode (req.getStatusCode()), \
 _fileLength (0), \
 _isReady (false), \
 _location (), \
-_state(PENDING) {}
+_state(PENDING), \
+_cgi(req) {}
 
 /**
  * @brief Destroy the Response:: Response object
@@ -30,8 +32,9 @@ _statusCode (r.getStatusCode()), \
 _fileLength (r.getFileLength()), \
 _isReady (r.getIsReady()), \
 _location (), \
-_fullResponse (r.getFullResponse()),
-_message (r.getMessage()) {}
+_fullResponse (r.getFullResponse()), \
+_message (r.getMessage()), \
+_cgi (r.getCgi()) {}
 
 /**
  * @brief Response copy assignment operator

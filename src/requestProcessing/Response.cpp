@@ -79,13 +79,22 @@ void	Response::deleteFile(void)
 
 void	Response::prepareResponsePOST(void)
 {
-	PostCGI	cgi(this->_req);
+	if (this->_state == PENDING)
+	{
+		PostCGI	tmp(this->_req);
+		this->_cgi = tmp;
+		std::cerr << "prep POST triggered" << std::endl;
+		_cgi.prepareEnv(this->_location->getCgiScriptName());
+		_cgi.prepareArg(this->_location->getCgiScriptName());
+	}
+	if (getState() == PENDING)
+		_cgi.run(*this);
+	if (getState() == READ_CGI)// && _cgi.checkIfCgiPipe())
+		_cgi.cgiRead(*this);
+	else if (getState() == WRITE_CGI)// && _cgi.checkIfCgiPipe())
+		_cgi.cgiWrite(*this);
+
 	
-	std::cerr << "prep POST triggered" << std::endl;
-	
-	cgi.prepareEnv(this->_location->getCgiScriptName());
-	cgi.prepareArg(this->_location->getCgiScriptName());
-	cgi.run(*this);
 }
 
 /**

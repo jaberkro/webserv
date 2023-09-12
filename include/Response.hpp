@@ -5,6 +5,7 @@
 # include "Request.hpp"
 # include "responseCodes.hpp"
 # include "Location.hpp"
+# include "PostCGI.hpp"
 // # include "Webserver.hpp"
 
 #define DEFAULT_ERROR_PAGE "/defaultError.html"
@@ -14,8 +15,11 @@ enum {
 	SENDING,
 	DONE,
 	WRITE_CGI,
-	READ_CGI
+	READ_CGI,
+	INIT_CGI,
 };
+
+class PostCGI;
 
 class Response {
 
@@ -25,6 +29,8 @@ class Response {
 		~Response(void);
 		Response(Response &);
 		Response &	operator=(Response &);
+
+		bool	cgiOnKqueue;
 		
 		/* functions */
 		void	prepareTargetURI(Server const & server);
@@ -37,6 +43,7 @@ class Response {
 		/* getters */
 		size_t											getFileLength(void) const;
 		Request &										getRequest(void);
+		PostCGI &										getCgi(void);
 		bool											getIsReady(void);
 		int												getStatusCode(void);
 		void											setStatusCode(int code);
@@ -66,7 +73,7 @@ class Response {
 		std::string								_message;
 		static std::map<int, std::string>		_responseCodes;
 		size_t									_state;
-		
+		PostCGI									_cgi;
 		size_t									getFileSize(std::string filePath);
 		std::string								identifyErrorPage(std::map<int, std::string> const & errorPages);
 		std::vector<Location>::const_iterator 	findLocationMatch(std::string target, std::vector<Location> const & locations);

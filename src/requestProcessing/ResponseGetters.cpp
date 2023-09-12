@@ -30,6 +30,11 @@ Request &	Response::getRequest(void)
 	return (this->_req);
 }
 
+PostCGI &	Response::getCgi(void)
+{
+	return (this->_cgi);
+}
+
 int	Response::getStatusCode(void)
 {
 	return (this->_statusCode);

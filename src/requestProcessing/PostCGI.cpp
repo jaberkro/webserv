@@ -1,22 +1,58 @@
 #include "PostCGI.hpp"
+#include "Response.hpp"
 #include <iostream>
 #include <unistd.h>	// for pipe, fork, execve
 #include <cstring>	// for strdup
 #include <string>	// for to_string
 #include <exception>
 #include <cstdio>
+#include <fcntl.h>
 
 
-PostCGI::PostCGI(Request & req) : _req(req) {}
+PostCGI::PostCGI(Request & req) : _req(req), id(-1) {}
 
 PostCGI::~PostCGI()
 {
-	size_t	i = 0;
-	while (this->_env[i])
-		delete this->_env[i++];
-	delete[] this->_env;
-	delete this->_arg[0];
-	delete[] this->_arg;
+
+		// size_t	i = 0;
+		// while (this->_env[i])
+		// 	delete this->_env[i++];
+		// delete[] this->_env;
+		// delete this->_arg[0];
+		// delete[] this->_arg;
+}
+
+PostCGI &	PostCGI::operator=(PostCGI &r)
+{
+	this->_req = r._req;
+	this->_arg = r._arg;
+	this->_env = r._env;
+	this->id = r.id;
+	this->_webservToScript[0] = r._webservToScript[0];
+	this->_webservToScript[1] = r._webservToScript[1];
+	this->_scriptToWebserv[0] = r._scriptToWebserv[0];
+	this->_scriptToWebserv[1] = r._scriptToWebserv[1];
+	this->_exitCode = r._exitCode;
+	this->_response = r._response;
+	return (*this);
+}
+
+int*	PostCGI::getWebservToScript()
+{
+	return(this->_webservToScript);
+}
+
+int*	PostCGI::getScriptToWebserv()
+{
+	return(this->_scriptToWebserv);
+}
+
+bool	PostCGI::checkIfCgiPipe()
+{
+	if (this->_req.getConnFD() != this->_scriptToWebserv[0] || this->_req.getConnFD() != this->_webservToScript[1])
+		return (false);
+	else
+		return (true);
 }
 
 void	PostCGI::prepareArg(std::string const & scriptName)
@@ -69,23 +105,85 @@ void	PostCGI::prepareEnv(std::string const & scriptName)
 		std::cout << this->_env[i++] << std::endl;
 }
 
+void	PostCGI::cgiWrite(Response & response)
+{
+	// if (response.getState() == WRITE_CGI && checkIfCgiPipe())
+	// {
+		ssize_t bytesSent;
+		ssize_t chunkSize = std::min(this->_req.getBody().length(), static_cast<size_t>(MAXLINE));
+		bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), chunkSize);
+		// std::cout << "BytesSent is " << bytesSent << std::endl;
+		if (bytesSent < 0)
+			std::cout << "BytesSent error, send 500 internal error" << std::endl;
+		this->_req.setBody(this->_req.getBody().erase(0, bytesSent)); //
+		if (this->_req.getBody().size() == 0 || bytesSent == 0 || bytesSent == -1)
+		{
+			response.setState(READ_CGI);
+			close(this->_scriptToWebserv[W]);
+			close(this->_webservToScript[R]);
+			close(this->_webservToScript[W]);
+			std::cout << "Closing webservToScript[W]" << std::endl;
+			waitpid(id, &(this->_exitCode), 0);
+		}
+	// }
+}
+
+void	PostCGI::cgiRead(Response & response)
+{
+	ssize_t bytesRead = 0;
+	char	buf[RESPONSELINE];
+	// std::cout << "Starting Cgi read" << std::endl;
+	// if (response.getState() == READ_CGI && checkIfCgiPipe())
+	// {
+		if ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) > 0)
+		{
+			// std::cout << "Read call for cgi, bytesRead = " << bytesRead << std::endl;
+			std::string	chunk(buf, bytesRead);
+			response.addToFullResponse(chunk);
+		}
+		if (bytesRead == 0 && (waitpid(id, &(this->_exitCode), WUNTRACED | WNOHANG) != 0))
+			response.setState(PENDING);
+		// std::cout << "End of cgiRead func, bytesRead = " << bytesRead << " , state is " << response.getState() << std::endl;
+	// }
+}
 
 void	PostCGI::run(Response & response)
 {
-	char	buf[RESPONSELINE];
-	ssize_t	bytesRead = 0;
+	// char	buf[RESPONSELINE];
+	// ssize_t	bytesRead = 0;
 
-	try 
+	try //when anything fails in this try block, remember to reset the state and handle correctly!
 	{
+		// if (id != 0)
+		// {
+		// if (response.getState() == PENDING)
+		// {
+			std::cout << "Piping and forking now" << std::endl;
+			if (pipe(this->_webservToScript) < 0 || pipe(this->_scriptToWebserv) < 0)
+				throw std::runtime_error("Pipe failed");
+			fcntl(this->_webservToScript[W], F_SETFL, O_NONBLOCK);
+			fcntl(this->_scriptToWebserv[R], F_SETFL, O_NONBLOCK);
+			std::cout << "FD VALUES OF PIPES:"
+			<< " WebToScript[0] = [" << this->_webservToScript[0] << "] "
+			<< " WebToScript[1] = [" << this->_webservToScript[1] << "] "
+			<< " ScriptToWebs[0] = [" << this->_scriptToWebserv[0] << "] "
+			<< " ScriptToWebs[1] = [" << this->_scriptToWebserv[1] << "] " << std::endl;
 
-		if (pipe(this->_webservToScript) < 0 || pipe(this->_scriptToWebserv) < 0)
-			throw std::runtime_error("Pipe failed");
-		id = fork();
-		if (id < 0)
-			throw std::runtime_error("Fork failed");
+			response.setState(INIT_CGI);
+			std::cout << "id = " << id << std::endl;
+			id = fork();
+			std::cerr << "id after fork = " << id << std::endl;
+
+			if (id < 0)
+				throw std::runtime_error("Fork failed");
+		// }
+		// }
+		// else 
+		// {
 		if (id == 0)
 		{
-			std::cout << "Starting child process" << std::endl;
+			// sleep(10);
+			std::cout << "Starting child process, id = " << id << std::endl;
 			close(this->_webservToScript[W]);
 			close(this->_scriptToWebserv[R]);
 			dup2(this->_webservToScript[R], STDIN_FILENO);
@@ -93,50 +191,69 @@ void	PostCGI::run(Response & response)
 			dup2(this->_scriptToWebserv[W], STDOUT_FILENO);
 			close(this->_scriptToWebserv[W]);
 			std::cerr << "trying to run script: [" << this->_arg[0] << "]" << std::endl;
-			response.setState(WRITE_CGI);
+			// std::cerr << "Arg[0] = " << this->_arg[0] << " , * ALLE ARG VOOR EXECVE *" << std::endl;
+			// int i = 0;
+			// while (this->_arg[i])
+			// 	std::cerr << this->_arg[i++] << std::endl;
+			// std::cerr << "ENV:" << std::endl;
+			// i = 0;
+			// while (this->_env[i])
+			// 	std::cerr << this->_env[i++] << std::endl << std::endl;
+
 			if (execve(this->_arg[0], this->_arg, this->_env) < 0)
 				std::cerr << strerror(errno) << std::endl;
-			std::cout << "FAIL: script: [" << this->_arg[0] << "]" << std::endl;
+			std::cout << "FAIL: script: [" << this->_arg[0] << "]" << std::endl; //hier ook exit toevoegen in case of fail
 		}
 		else
 		{
-			std::string const & body = this->_req.getBody();
+			std::cerr << "In else statement of cgi call. State: " << response.getState() << std::endl;
+			response.setState(WRITE_CGI);
+			// std::string const & body = this->_req.getBody();
 			// MAKE THEM NON-BLOCKING
-			if (response.getState() == WRITE_CGI)
-			{
-				ssize_t bytesSent;
-				ssize_t chunkSize = std::min(this->_req.getBody().length(), static_cast<size_t>(MAXLINE));
-				bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), chunkSize);
-				if (bytesSent < 0)
-					std::cout << "BytesSent error, send 500 internal error" << std::endl;
-				this->_req.getBody().erase(0, bytesSent);
-				if (this->_req.getBody().size() == 0 || bytesSent == 0)
-				{
-					response.setState(READ_CGI);
-					close(this->_scriptToWebserv[W]);
-					close(this->_webservToScript[R]);
-					close(this->_webservToScript[W]);
-				}
-			}
-			if (response.getState() == WRITE_CGI)
-			{
-				if ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) > 0)
-				{
-					std::string	chunk(buf, bytesRead);
-					response.addToFullResponse(chunk);
-				}
+			// if (response.getState() == WRITE_CGI && checkIfCgiPipe())
+			// {
+			// 	ssize_t bytesSent;
+			// 	ssize_t chunkSize = std::min(this->_req.getBody().length(), static_cast<size_t>(MAXLINE));
+			// 	bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), chunkSize);
+			// 	std::cout << "BytesSent is " << bytesSent << std::endl;
+			// 	if (bytesSent < 0)
+			// 		std::cout << "BytesSent error, send 500 internal error" << std::endl;
+			// 	this->_req.setBody(this->_req.getBody().erase(0, bytesSent)); //
+			// 	if (this->_req.getBody().size() == 0 || bytesSent == 0)
+			// 	{
+			// 		response.setState(READ_CGI);
+			// 		close(this->_scriptToWebserv[W]);
+			// 		close(this->_webservToScript[R]);
+			// 		close(this->_webservToScript[W]);
+			// 		std::cout << "Closing webservToScript[W]" << std::endl;
+			// 	}
+			// }
+			// if (response.getState() == READ_CGI && checkIfCgiPipe())
+			// {
+			// 	if ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) > 0)
+			// 	{
+			// 		std::string	chunk(buf, bytesRead);
+			// 		response.addToFullResponse(chunk);
+			// 	}
 				// std::cout << "Parent received this response: [" << response.getFullResponse() << "]" << std::endl;
-				if (bytesRead == 0)
-				{
+				// if (bytesRead == 0)
+				// {
+			if ((waitpid(id, &(this->_exitCode), WUNTRACED | WNOHANG)) != 0) //BS: what if we don't wait for the script to finish, will the kq timer ring in time?
+			{
 					close(this->_scriptToWebserv[R]);
-					waitpid(id, &(this->_exitCode), 0); //BS: what if we don't wait for the script to finish, will the kq timer ring in time?
 					if (WIFEXITED(this->_exitCode))
 						std::cout << "Script exited with exit code " << this->_exitCode << std::endl;
 					response.setState(PENDING);
-				}
+					size_t	i = 0;
+					while (this->_env[i])
+						delete this->_env[i++];
+					delete[] this->_env;
+					delete this->_arg[0];
+					delete[] this->_arg;
+			}
+				// }
 			}
 		}
-	}
 	catch (std::runtime_error &re)
 	{
 		std::cerr << re.what() << std::endl;

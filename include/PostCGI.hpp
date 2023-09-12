@@ -4,11 +4,13 @@
 #include <unistd.h>
 #include <iostream>
 #include "Request.hpp"
-#include "Response.hpp"
+// #include "Response.hpp"
 
 
 #define R 0
 #define W 1
+
+class Response;
 
 class PostCGI
 {
@@ -24,9 +26,18 @@ class PostCGI
 	public:
 		PostCGI(Request & req);
 		~PostCGI();
+		PostCGI &	operator=(PostCGI & r);
+
 		void	run(Response & response);
 		void	prepareArg(std::string const & scriptName);
 		void	prepareEnv(std::string const & scriptName);
+		int*	getWebservToScript();
+		int*	getScriptToWebserv();
+		bool	checkIfCgiPipe();
+		void	cgiRead(Response & response);
+		void	cgiWrite(Response & response);
+
+
 
 		std::string	getResponse();
 };
