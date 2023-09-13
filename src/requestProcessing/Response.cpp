@@ -109,16 +109,23 @@ void	Response::prepareResponsePOST(void)
 
 void	Response::executeCgiScript(void)
 {
-	CGI	cgi(this->_req);
-	std::string scriptName = this->_location->getCgiScriptName();
-	if (scriptName.find('*') < std::string::npos)
-		scriptName = this->_filePath;
-
-	std::cerr << "prep POST triggered; cgi script is " << scriptName;
-	cgi.prepareEnv(scriptName, this->_pathInfo);
-	cgi.prepareArg(scriptName);
-	cgi.run(*this, this->_fullResponse);
-
+	if (this->_state == PENDING)
+	{
+		CGI	cgi(this->_req);
+		this->_cgi = cgi;
+		
+		std::string scriptName = this->_location->getCgiScriptName();
+		if (scriptName.find('*') < std::string::npos)
+			scriptName = this->_filePath;
+		_cgi.prepareEnv(scriptName, this->_pathInfo);
+		_cgi.prepareArg(scriptName);
+	}
+	if (getState() == PENDING)
+		_cgi.run(*this);
+	if (getState() == READ_CGI)// && _cgi.checkIfCgiPipe())
+		_cgi.cgiRead(*this, this->_fullResponse);
+	else if (getState() == WRITE_CGI)// && _cgi.checkIfCgiPipe())
+		_cgi.cgiWrite(*this);
 }
 
 /**
@@ -590,3 +597,4 @@ void	Response::printResponse(void) const
 	std::cout << "\tConnection FD: " << this->_req.getConnFD() << std::endl;
 	std::cout << "******" << std::endl;
 }
+

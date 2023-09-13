@@ -11,7 +11,7 @@
 # define UPPERCASE "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 # define MAXLINE 6000
-# define RESPONSELINE 5000
+# define RESPONSELINE 500 //test, was 5000
 
 enum {
 	READHEADERS,
@@ -57,6 +57,7 @@ class Request
 		void												setContentLength(std::string contentLength);
 		void												setHost(std::string host);
 		void												setState(size_t state);
+		void 												setBody(std::string newBody);
 
 		void			printRequest();	// for debugging purposes, to be deleted
 		void			printServer(Server const & server); // for debugging purposes, to be deleted
