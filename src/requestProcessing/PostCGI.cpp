@@ -142,9 +142,20 @@ void	PostCGI::cgiRead(Response & response)
 			response.addToFullResponse(chunk);
 		}
 		if (bytesRead == 0 && (waitpid(id, &(this->_exitCode), WUNTRACED | WNOHANG) != 0))
+		{
+			close(this->_scriptToWebserv[R]);
+			if (WIFEXITED(this->_exitCode))
+				std::cout << "Script exited with exit code " << this->_exitCode << std::endl;
 			response.setState(PENDING);
+			size_t	i = 0;
+			std::cout << "Cleaning up cgi vars" << std::endl;
+			while (this->_env[i])
+				delete this->_env[i++];
+			delete[] this->_env;
+			delete this->_arg[0];
+			delete[] this->_arg;
 		// std::cout << "End of cgiRead func, bytesRead = " << bytesRead << " , state is " << response.getState() << std::endl;
-	// }
+		}
 }
 
 void	PostCGI::run(Response & response)
@@ -238,19 +249,20 @@ void	PostCGI::run(Response & response)
 				// std::cout << "Parent received this response: [" << response.getFullResponse() << "]" << std::endl;
 				// if (bytesRead == 0)
 				// {
-			if ((waitpid(id, &(this->_exitCode), WUNTRACED | WNOHANG)) != 0) //BS: what if we don't wait for the script to finish, will the kq timer ring in time?
-			{
-					close(this->_scriptToWebserv[R]);
-					if (WIFEXITED(this->_exitCode))
-						std::cout << "Script exited with exit code " << this->_exitCode << std::endl;
-					response.setState(PENDING);
-					size_t	i = 0;
-					while (this->_env[i])
-						delete this->_env[i++];
-					delete[] this->_env;
-					delete this->_arg[0];
-					delete[] this->_arg;
-			}
+			// if ((waitpid(id, &(this->_exitCode), WUNTRACED | WNOHANG)) != 0) //BS: what if we don't wait for the script to finish, will the kq timer ring in time?
+			// {
+			// 		close(this->_scriptToWebserv[R]);
+			// 		if (WIFEXITED(this->_exitCode))
+			// 			std::cout << "Script exited with exit code " << this->_exitCode << std::endl;
+			// 		response.setState(PENDING);
+					// size_t	i = 0;
+					// std::cout << "Cleaning up cgi vars" << std::endl;
+					// while (this->_env[i])
+					// 	delete this->_env[i++];
+					// delete[] this->_env;
+					// delete this->_arg[0];
+					// delete[] this->_arg;
+			// }
 				// }
 			}
 		}
