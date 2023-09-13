@@ -21,6 +21,7 @@ std::map<int, std::string> 	Response::_responseCodes =
 {
 	{OK, "OK"},
 	{DELETED, "Deleted"},
+	{MOVED_PERMANENTLY, "Moved Permanently"},
 	{BAD_REQUEST, "Bad Request"},
 	{FORBIDDEN, "Forbidden"},
 	{NOT_FOUND, "Not Found"},
@@ -185,7 +186,7 @@ void	Response::prepareTargetURI(Server const & server)
 					// hier message vullen en statuscode en IETS in de filepath zetten OF JUIST NIET?
 					this->_message = createAutoindex();	// DM: perhaps move autoindex to the end?
 					this->_statusCode = NOT_FOUND;
-					this->_filePath = "_"; // REMOVE
+					// this->_filePath = ""; // REMOVE
 					this->_isReady = true;
 				}
 			}
@@ -474,13 +475,22 @@ void	Response::prepareHeaders(std::string const & root)
 		std::memset(responseBuffer, 0, RESPONSELINE);
 		snprintf(responseBuffer, RESPONSELINE, "Content-Type: %s\r\n", contentType.c_str());
 	}
-	// ELSE TEXT/HTML FOR AUTOINDEX
+	else if (this->_statusCode == NOT_FOUND && this->_location->getAutoindex() == 1)
+	{
+		// ELSE TEXT/HTML FOR AUTOINDEX, this should be checked and improved
+		contentType = "text/html";
+		std::memset(responseBuffer, 0, RESPONSELINE);
+		snprintf(responseBuffer, RESPONSELINE, "Content-Type: %s\r\n", contentType.c_str());
+	}
+
+
 	if (this->_fileLength == 0 && this->_message.length() > 0)
 		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_message.length());
+	else if (this->_location->getReturnLink().size() > 0)
+		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\nLocation: %s\r\n\r\n", this->_message.size(), this->_location->getReturnLink().c_str());
 	else
 		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_fileLength);
 
-	// IF RETURN_LINK, ADD HEADER LOCATION
 
 	// printf("\n\nFILEPATH: [%s]\n\n", this->_filePath.c_str());
 	// printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
@@ -506,9 +516,9 @@ void	Response::prepareContent(void)
 	// DM: add first check whether _filePath is empty, zo ja, plak message in body
 	// also check response codes die geen body mogen hebben (dat er geen body komt)
 	
-	if (this->_filePath.empty() || this->_filePath == "_") // REMOVE "_", FILEPATH WILL BE EMPTY FOR AUTOINDEX
+	if (this->_filePath.empty())
 	{
-		this->_fullResponse.append(this->_message); //JMA: this might have to be different
+		this->_fullResponse.append(this->_message);
 		return;
 	}
 	else
