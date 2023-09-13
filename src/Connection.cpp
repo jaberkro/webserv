@@ -131,7 +131,7 @@ void	Connection::handleResponse()
 			}
 			// DM: does the below belong in the scope of the else{} statement?
 			//JMA: maybe returnCode, returnLink and returnMessage? seperate, because the message can also be empty
-			if (this->_newResp->getLocation()->getReturnCode()) // DM should we only do this for status codes < 500?
+			if (this->_newResp->getLocation()->getReturnCode()) // DM should we only do this for status codes < 500? // JMA: good question. Maybe also above 500 should be allowed, up to the creator of the config file to make a valid file? (we can also forbid it in the parsing)
 			{
 				this->_newResp->setStatusCode(this->_newResp->getLocation()->getReturnCode());
 				this->_newResp->setMessage(this->_newResp->getLocation()->getReturnMessage());
