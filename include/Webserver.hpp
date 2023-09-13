@@ -14,6 +14,8 @@
 #include <map>
 
 class Socket;
+class Response;
+class CGI;
 
 class Webserver
 {
@@ -21,6 +23,7 @@ class Webserver
 		bool						running; //BS:houden of weg?
 		std::vector<Socket> 		_sckts;
 		std::map<int, Connection>	_connections;
+		std::map<int, int>			_cgiFds; //first one is cgi Fd, second one is corresponding connFd
 		int							_kq;
 		int							comparefd(int fd);
 		void						setSignal();
@@ -31,6 +34,7 @@ class Webserver
 	public:
 		Webserver(std::vector<Server> servers);
 		~Webserver();
+		int							checkIfCgiFd(int evFd);
 
 	class KeventError : public std::exception {
 		public:

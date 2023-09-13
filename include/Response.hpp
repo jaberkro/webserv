@@ -5,6 +5,7 @@
 # include "Request.hpp"
 # include "responseCodes.hpp"
 # include "Location.hpp"
+# include "CGI.hpp"
 // # include "Webserver.hpp"
 
 #define DEFAULT_ERROR_PAGE "/defaultError.html"
@@ -12,8 +13,13 @@
 enum {
 	PENDING,
 	SENDING,
-	DONE
+	DONE,
+	WRITE_CGI,
+	READ_CGI,
+	INIT_CGI,
 };
+
+class CGI;
 
 class Response {
 
@@ -23,6 +29,8 @@ class Response {
 		~Response(void);
 		Response(Response &);
 		Response &	operator=(Response &);
+
+		bool	cgiOnKqueue;
 		
 		/* functions */
 		void	prepareTargetURI(Server const & server);
@@ -36,6 +44,7 @@ class Response {
 		/* getters */
 		size_t											getFileLength(void) const;
 		Request &										getRequest(void);
+		CGI &										getCgi(void);
 		bool											getIsReady(void);
 		int												getStatusCode(void);
 		void											setStatusCode(int code);
@@ -48,6 +57,7 @@ class Response {
 		std::string										getMessage(void);
 		void											setMessage(std::string);
 		size_t	const & 								getState() const;
+		void											setState(size_t state);
 		void											addToFullResponse(char *response, size_t length);
 		void											addToFullResponse(std::string chunk);
 
@@ -69,6 +79,7 @@ class Response {
 		size_t									_state;
 		std::string								_pathInfo;
 		
+		CGI										_cgi;
 		size_t									getFileSize(std::string filePath);
 		std::vector<Location>::const_iterator 	findLocationMatch(std::string target, std::vector<Location> const & locations);
 		std::vector<Location>::const_iterator	findExactLocationMatch(std::string target, std::vector<Location> const & locations);

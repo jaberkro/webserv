@@ -40,6 +40,11 @@ Request &	Response::getRequest(void)
 	return (this->_req);
 }
 
+CGI &	Response::getCgi(void)
+{
+	return (this->_cgi);
+}
+
 int	Response::getStatusCode(void)
 {
 	return (this->_statusCode);
@@ -83,4 +88,9 @@ void	Response::setMessage(std::string message)
 size_t	const & Response::getState() const
 {
 	return (this->_state);
+}
+
+void	Response::setState(size_t state)
+{
+	this->_state = state;
 }

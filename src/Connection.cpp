@@ -59,7 +59,7 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 		this->_newReq->printRequest();
 		this->_handlingServer = new Server(this->_newReq->identifyServer(servers));
 		std::cout << "_Handler info: host: [" << this->_handlingServer->getPort(0) << "], port: [" << this->_handlingServer->getHost(0) << "]" << std::endl;
-		std::cout << "Responsible server is " << \
+		std::cout << "Responsible server is " << 
 		this->_handlingServer->getServerName(0) << std::endl;
 	}
 	catch(const std::exception& e)
@@ -138,9 +138,12 @@ void	Connection::handleResponse()
 				this->_newResp->setFilePath("");
 			}
 		}
+		if (this->_newResp->getState() == WRITE_CGI || this->_newResp->getState() == READ_CGI)
+			this->_newResp->prepareResponsePOST();
 		if (this->_newResp->getStatusCode() >= 400)
 			this->_newResp->identifyErrorPage(*this->_handlingServer); 
-		this->_newResp->sendResponse();
+		if (this->_newResp->getState() == PENDING || this->_newResp->getState() == SENDING)
+			this->_newResp->sendResponse();
 		if (this->_newResp->getState() == DONE)
 		{
 			this->_newReq->setState(OVERWRITE);

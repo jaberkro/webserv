@@ -14,6 +14,16 @@
 #include "Response.hpp"
 #include <vector>
 #include "Connection.hpp"
+// #include "CGI.hpp"
+
+void	printAllConnections(std::map<int, Connection> conn)
+{
+	std::cout << "All connection fds: ";
+	std::map<int, Connection>::iterator it;
+	for (it = conn.begin(); it != conn.end(); it++)
+		std::cout << it->first << " ,";
+	std::cout << std::endl;
+}
 
 /**
  * @brief Checks if the fd that an event took place on matches any socket fd's
@@ -30,6 +40,15 @@ int		Webserver::comparefd(int eventfd)
 			return (i);
 	}
 	return (-1);
+}
+
+int		Webserver::checkIfCgiFd(int evFd)
+{
+	std::map<int, int>::iterator it;
+	for (it = _cgiFds.begin(); it != _cgiFds.end(); it++)
+		if (it->first == evFd)
+			return (it->second);
+	return (evFd);
 }
 
 /**
@@ -99,33 +118,70 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 		}
 		else if (evList.filter == EVFILT_READ)
 		{
-			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
-			std::cout << "Data size to be read: " << evList.data << std::endl;
-			//At each call ofthis event, add a oneshot event for the timeout event (EVFILT_TIMER)!
-			_connections[(int)evList.ident].handleRequest(evList.ident, servers);//, handlingServer, newReq);
-			if (_connections[(int)evList.ident].getRequest()->getState() == WRITE)
+			int evFd = checkIfCgiFd((int)evList.ident);
+			if (_connections[evFd].getResponse())
 			{
-				std::cout << "~~~~~~~~~~~~~~~~~~WRITE event filter added for conn fd " << (int)evList.ident << " with state " << _connections[(int)evList.ident].getRequest()->getState() << "~~~~~~~~~~~~~~~~\n\n" << std::endl;
-				EV_SET(&evList, (int)evList.ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-				if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
-					throw Webserver::KeventError();  // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
+				if (_connections[evFd].getResponse()->getState() == READ_CGI)
+				{
+					std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT FOR CGI~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
+					_connections[evFd].handleResponse();//newReq, newResp, handlingServer);//;connfd, servers); //of moet connfd hier wel evList.ident zijn?
+				}
+			}
+			else
+			{
+				std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
+				// std::cout << "Data size to be read: " << evList.data << std::endl;
+				//At each call ofthis event, add a oneshot event for the timeout event (EVFILT_TIMER)!
+				_connections[(int)evFd].handleRequest(evFd, servers);//, handlingServer, newReq);
+				if (_connections[(int)evFd].getRequest()->getState() == WRITE)
+				{
+					// std::cout << "~~~~~~~~~~~~~~~~~~WRITE event filter added for conn fd " << (int)evFd << " with state " << _connections[(int)evFd].getRequest()->getState() << "~~~~~~~~~~~~~~~~\n\n" << std::endl;
+					EV_SET(&evList, (int)evFd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+					if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
+						throw Webserver::KeventError();
+				}
 			}
 
 		}
 		else if (evList.filter == EVFILT_WRITE)// && _connections[(int)evList.ident].getRequest()->getState() == WRITE)//Hier response senden!
 		{
+			int evFd = checkIfCgiFd((int)evList.ident);
 			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~WRITE EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
+			std::cout << " Connection id is [" << (int)evList.ident << "]" << std::endl;
+			// printAllConnections(_connections);
+			// if (_connections[evFd].getResponse())
+			// 	std::cout << "State at start write event: " << _connections[evFd].getResponse()->getState() << std::endl;
 			// std::cout << "Space left in writing buffer: " << evList.data << std::endl;
 
 			//send response content that you bind to your request class. When all data is sent, delete TIMEOUT events and close conn
-			_connections[(int)evList.ident].handleResponse();//newReq, newResp, handlingServer);//;connfd, servers); //of moet connfd hier wel evList.ident zijn?
-			if (_connections[(int)evList.ident].getResponse() == nullptr)// _connections[(int)evList.ident].getResponse()->getState() == DONE)
+			_connections[evFd].handleResponse();//newReq, newResp, handlingServer);//;connfd, servers); //of moet connfd hier wel evList.ident zijn?
+			if (_connections[evFd].getResponse() == nullptr)//In case the Response is sent and finished
 			{
-				std::cout << "~~~~~~~~~~~~~~~~~~WRITE event filter deleted for conn fd " << (int)evList.ident << "~~~~~~~~~~~~~~~~\n\n" << std::endl;
-				EV_SET(&evList, (int)evList.ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+				std::cout << "~~~~~~~~~~~~~~~~~~WRITE event filter deleted for conn fd " << evFd << "~~~~~~~~~~~~~~~~\n\n" << std::endl;
+				EV_SET(&evList, evFd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+				if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
+					throw Webserver::KeventError();
+			}
+			else if(_connections[evFd].getResponse()->getState() == INIT_CGI && _connections[evFd].getResponse()->cgiOnKqueue == false)
+			{
+				std::cout << "~~~~~~~~~~~~~~~~~~WRITE event filter added for cgi pipes ~~~~~~~~~~~~~~~~\n\n" << std::endl;
+				EV_SET(&evList, _connections[evFd].getResponse()->getCgi().getScriptToWebserv()[0], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+				if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
+					throw Webserver::KeventError();
+				std::cout << " Connection id is [" << evFd << "]" << std::endl;
+				std::cout << "WebservToScript[1] = [" << std::endl;
+				std::cout << "ScriptToWebserv[0] = " << _connections[evFd].getResponse()->getCgi().getScriptToWebserv()[0] << std::endl;
+				std::cout << _connections[evFd].getResponse()->getCgi().getWebservToScript()[1] << "]" << std::endl;
+				EV_SET(&evList, _connections[evFd].getResponse()->getCgi().getWebservToScript()[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 				if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
 					throw Webserver::KeventError();  // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
+				_connections[evFd].getResponse()->cgiOnKqueue = true;
+				_connections[evFd].getResponse()->setState(WRITE_CGI);
+				_cgiFds.insert({evFd, _connections[evFd].getResponse()->getCgi().getScriptToWebserv()[0]});
+				_cgiFds.insert({evFd, _connections[evFd].getResponse()->getCgi().getWebservToScript()[1]});
+				std::cout << "PRINT STATEMENT *CHEER*" << std::endl;
 			}
+
 		}
 		// else if (evList.filter == EVFILT_TIMER)
 		// {

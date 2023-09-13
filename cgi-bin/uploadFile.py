@@ -12,7 +12,7 @@ def sendResponseSuccess(fileName):
 		response = "{} 201 Created\r\nContent-Type: text/html\r\nContent-Length: {}\r\nLocation: {}\r\n\r\n".format(os.environ["SERVER_PROTOCOL"], len(responseBody), uploadDir + fileName) + responseBody 
 	sys.stdout.buffer.write(response.encode())
 
-# print("PYTHON SCRIPT STARTED", file=sys.stderr)
+print("PYTHON SCRIPT STARTED", file=sys.stderr)
 
 # if the upload directory does not exist, it will be created
 uploadDir = os.getenv("UPLOAD_DIR")
@@ -38,4 +38,4 @@ else:
 sys.stdin.close()
 sys.stdout.close()
 
-# print("PYTHON SCRIPT FINISHED", file=sys.stderr)
+print("PYTHON SCRIPT FINISHED", file=sys.stderr)
