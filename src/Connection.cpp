@@ -101,7 +101,7 @@ void	Connection::handleResponse()
 
 	try
 	{
-		if (this->_newResp == nullptr)
+		if (this->_newResp == nullptr) // DM: shouldn't we replace this by a state?
 		{
 			this->_newResp = new Response(*this->_newReq);
 			this->_newResp->prepareTargetURI(*this->_handlingServer);
@@ -121,11 +121,11 @@ void	Connection::handleResponse()
 			{
 				std::cerr << "method is " << this->_newReq->getMethod() << std::endl;
 				if (this->_newReq->getMethod() == "POST")
-					this->_newResp->prepareResponsePOST();
+					this->_newResp->performPOST();
 				else if (this->_newReq->getMethod() == "DELETE")
-					this->_newResp->prepareResponseDELETE();
+					this->_newResp->performDELETE();
 				else if (this->_newReq->getMethod() == "GET")
-					this->_newResp->prepareResponseGET();
+					this->_newResp->performGET();
 				else
 					this->_newResp->setStatusCode(NOT_IMPLEMENTED);
 			}
@@ -139,10 +139,12 @@ void	Connection::handleResponse()
 			}
 		}
 		if (this->_newResp->getState() == WRITE_CGI || this->_newResp->getState() == READ_CGI)
-			this->_newResp->prepareResponsePOST();
+			this->_newResp->performPOST(); // what about when we have a GET request that uses CGI?
 		if (this->_newResp->getStatusCode() >= 400)
 			this->_newResp->identifyErrorPage(*this->_handlingServer); 
-		if (this->_newResp->getState() == PENDING || this->_newResp->getState() == SENDING)
+		if (this->_newResp->getState() == PENDING)
+			this->_newResp->prepareResponse();
+		if (this->_newResp->getState() == SENDING)
 			this->_newResp->sendResponse();
 		if (this->_newResp->getState() == DONE)
 		{

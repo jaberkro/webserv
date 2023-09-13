@@ -5,12 +5,25 @@ import cgi, sys, os #, urllib.parse
 import cgitb # for debugging messages
 
 cgitb.enable()
+exitCode = 0
+response = ""
 
-def sendResponseSuccess(fileName):
-	with open("data/www/uploaded.html", 'r') as uploaded:
-		responseBody = uploaded.read()
-		response = "{} 201 Created\r\nContent-Type: text/html\r\nContent-Length: {}\r\nLocation: {}\r\n\r\n".format(os.environ["SERVER_PROTOCOL"], len(responseBody), uploadDir + fileName) + responseBody 
-	sys.stdout.buffer.write(response.encode())
+def createResponse(statusCode, message, contentFile, location):
+	global response
+	print("[script] about to open the content file ", contentFile, file=sys.stderr)
+	with open(contentFile, 'r') as body:
+		print("[script] file is open", file=sys.stderr)
+		responseBody = body.read()
+		print("[script] responseBody is ", responseBody, file=sys.stderr)
+		response = "{} {} {}\r\nContent-Type: text/html\r\nContent-Length: {}\r\n".format(os.environ["SERVER_PROTOCOL"], statusCode, message, len(responseBody))
+		print("[script] response is now ", response, "\nabout to add location ", location, file=sys.stderr)
+		
+		if len(location) > 0:
+			response += "Location: {}\r\n".format(location)
+		response += "\r\n" + responseBody
+	print("[script] end of createRespone; response is now ", response, file=sys.stderr)
+	
+
 
 print("PYTHON SCRIPT STARTED", file=sys.stderr)
 
@@ -25,17 +38,23 @@ contentType = os.getenv("CONTENT_TYPE")
 form = cgi.FieldStorage()
 if 'file' in form:
 	fileToUpload = form['file']
-	fileName = fileToUpload.filename
-	open(uploadDir + fileName, 'wb').write(fileToUpload.file.read())
-	sendResponseSuccess(fileName)
+	fileName = uploadDir + "/" + fileToUpload.filename
+	print("[script] fileName is ", fileName, file=sys.stderr)
+	open(fileName, 'wb').write(fileToUpload.file.read())
+	print("[script] file size is ", os.path.getsize(fileName), file=sys.stderr)
+	# close(fileName)
+	print("[script] about to create a success message ", file=sys.stderr)
+	createResponse(201, "Created", "data/www/uploaded.html", fileName)
 else:
-	redirect_url = "/postFailed.html"
-	with open("data/www/postFailed.html", 'r') as uploaded:
-		responseBody = uploaded.read()
-		response = "{} 400 Bad Request\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\n".format(os.environ["SERVER_PROTOCOL"], len(responseBody)) + responseBody
-	sys.stdout.buffer.write(response.encode())
+	exitCode = 400
+	print("[script] about to create a failure message ", file=sys.stderr)
+	createResponse(400, "Bad Request", "data/www/postFailed.html", "")
 
+
+print("[script] about to send the following message:  ", response, file=sys.stderr)
+sys.stdout.buffer.write(response.encode())
 sys.stdin.close()
 sys.stdout.close()
 
-print("PYTHON SCRIPT FINISHED", file=sys.stderr)
+print("PYTHON SCRIPT FINISHED, exit code is ", exitCode, file=sys.stderr)
+sys.exit(exitCode)

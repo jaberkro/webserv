@@ -30,7 +30,7 @@ std::map<int, std::string> 	Response::_responseCodes =
 	{NOT_IMPLEMENTED, "Not Implemented"}
 };
 
-void	Response::prepareResponseGET(void) 
+void	Response::performGET(void) 
 {
 	// std::cerr << "prepGET - cgi script name is " << this->_location->getCgiScriptName() << std::endl;
 	if ((!this->_location->getCgiScriptName().empty() && !this->_req.getQueryString().empty()) || \
@@ -38,7 +38,7 @@ void	Response::prepareResponseGET(void)
 		this->executeCgiScript();
 }
 
-void	Response::prepareResponseDELETE(void)	
+void	Response::performDELETE(void)	
 {
 	uint8_t		response[RESPONSELINE + 1];
 
@@ -88,22 +88,24 @@ void	Response::deleteFile(void)
 	}
 }
 
-void	Response::prepareResponsePOST(void)
+void	Response::performPOST(void)
 {
-	std::cout << "Checking if POST is allowed based om the client_max_body_size..." << std::endl;
-	std::cout << "max size: " << this->getLocation()->getMaxBodySize() << " and body length: " << this->getRequest().getBodyLength() << std::endl;
-	if (this->getRequest().getBodyLength() > this->getLocation()->getMaxBodySize() && this->getLocation()->getMaxBodySize() > 0)
+	if (getState() == PENDING)
 	{
-		std::cout << "POST not allowed: Content Too Large. Max body size is " << this->getLocation()->getMaxBodySize() << std::endl;
-		this->_statusCode = CONTENT_TOO_LARGE;
-		if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
-			this->_filePath.clear();
-		else
-			this->_filePath = "data/www/postFailed.html";
-		return ;
+		std::cout << "Checking if POST is allowed based om the client_max_body_size..." << std::endl;
+		std::cout << "max size: " << this->getLocation()->getMaxBodySize() << " and body length: " << this->getRequest().getBodyLength() << std::endl;
+		if (this->getRequest().getBodyLength() > this->getLocation()->getMaxBodySize() && this->getLocation()->getMaxBodySize() > 0)
+		{
+			std::cout << "POST not allowed: Content Too Large. Max body size is " << this->getLocation()->getMaxBodySize() << std::endl;
+			this->_statusCode = CONTENT_TOO_LARGE;
+			if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
+				this->_filePath.clear();
+			else
+				this->_filePath = "data/www/postFailed.html";
+			return ;
+		}
 	}
 	this->executeCgiScript();
-
 }
 
 void	Response::executeCgiScript(void)
@@ -116,7 +118,7 @@ void	Response::executeCgiScript(void)
 		std::string scriptName = this->_location->getCgiScriptName();
 		if (scriptName.find('*') < std::string::npos)
 			scriptName = this->_filePath;
-		_cgi.prepareEnv(scriptName, this->_pathInfo);
+		_cgi.prepareEnv(scriptName, *this);
 		_cgi.prepareArg(scriptName);
 	}
 	if (getState() == PENDING)
@@ -138,7 +140,7 @@ void	Response::executeCgiScript(void)
  * @param server a reference to the server that was identified to respond to this
  * request
  */
-void	Response::sendResponse(void)
+void	Response::prepareResponse(void)
 {
 	if (this->_state == PENDING)
 	{
@@ -153,6 +155,12 @@ void	Response::sendResponse(void)
 		}
 		this->_state = SENDING;
 	}
+	// BOUNCE CLIENT WHEN: INTERNAL_SERVER_ERROR
+}
+
+void	Response::sendResponse(void)
+{
+
 	ssize_t bytesSent;
 	ssize_t chunkSize = std::min(_fullResponse.length(), static_cast<size_t>(MAXLINE));
 	// std::cout << "Chunksize is " << _fullResponse.length() << " or " << static_cast<size_t>(MAXLINE) << std::endl;
