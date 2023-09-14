@@ -1,16 +1,18 @@
-#ifndef POSTCGI_HPP
-# define POSTCGI_HPP
+#ifndef CGI_HPP
+# define CGI_HPP
 
 #include <unistd.h>
 #include <iostream>
 #include "Request.hpp"
-#include "Response.hpp"
+// #include "Response.hpp"
 
 
 #define R 0
 #define W 1
 
-class PostCGI
+class Response;
+
+class CGI
 {
 	private:
 		Request		& _req;
@@ -22,11 +24,20 @@ class PostCGI
 		int			_exitCode;
 		std::string	_response;
 	public:
-		PostCGI(Request & req);
-		~PostCGI();
+		CGI(Request & req);
+		~CGI();
+		CGI &	operator=(CGI & r);
+
 		void	run(Response & response);
 		void	prepareArg(std::string const & scriptName);
-		void	prepareEnv(std::string const & scriptName);
+		void	prepareEnv(std::string const & scriptName, std::string const & pathInfo);
+		int*	getWebservToScript();
+		int*	getScriptToWebserv();
+		bool	checkIfCgiPipe();
+		void	cgiRead(Response & response, std::string & fullResponse);
+		void	cgiWrite(Response & response);
+
+
 
 		std::string	getResponse();
 };

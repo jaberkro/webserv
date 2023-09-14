@@ -51,3 +51,7 @@ void	Request::setState(size_t state)
 	this->_state = state;
 }
 
+void Request::setBody(std::string newBody)
+{
+	this->_body = newBody;
+}

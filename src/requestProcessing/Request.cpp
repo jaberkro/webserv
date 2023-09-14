@@ -23,7 +23,7 @@ void		Request::readFirstLineAndHeaders(void)
 	ssize_t		bytesRead = 0;
 	bool		firstLineComplete = false;
 
-	while (this->_state == READHEADERS && (bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0)
+	if (this->_state == READHEADERS && (bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0)
 	{
 		std::string	chunk(socketBuffer, bytesRead);
 		processingBuffer += chunk;
@@ -41,6 +41,7 @@ void		Request::readFirstLineAndHeaders(void)
 			}
 		}
 	}
+	// BYTESREAD < 0? INTERNAL_SERVER_ERROR
 	if (bytesRead == 0)
 		this->_state = OVERWRITE;
 	if (this->_state == READBODY && this->_contentLength > 0)
@@ -56,8 +57,7 @@ void		Request::readBody()
 	char	socketBuffer[MAXLINE];
 	ssize_t	bytesRead = 0;
 	std::memset(socketBuffer, 0, MAXLINE);
-
-	//while ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && this->_state != WRITE)
+	
 	if ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && this->_state != WRITE)
 	{
 		std::cout << "Read " << bytesRead << " bytes, total is now " << this->_bodyLength << std::endl;
@@ -71,13 +71,16 @@ void		Request::readBody()
 	}
 	if (bytesRead < 0)
 	{
-		std::string lastpart = _body.substr(_body.size() - 42);
-		std::cerr << "[processReq] (read "  << this->_bodyLength << "/" << this->_contentLength << "), leaving loop. Last part of body is: [" << lastpart << "]" << std::endl;
-		if (this->_bodyLength == this->_contentLength || this->_body.find((this->_boundary + "--")) < std::string::npos)
-			this->_state = WRITE;
-		else
-			this->_state = READBODY;
-		std::cout << "State is now: " << this->_state << std::endl;
+		// INTERNAL_SERVER_ERROR STATUSCODE
+		// STATE SEND_RESPONSE OID
+
+			// // std::string lastpart = _body.substr(_body.size() - 42);
+			// // std::cerr << "[processReq] (read "  << this->_bodyLength << "/" << this->_contentLength << "), leaving loop. Last part of body is: [" << lastpart << "]" << std::endl;
+			// if (this->_bodyLength == this->_contentLength || this->_body.find((this->_boundary + "--")) < std::string::npos)
+			// 	this->_state = WRITE;
+			// else
+			// 	this->_state = READBODY;
+			// std::cout << "State is now: " << this->_state << std::endl;
 	}
 	else if (bytesRead == 0)
 		std::cerr << "[processReq] READ 0; total read body length is " << this->_bodyLength << ", contentlength is " << this->_contentLength << std::endl;
@@ -124,7 +127,7 @@ void	Request::parseFieldLine(std::string &line)
 {
 	std::string	key, value;
 	std::map<std::string,std::string>::iterator	it;
-
+	
 	key = extractKey(line);
 	value = extractValue(line);
 	if (key == "Host")
@@ -166,7 +169,6 @@ Server const &	Request::identifyServer(std::vector<Server> const & servers)
 		case 0:
 			if (zero < 0){
 				this->_statusCode = INTERNAL_SERVER_ERROR;
-				throw std::runtime_error("ERROR: No matching server, not even a default 0.0.0.0 found");
 			}
 			return (servers[zero]);
 		case 1:
@@ -316,6 +318,6 @@ void	Request::printRequest()
 	for (std::map<std::string,std::string>::iterator it = this->_headers.begin(); \
 	it != this->_headers.end(); it++)
 		std::cout << "\t" << it->first << ": " << it->second << std::endl;
-	std::cout << "Body length: " << this->getBodyLength() << std::endl;
+	std::cout << "\tBody length: " << this->getBodyLength() << std::endl;
 	std::cout << "\t***\n" << std::endl;
 }

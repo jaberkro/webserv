@@ -1,7 +1,11 @@
 #!/usr/local/bin/python3
+<<<<<<< HEAD
 
 #!/usr/bin/python3
 
+=======
+# !/usr/bin/python3
+>>>>>>> 97308604edda1f671eca24e78a1c01bfa3547ac0
 
 import cgi, sys, os #, urllib.parse
 import cgitb # for debugging messages
@@ -15,7 +19,7 @@ def sendResponseSuccess(fileName):
 		response = "{} 201 Created\r\nContent-Type: text/html\r\nContent-Length: {}\r\nLocation: {}\r\n\r\n".format(os.environ["SERVER_PROTOCOL"], len(responseBody), uploadDir + fileName) + responseBody 
 	sys.stdout.buffer.write(response.encode())
 
-# print("PYTHON SCRIPT STARTED", file=sys.stderr)
+print("PYTHON SCRIPT STARTED", file=sys.stderr)
 
 # time.sleep(10)
 
@@ -43,4 +47,4 @@ else:
 sys.stdin.close()
 sys.stdout.close()
 
-# print("PYTHON SCRIPT FINISHED", file=sys.stderr)
+print("PYTHON SCRIPT FINISHED", file=sys.stderr)

@@ -36,6 +36,8 @@ static void checkNotImplementedLocation(std::string line)
 		notImplementedError(line, "location", "server block");
 	else if (line.find("server_name") == 0)
 		notImplementedError(line, "location", "server block");
+	else if (line.find("upload_dir") == 0)
+		notImplementedError(line, "location", "server or http block");
 }
 
 void parseModifierAndMatch(Location &location, std::string &line)
