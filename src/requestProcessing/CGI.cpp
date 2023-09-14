@@ -115,8 +115,9 @@ void	CGI::cgiWrite(Response & response)
 		// std::cout << "BytesSent is " << bytesSent << std::endl;
 		if (bytesSent < 0)
 			std::cout << "BytesSent error, send 500 internal error" << std::endl;
-		this->_req.setBody(this->_req.getBody().erase(0, bytesSent)); //
-		if (this->_req.getBody().size() == 0 || bytesSent == 0 || bytesSent == -1)
+		else
+			this->_req.setBody(this->_req.getBody().erase(0, bytesSent)); //JMA: was outside of else statement before
+		if (this->_req.getBody().size() == 0 || bytesSent == 0)// || bytesSent == -1) // JMA: partly outcommented to prevent early quitting
 		{
 			response.setState(READ_CGI);
 			close(this->_scriptToWebserv[W]);
