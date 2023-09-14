@@ -69,9 +69,6 @@ std::string	Response::getMessage(void)
 void	Response::addToFullResponse(char *response, size_t length)
 {
 	std::string	chunk(response, length);
-	std::cerr << "[add to full response:] response is ";
-	std::cerr << response << "; len is " << length << std::endl;
-	std::cerr << "chunk is " << chunk << std::endl;
 	this->_fullResponse.append(chunk);
 }
 

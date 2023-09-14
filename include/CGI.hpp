@@ -21,7 +21,7 @@ class CGI
 		pid_t		id;
 		int			_webservToScript[2];
 		int			_scriptToWebserv[2];
-		int			_exitCode;
+		int			_childProcessExitStatus;
 		std::string	_response;
 	public:
 		CGI(Request & req);
@@ -30,7 +30,7 @@ class CGI
 
 		void	run(Response & response);
 		void	prepareArg(std::string const & scriptName);
-		void	prepareEnv(std::string const & scriptName, std::string const & pathInfo);
+		void	prepareEnv(std::string const & scriptName, Response & response);
 		int*	getWebservToScript();
 		int*	getScriptToWebserv();
 		bool	checkIfCgiPipe();

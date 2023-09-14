@@ -58,10 +58,10 @@ int		Webserver::checkIfCgiFd(int evFd)
  * @param ident 
  */
 
-void	Webserver::eofEvent(/*int connfd, */int ident)
+void	Webserver::eofEvent(/*int connfd, */int ident, struct kevent evList)
 {
-	std::cout << "Disconnect" << std::endl;
-	if (close(ident) < 0)
+	printf("Disconnect, fflag error code is %d\n", evList.fflags);
+    if (close(ident) < 0)
 		throw Webserver::CloseError();  // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
 }
 
@@ -96,7 +96,7 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 		// if (timeout())
 		// 	continue ;
 		if (evList.flags & EV_EOF)
-			eofEvent(evList.ident);
+			eofEvent(evList.ident, evList);
 		else if ((eventSocket = comparefd((int)evList.ident)) > -1)
 		{
 			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~Connection accepted~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
@@ -146,8 +146,8 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 		else if (evList.filter == EVFILT_WRITE)// && _connections[(int)evList.ident].getRequest()->getState() == WRITE)//Hier response senden!
 		{
 			int evFd = checkIfCgiFd((int)evList.ident);
-			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~WRITE EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
-			std::cout << " Connection id is [" << (int)evList.ident << "]" << std::endl;
+			// std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~WRITE EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
+			// std::cout << " Connection id is [" << (int)evList.ident << "]" << std::endl;
 			// printAllConnections(_connections);
 			// if (_connections[evFd].getResponse())
 			// 	std::cout << "State at start write event: " << _connections[evFd].getResponse()->getState() << std::endl;

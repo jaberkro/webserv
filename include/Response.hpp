@@ -34,17 +34,18 @@ class Response {
 		
 		/* functions */
 		void	prepareTargetURI(Server const & server);
+		void	performPOST(void);
+		void	performGET(void);
+		void	performDELETE(void);
+		void	prepareResponse(Server const & server);
 		void	sendResponse(void);
-		void	prepareResponsePOST(void);
-		void	prepareResponseGET(void);
-		void	prepareResponseDELETE(void);
 		void	deleteFile(void);
 		void	identifyErrorPage(Server const & server);
 		
 		/* getters */
 		size_t											getFileLength(void) const;
 		Request &										getRequest(void);
-		CGI &										getCgi(void);
+		CGI &											getCgi(void);
 		bool											getIsReady(void);
 		int												getStatusCode(void);
 		void											setStatusCode(int code);
@@ -100,18 +101,5 @@ bool		forbiddenToDeleteFileOrFolder(std::string toRemove);
 std::string	createAutoindex(void);
 bool		hasReadPermission(std::string filePath);
 
-
-
-/* 
-RE CONTENT
-For a response message, the following rules are applied in order until a match is found:
-If the request method is HEAD or the response status code is 204 (No Content) or 304 (Not Modified), there is no content in the response.
-If the request method is GET and the response status code is 200 (OK), the content is a representation of the target resource (Section 7.1).
-If the request method is GET and the response status code is 203 (Non-Authoritative Information), the content is a potentially modified or enhanced representation of the target resource as provided by an intermediary.
-If the request method is GET and the response status code is 206 (Partial Content), the content is one or more parts of a representation of the target resource.
-If the response has a Content-Location header field and its field value is a reference to the same URI as the target URI, the content is a representation of the target resource.
-If the response has a Content-Location header field and its field value is a reference to a URI different from the target URI, then the sender asserts that the content is a representation of the resource identified by the Content-Location field value. However, such an assertion cannot be trusted unless it can be verified by other means (not defined by this specification).
-Otherwise, the content is unidentified by HTTP, but a more specific identifier might be supplied within the content itself.
- */
 
 #endif
