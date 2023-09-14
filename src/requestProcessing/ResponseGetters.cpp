@@ -1,4 +1,5 @@
 #include "Response.hpp"
+#include <iostream>
 
 size_t	Response::getFileLength( void ) const
 {
@@ -30,7 +31,7 @@ bool	Response::getIsReady(void)
 	return (this->_isReady);
 }
 
-std::vector<Location>::const_iterator	const & Response::getLocation(void) const
+std::vector<Location>::const_iterator const & Response::getLocation(void) const
 {
 	return (this->_location);
 }
@@ -65,12 +66,11 @@ std::string	Response::getMessage(void)
 	return (this->_message);
 }
 
-#include <iostream>
-
 void	Response::addToFullResponse(char *response, size_t length)
 {
 	std::string	chunk(response, length);
-	std::cerr << "[add to full response:] response is " << response << "; len is " << length << std::endl;
+	std::cerr << "[add to full response:] response is ";
+	std::cerr << response << "; len is " << length << std::endl;
 	std::cerr << "chunk is " << chunk << std::endl;
 	this->_fullResponse.append(chunk);
 }
