@@ -37,7 +37,7 @@ class Response {
 		void	performPOST(void);
 		void	performGET(void);
 		void	performDELETE(void);
-		void	prepareResponse(void);
+		void	prepareResponse(Server const & server);
 		void	sendResponse(void);
 		void	deleteFile(void);
 		void	identifyErrorPage(Server const & server);

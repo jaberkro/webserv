@@ -28,7 +28,7 @@ class Webserver
 		int							comparefd(int fd);
 		void						setSignal();
 		void						runWebserver(std::vector<Server> servers);
-		void						eofEvent(int ident);
+		void						eofEvent(int ident, struct kevent evList);
 		Webserver(const Webserver &src); //private because shouldn't be instantiated!
 		Webserver& operator=(const Webserver &src); //idem
 	public:

@@ -140,15 +140,14 @@ void	Connection::handleResponse()
 		}
 		if (this->_newResp->getState() == WRITE_CGI || this->_newResp->getState() == READ_CGI)
 			this->_newResp->performPOST(); // what about when we have a GET request that uses CGI?
-		if (this->_newResp->getStatusCode() >= 400)
-			this->_newResp->identifyErrorPage(*this->_handlingServer); 
 		if (this->_newResp->getState() == PENDING)
-			this->_newResp->prepareResponse();
+			this->_newResp->prepareResponse(*this->_handlingServer);
 		if (this->_newResp->getState() == SENDING)
 			this->_newResp->sendResponse();
 		if (this->_newResp->getState() == DONE)
 		{
 			this->_newReq->setState(OVERWRITE);
+			std::cout << "changed state to OVERWRITE" << std::endl;
 			delete this->_newResp;
 			this->_newResp = nullptr;
 			delete this->_handlingServer;

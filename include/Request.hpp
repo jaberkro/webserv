@@ -11,7 +11,7 @@
 # define UPPERCASE "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 # define MAXLINE 6000
-# define RESPONSELINE 500 //test, was 5000
+# define RESPONSELINE 5000 //test, was 5000
 
 enum {
 	READHEADERS,

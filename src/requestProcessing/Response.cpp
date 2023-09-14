@@ -141,56 +141,60 @@ void	Response::executeCgiScript(void)
  * @param server a reference to the server that was identified to respond to this
  * request
  */
-void	Response::prepareResponse(void)
+void	Response::prepareResponse(Server const & server)
 {
 	std::ifstream	file;
 
-	if (this->_state == PENDING)
+	// if (this->_state == PENDING)		// DM: this can be removed because this function is only called if the state is PENDING
+	// {
+		// DM this below doesn't work properly yet
+	// if (this->_statusCode == NOT_FOUND && this->_location->getMatch() != "/")
+	// {
+	// 	this->_statusCode = TEMPORARY_REDIRECT;
+	// 	this->_filePath.clear();
+	// }
+	if (this->_statusCode >= 400)
+			this->identifyErrorPage(server);
+	if (this->_fullResponse.empty()) // here we check whether response was already prepared by a CGI script
 	{
-		this->_fileLength = this->getFileSize(this->_filePath);
-		if (this->_fullResponse.empty()) // here we check whether response was already prepared by a CGI script
+		if (!this->_filePath.empty())
 		{
-			//OPEN FILE THAT WILL BE SENT
-			if (!this->_filePath.empty())
-			{
-				file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
-				if (!file.is_open()) // MOVE UP 
-				{
-					this->_statusCode = FORBIDDEN; // SHOULD BE DIFFERENT
-					throw std::ios_base::failure("Error when opening a file"); // LOOK INTO THIS, PROBABLY STATUSCODE INTERNAL_SERVER_ERROR (?)
-				}
-			}
-			prepareFirstLine();
-			prepareHeaders(this->_location->getRoot());
-			if (this->_statusCode > 199 && this->_statusCode != DELETED && this->_statusCode != 304)
-				prepareContent(file);
-			if (!this->_filePath.empty())
-			{
-				file.close();
-			}
+			this->_fileLength = this->getFileSize(this->_filePath);
+			file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
+			if (!file.is_open())
+				this->_statusCode = INTERNAL_SERVER_ERROR;
 		}
-		this->_state = SENDING;
+		prepareFirstLine();
+		prepareHeaders(this->_location->getRoot());
+		if (this->_statusCode > 199 && this->_statusCode != DELETED && this->_statusCode != 304)
+			prepareContent(file);
+		if (!this->_filePath.empty())
+			file.close();
 	}
-	// BOUNCE CLIENT WHEN: INTERNAL_SERVER_ERROR
+	this->_state = SENDING;
+	// }
 }
 
 void	Response::sendResponse(void)
 {
 
 	ssize_t bytesSent;
-	ssize_t chunkSize = std::min(_fullResponse.length(), static_cast<size_t>(MAXLINE));
+	ssize_t chunkSize = std::min(this->_fullResponse.length(), static_cast<size_t>(MAXLINE));
 	// std::cout << "Chunksize is " << _fullResponse.length() << " or " << static_cast<size_t>(MAXLINE) << std::endl;
-	if (this->_state == SENDING) // THIS SHOULD GO TO A SEPARATE FUNCTION, CALLED FROM HANDLERESPONSE
+	if (this->_state == SENDING)
 	{
 		std::cerr << "[sendResponse] SENDING to fd " << this->_req.getConnFD() << std::endl;
 		bytesSent = send(this->_req.getConnFD(), this->_fullResponse.c_str(), chunkSize, 0);
 		if (bytesSent < 0)
-			std::cout << "BytesSent error, send 500 internal error" << std::endl;
-			//INTERNAL_SERVER_ERROR STATUSCODE
-		_fullResponse.erase(0, bytesSent);
-		if (_fullResponse.size() == 0 || bytesSent == 0)
+			std::cout << "BytesSent error, send 500 internal error" << std::endl; // TO BE HANDLED
+		else
+			this->_fullResponse.erase(0, bytesSent);
+		std::cout << "State is " << this->_state << ", bytesSent = " << bytesSent << ", response leftover size is " << this->_fullResponse.size() << ", chunkSize = " << chunkSize << std::endl;
+		if (/* this->_fullResponse.size() == 0 ||  */bytesSent == 0)
+		{
 			this->_state = DONE;
-		std::cout << "State is " << this->_state << ", bytesSent = " << bytesSent << ", response leftover size is " << _fullResponse.size() << ", chunkSize = " << chunkSize << std::endl;
+			std::cout << "changed state to DONE" << std::endl;
+		}
 	}
 	// BOUNCE CLIENT WHEN: INTERNAL_SERVER_ERROR
 }
@@ -216,8 +220,6 @@ void	Response::prepareTargetURI(Server const & server)
 					// tbd what to return if a directory is requested and there is no index and autoindex is off
 					// hier message vullen en statuscode en IETS in de filepath zetten OF JUIST NIET?
 					this->_message = createAutoindex();	// DM: perhaps move autoindex to the end?
-					this->_statusCode = NOT_FOUND;
-					// this->_filePath = ""; // REMOVE
 					this->_isReady = true;
 				}
 			}
@@ -249,8 +251,7 @@ void	Response::prepareTargetURI(Server const & server)
 
 void	Response::identifyErrorPage(Server const & server)
 {
-	std::map<int, std::string> const & errorPages = \
-		this->_location->getErrorPages();
+	std::map<int, std::string> const & errorPages = this->_location->getErrorPages();
 	std::string	targetUri;
 
 	std::cerr << "[identifyErrorPage] ";
@@ -495,12 +496,11 @@ void	Response::prepareFirstLine(void)
 			responseMessage = "";
 		}
 	}
-	
+
 	snprintf(responseBuffer, RESPONSELINE, "%s %d %s\r\n",	\
 		this->_req.getProtocolVersion().c_str(), this->_statusCode, \
 		responseMessage.c_str());
 	
-	printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
 	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
 }
 
@@ -515,36 +515,30 @@ void	Response::prepareFirstLine(void)
 void	Response::prepareHeaders(std::string const & root)
 {
 	char			responseBuffer[RESPONSELINE + 1];
-	std::string		contentType;
+	std::string		contentType = "text/html";
+	size_t			contentLength = 0;
+	std::string		location;
 
+	std::memset(responseBuffer, 0, RESPONSELINE); // CHECK IF FAILED
+	
 	if (!this->_filePath.empty())
-	{
 		contentType = root == "data" ? \
 		"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
 		std::string::npos) : "text/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1);
-		std::memset(responseBuffer, 0, RESPONSELINE); // CHECK IF FAILED
-		snprintf(responseBuffer, RESPONSELINE, "Content-Type: %s\r\n", contentType.c_str());
-	}
-	else if (this->_statusCode == NOT_FOUND && this->_location->getAutoindex() == 1)
-	{
-		// ELSE TEXT/HTML FOR AUTOINDEX, this should be checked and improved
-		contentType = "text/html";
-		std::memset(responseBuffer, 0, RESPONSELINE);
-		snprintf(responseBuffer, RESPONSELINE, "Content-Type: %s\r\n", contentType.c_str());
-	}
 
-	if (this->_fileLength == 0 && this->_message.length() > 0)
-		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_message.length());
-	else if (this->_location->getReturnLink().size() > 0)
-		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\nLocation: %s\r\n\r\n", this->_message.size(), this->_location->getReturnLink().c_str());
-	else
-		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_fileLength);
+	contentLength = (this->_fileLength == 0 && this->_message.length() > 0) ? \
+	this->_message.length() : this->_fileLength;
 
-	// printf("\n\nFILEPATH: [%s]\n\n", this->_filePath.c_str());
-	// printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
-	// printf("\n\nCONTENT TYPE: [%s]\n\n", contentType.c_str());
-
+	snprintf(responseBuffer, RESPONSELINE, "Content-Type: %s\r\nContent-Length: %zu\r\n", contentType.c_str(), contentLength);
 	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
+
+	if (this->_location->getReturnLink().size() > 0)
+		location = this->_location->getReturnLink();
+	else
+		location = "/";
+	if (!location.empty())
+		this->addToFullResponse("Location: " + location + "\r\n");
+	this->addToFullResponse("\r\n");
 }
 
 /**
@@ -558,9 +552,6 @@ void	Response::prepareHeaders(std::string const & root)
 void	Response::prepareContent(std::ifstream	&file)
 {
 	std::string		body;
-	
-	// DM: add first check whether _filePath is empty, zo ja, plak message in body
-	// also check response codes die geen body mogen hebben (dat er geen body komt)
 	
 	if (this->_filePath.empty())
 	{
