@@ -1,4 +1,5 @@
 #include "Response.hpp"
+#include <iostream>
 
 size_t	Response::getFileLength( void ) const
 {
@@ -30,7 +31,7 @@ bool	Response::getIsReady(void)
 	return (this->_isReady);
 }
 
-std::vector<Location>::const_iterator	const & Response::getLocation(void) const
+std::vector<Location>::const_iterator const & Response::getLocation(void) const
 {
 	return (this->_location);
 }

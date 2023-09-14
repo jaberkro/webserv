@@ -90,7 +90,7 @@ class Response {
 		void									extractPathInfo(std::string & targetUri);
 		void									prepareFirstLine(void);
 		void									prepareHeaders(std::string const & root);
-		void									prepareContent(void);
+		void									prepareContent(std::ifstream &file);
 		void									executeCgiScript(void);
 
 };
