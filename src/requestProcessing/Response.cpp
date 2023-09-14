@@ -141,16 +141,31 @@ void	Response::executeCgiScript(void)
  */
 void	Response::sendResponse(void)
 {
+	std::ifstream	file;
+
 	if (this->_state == PENDING)
 	{
 		this->_fileLength = this->getFileSize(this->_filePath);
 		if (this->_fullResponse.empty()) // here we check whether response was already prepared by a CGI script
 		{
 			//OPEN FILE THAT WILL BE SENT
+			if (!this->_filePath.empty())
+			{
+				file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
+				if (!file.is_open()) // MOVE UP 
+				{
+					this->_statusCode = FORBIDDEN; // SHOULD BE DIFFERENT
+					throw std::ios_base::failure("Error when opening a file"); // LOOK INTO THIS, PROBABLY STATUSCODE INTERNAL_SERVER_ERROR (?)
+				}
+			}
 			prepareFirstLine();
 			prepareHeaders(this->_location->getRoot());
 			if (this->_statusCode > 199 && this->_statusCode != DELETED && this->_statusCode != 304)
-				prepareContent();
+				prepareContent(file);
+			if (!this->_filePath.empty())
+			{
+				file.close();
+			}
 		}
 		this->_state = SENDING;
 	}
@@ -175,16 +190,17 @@ void	Response::sendResponse(void)
 void	Response::prepareTargetURI(Server const & server)
 {
 	std::string	targetUri = this->_req.getTarget().substr(0, \
-	this->_req.getTarget().find_first_of('?'));
-
+		this->_req.getTarget().find_first_of('?'));
 	while (!this->_isReady)
 	{
 		try 
 		{
-			this->_location = findLocationMatch(targetUri, server.getLocations());
+			this->_location = findLocationMatch(targetUri, \
+				server.getLocations());
 			if (targetUri[targetUri.length() - 1] == '/')
 			{
-				if (this->_req.getMethod() == "GET" && !this->_location->getIndexes().empty())
+				if (this->_req.getMethod() == "GET" && \
+					!this->_location->getIndexes().empty())
 					targetUri = findIndexPage(this->_location);
 				else 
 				{
@@ -208,13 +224,15 @@ void	Response::prepareTargetURI(Server const & server)
 		}
 		catch(const std::ios_base::failure & f)
 		{
-			std::cerr << "IOS exception caught (something went wrong with opening the file " << this->_filePath << "): ";
+			std::cerr << "IOS exception caught (something went wrong with ";
+			std::cerr << "opening the file " << this->_filePath << "): ";
 			std::cerr << f.what() << std::endl;
 			this->_statusCode = NOT_FOUND;
 		}
 		catch(const std::range_error &re)
 		{
-			std::cerr << "Range exception caught: (no location match found for target " << this->_req.getTarget() << "): ";
+			std::cerr << "Range exception caught: (no location match found ";
+			std::cerr << "for target " << this->_req.getTarget() << "): ";
 			std::cerr << re.what() << std::endl;
 			this->_statusCode = INTERNAL_SERVER_ERROR;
 		}
@@ -223,7 +241,8 @@ void	Response::prepareTargetURI(Server const & server)
 
 void	Response::identifyErrorPage(Server const & server)
 {
-	std::map<int, std::string> const & errorPages = this->_location->getErrorPages();
+	std::map<int, std::string> const & errorPages = \
+		this->_location->getErrorPages();
 	std::string	targetUri;
 
 	std::cerr << "[identifyErrorPage] ";
@@ -244,10 +263,12 @@ void	Response::identifyErrorPage(Server const & server)
 		std::cerr << ", location is " << this->_location->getMatch();
 		this->_filePath = this->_location->getRoot() + targetUri;
 		std::cerr << ", filePath is " << this->_filePath << std::endl;
-		if (!hasReadPermission(this->_filePath) && targetUri == DEFAULT_ERROR_PAGE)
+		if (!hasReadPermission(this->_filePath) && \
+			targetUri == DEFAULT_ERROR_PAGE)
 		{
 			this->_filePath.clear();
-			this->_message = this->_responseCodes.at(this->_statusCode).c_str();
+			this->_message = \
+				this->_responseCodes.at(this->_statusCode).c_str();
 			this->_isReady = true;
 		}
 		else if (!hasReadPermission(this->_filePath))
@@ -262,11 +283,13 @@ void	Response::identifyErrorPage(Server const & server)
  * 
  * @param target the target URI
  * @param locations a reference to a vector of Locations
- * @return std::vector<Location>::iterator pointing to a Location instance that 
- * is either the exact match for the target, if available, or the closest one.
+ * @return std::vector<Location>::iterator pointing to a Location instance 
+ * that is either the exact match for the target, if available, or the 
+ * closest one.
  */
-std::vector<Location>::const_iterator Response::findLocationMatch(std::string target, \
-std::vector<Location> const & locations)
+std::vector<Location>::const_iterator \
+	Response::findLocationMatch(std::string target, \
+	std::vector<Location> const & locations)
 {
 	std::vector<Location>::const_iterator	itLoc;
 
@@ -278,7 +301,7 @@ std::vector<Location> const & locations)
 	if (itLoc == locations.end())
 	{
 		this->_statusCode = INTERNAL_SERVER_ERROR;
-		throw(std::range_error("No location match")); // further handle 
+		throw(std::range_error("No location match")); // further handle
 	}
 	return (itLoc);
 }
@@ -289,12 +312,13 @@ std::vector<Location> const & locations)
  * 
  * @param target the target URI
  * @param locations a reference to a vector of Locations
- * @return std::vector<Location>::iterator pointing to a Location instance that 
- * is the exact match for the target. If no exact match was found, an iterator
- * pointing to the end of the locations vector is returned.
+ * @return std::vector<Location>::iterator pointing to a Location instance 
+ * that is the exact match for the target. If no exact match was found, an 
+ * iterator pointing to the end of the locations vector is returned.
  */
-std::vector<Location>::const_iterator	Response::findExactLocationMatch(std::string target, \
-std::vector<Location> const & locations)
+std::vector<Location>::const_iterator	\
+	Response::findExactLocationMatch(std::string target, \
+	std::vector<Location> const & locations)
 {
 	std::vector<Location>::const_iterator it;
 	
@@ -308,8 +332,9 @@ std::vector<Location> const & locations)
 	return (it);
 }
 
-std::vector<Location>::const_iterator	Response::findWildcardLocationMatch(std::string target, \
-std::vector<Location> const & locations)
+std::vector<Location>::const_iterator	\
+	Response::findWildcardLocationMatch(std::string target, \
+	std::vector<Location> const & locations)
 {
 	std::vector<Location>::const_iterator	it;
 	std::vector<std::string>				targetSplit;
@@ -322,9 +347,12 @@ std::vector<Location> const & locations)
 			this->splitUri(target, targetSplit);
 			for (size_t i = 0; i < targetSplit.size(); i++)
 			{
-				if (targetSplit[i].find(needle) == targetSplit[i].length() - needle.length())
+				if (targetSplit[i].find(needle) == \
+					targetSplit[i].length() - needle.length())
 				{
-					std::cerr << "Target is " << target << ", targetSplit[" << i << "] = " << targetSplit[i] << ", needle = " << needle << std::endl;
+					std::cerr << "Target is " << target << ", targetSplit[";
+					std::cerr << i << "] = " << targetSplit[i];
+					std::cerr << ", needle = " << needle << std::endl;
 					return (it);
 				}
 			}
@@ -335,17 +363,18 @@ std::vector<Location> const & locations)
 
 /**
  * @brief iterates over locations and identifies the location with the greatest
- * overlap with the target URI. To enable the comparison, the target and match URI 
- * are split into elements by calling the function splitURI().
+ * overlap with the target URI. To enable the comparison, the target and match 
+ * URI are split into elements by calling the function splitURI().
  * 
  * @param target the target URI
  * @param locations a reference to a vector of Locations
- * @return std::vector<Location>::iterator pointing to a Location instance that 
- * is the closest match for the target. If no location is found, iterator to the
- * end of the locations vector is returned.
+ * @return std::vector<Location>::iterator pointing to a Location instance 
+ * that is the closest match for the target. If no location is found, iterator 
+ * to the end of the locations vector is returned.
  */
-std::vector<Location>::const_iterator	Response::findClosestLocationMatch(std::string target, \
-std::vector<Location> const & locations)
+std::vector<Location>::const_iterator	\
+	Response::findClosestLocationMatch(std::string target, \
+	std::vector<Location> const & locations)
 {
 	size_t									overlap = 0;
 	std::vector<std::string>				targetSplit;
@@ -354,7 +383,8 @@ std::vector<Location> const & locations)
 	size_t									len = 0;
 
 	this->splitUri(target, targetSplit);
-	for (std::vector<std::string>::iterator i = targetSplit.begin(); i != targetSplit.end(); i++)
+	// for (std::vector<std::string>::iterator i = targetSplit.begin(); \
+	// 	i != targetSplit.end(); i++) // JMA: what does this do? Can it go?
 	for (auto it = locations.begin(); it != locations.end(); it++)
 	{
 		if (it->getModifier() == "=")
@@ -364,16 +394,19 @@ std::vector<Location> const & locations)
 		len = matchSplit.size();
 		for (idx = 0; idx < len; idx++)
 		{
-			if (idx == targetSplit.size() || targetSplit[idx] != matchSplit[idx])
+			if (idx == targetSplit.size() || \
+				targetSplit[idx] != matchSplit[idx])
 			{
 				idx = 0;
 				break;
 			}
 		}
-		// std::cout << "checking match: " << it->getMatch() << "\tidx: " << idx << std::endl;
+		// std::cout << "checking match: " << it->getMatch() << "\tidx: ";
+		// std::cout << idx << std::endl;
 		if (idx > overlap)
 		{
-			// std::cout << "better match found: " << it->getMatch() << "overlap: " << overlap << std::endl;
+			// std::cout << "better match found: " << it->getMatch();
+			// std::cout << "overlap: " << overlap << std::endl;
 			overlap = idx;
 			longest = it;
 		}
@@ -383,16 +416,18 @@ std::vector<Location> const & locations)
 }
 
 /**
- * @brief loops through the index page filenames provided in the config file for 
- * a particular location. For each one, it constructs the path to the file and 
- * tries to locate the file. If successful, it returns the filename of that index
- * page. If none of the files is found, the status code is set to 404 (Not Found) 
- * and an exception is thrown.
+ * @brief loops through the index page filenames provided in the config file 
+ * for a particular location. For each one, it constructs the path to the file 
+ * and tries to locate the file. If successful, it returns the filename of 
+ * that index page. If none of the files is found, the status code is set to 
+ * 404 (Not Found) and an exception is thrown.
  * 
  * @param itLoc iterator to the relevant Location object
- * @return std::string - the filename of the index corresponding to the location. 
+ * @return std::string - the filename of the index corresponding to the 
+ * location. 
  */
-std::string	Response::findIndexPage(std::vector<Location>::const_iterator itLoc)
+std::string	\
+	Response::findIndexPage(std::vector<Location>::const_iterator itLoc)
 {
 	std::string					filePath;
 	std::vector<std::string>	indexes = itLoc->getIndexes();
@@ -421,13 +456,14 @@ void	Response::extractPathInfo(std::string & targetUri)
 		beginPathInfo = targetUri.find(needle) + needle.length();
 		this->_pathInfo = targetUri.substr(beginPathInfo);
 		targetUri.erase(beginPathInfo);
-		std::cerr << "[pathInfo extraction] targetUri is " << targetUri << ", pathInfo is " << this->_pathInfo << std::endl;
+		std::cerr << "[pathInfo extraction] targetUri is " << targetUri;
+		std::cerr << ", pathInfo is " << this->_pathInfo << std::endl;
 	}
 }
 
 /**
- * @brief composes the first line of a response, writing it into the response buffer.
- * After sending the response, it clears the buffer with std::memset().
+ * @brief composes the first line of a response, writing it into the response 
+ * buffer. After sending the response, it clears the buffer with std::memset().
  * 
  * @param response the buffer into which the response is written
  */
@@ -450,12 +486,11 @@ void	Response::prepareFirstLine(void)
 		{
 			responseMessage = "";
 		}
-
 	}
 	
-	snprintf(responseBuffer, RESPONSELINE, \
-	"%s %d %s\r\n",	this->_req.getProtocolVersion().c_str(), this->_statusCode, \
-	responseMessage.c_str());
+	snprintf(responseBuffer, RESPONSELINE, "%s %d %s\r\n",	\
+		this->_req.getProtocolVersion().c_str(), this->_statusCode, \
+		responseMessage.c_str());
 	
 	printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
 	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
@@ -479,7 +514,7 @@ void	Response::prepareHeaders(std::string const & root)
 		contentType = root == "data" ? \
 		"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
 		std::string::npos) : "text/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1);
-		std::memset(responseBuffer, 0, RESPONSELINE);
+		std::memset(responseBuffer, 0, RESPONSELINE); // CHECK IF FAILED
 		snprintf(responseBuffer, RESPONSELINE, "Content-Type: %s\r\n", contentType.c_str());
 	}
 	else if (this->_statusCode == NOT_FOUND && this->_location->getAutoindex() == 1)
@@ -490,7 +525,6 @@ void	Response::prepareHeaders(std::string const & root)
 		snprintf(responseBuffer, RESPONSELINE, "Content-Type: %s\r\n", contentType.c_str());
 	}
 
-
 	if (this->_fileLength == 0 && this->_message.length() > 0)
 		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_message.length());
 	else if (this->_location->getReturnLink().size() > 0)
@@ -498,14 +532,12 @@ void	Response::prepareHeaders(std::string const & root)
 	else
 		snprintf(responseBuffer, RESPONSELINE, "Content-Length: %zu\r\n\r\n", this->_fileLength);
 
-
 	// printf("\n\nFILEPATH: [%s]\n\n", this->_filePath.c_str());
 	// printf("\n\nRESPONSE: [%s]\n\n", (char*)responseBuffer);
 	// printf("\n\nCONTENT TYPE: [%s]\n\n", contentType.c_str());
 
 	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
 }
-
 
 /**
  * @brief copy-pastes the content of the target file into the response buffer
@@ -515,9 +547,8 @@ void	Response::prepareHeaders(std::string const & root)
  * 
  * @param response the buffer into which the response is written
  */
-void	Response::prepareContent(void)
+void	Response::prepareContent(std::ifstream	&file)
 {
-	std::ifstream	file;
 	std::string		body;
 	
 	// DM: add first check whether _filePath is empty, zo ja, plak message in body
@@ -530,15 +561,9 @@ void	Response::prepareContent(void)
 	}
 	else
 	{
-		file.open(this->_filePath, std::ifstream::in | std::ifstream::binary); // MOVE UP, FIRST CHECK PERMISSIONS
-		if (!file.is_open()) // MOVE UP 
-		{
-			this->_statusCode = FORBIDDEN; // SHOULD BE DIFFERENT
-			throw std::ios_base::failure("Error when opening a file"); // LOOK INTO THIS, PROBABLY STATUSCODE INTERNAL_SERVER_ERROR (?)
-		}
-		body = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+		body = std::string(std::istreambuf_iterator<char>(file), \
+			std::istreambuf_iterator<char>());
 		this->_fullResponse.append(body);
-		file.close();
 	}
 }
 
@@ -574,14 +599,20 @@ size_t	Response::getFileSize(std::string filePath)
  * @param uri the uri string to be split
  * @param chunks reference to a vector, in which the chunks are to be placed
  */
-void	Response::splitUri(std::string const & uri, std::vector<std::string> & chunks)
+void	Response::splitUri(std::string const & uri, \
+	std::vector<std::string> & chunks)
 {
 	size_t	begin = 0;
 	size_t	end;
 
 	while (begin < uri.length() && begin < uri.find_first_of('?'))
 	{
-		end = uri[begin] == '/' ? uri.find_first_of('/', begin) + 1 : uri.find_first_of('/', begin);
+
+		end = uri[begin];
+		if (uri[begin] == '/') 
+			end = uri.find_first_of('/', begin) + 1;
+		else
+			end = uri.find_first_of('/', begin);
 		chunks.push_back(uri.substr(begin, end - begin));
 		begin = end;
 	}
@@ -590,10 +621,10 @@ void	Response::splitUri(std::string const & uri, std::vector<std::string> & chun
 /* TO BE DELETED */
 void	Response::printResponse(void) const
 {
-	std::cout << "***RESPONSE***" << std::endl;
-	std::cout << "\tStatus code: " << this->_statusCode << std::endl;
-	std::cout << "\tReason: " << this->_responseCodes[this->_statusCode] << std::endl;
-	std::cout << "\tProtocol Version: " << this->_req.getProtocolVersion() << std::endl;
-	std::cout << "\tConnection FD: " << this->_req.getConnFD() << std::endl;
-	std::cout << "******" << std::endl;
+	std::cout << "***RESPONSE***";
+	std::cout << "\n\tStatus code: " << this->_statusCode;
+	std::cout << "\n\tReason: " << this->_responseCodes[this->_statusCode];
+	std::cout << "\n\tProtocol Version: " << this->_req.getProtocolVersion();
+	std::cout << "\n\tConnection FD: " << this->_req.getConnFD();
+	std::cout << "\n******" << std::endl;
 }
