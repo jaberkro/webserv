@@ -8,25 +8,21 @@ std::string const &	Request::getMethod() const
 std::string const &	Request::getTarget() const
 {
 	return (this->_target);
-
 }
 
 std::string const &	Request::getQueryString() const
 {
 	return (this->_queryString);
-
 }
 
 std::string const &	Request::getBoundary() const
 {
 	return (this->_boundary);
-
 }
 
 std::string const &	Request::getProtocolVersion() const
 {
 	return (this->_protocolVersion);
-
 }
 
 int	Request::getStatusCode() const
