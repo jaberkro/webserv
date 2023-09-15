@@ -49,6 +49,8 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 {
 	if (this->_newReq->getState() == ERROR)
 		return ;
+	Server	handlingServerToCopy;
+
 	try
 	{
 		if (this->_newReq->getState() == OVERWRITE)
@@ -58,14 +60,18 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 		}
 		this->_newReq->processReq();
 		this->_newReq->printRequest();
-		this->_handlingServer = new Server(this->_newReq->identifyServer(servers));
-		std::cout << "_Handler info: host: [" << this->_handlingServer->getPort(0) << "], port: [" << this->_handlingServer->getHost(0) << "]" << std::endl;
-		std::cout << "Responsible server is " << 
-		this->_handlingServer->getServerName(0) << std::endl;
+		handlingServerToCopy = this->_newReq->identifyServer(servers);
+		this->_handlingServer = new Server(handlingServerToCopy);
+		std::cout << "_Handler info: host: [";
+		std::cout << this->_handlingServer->getPort(0) << "], port: [";
+		std::cout << this->_handlingServer->getHost(0) << "]" << std::endl;
+		std::cout << "Responsible server is ";
+		std::cout << this->_handlingServer->getServerName(0) << std::endl;
 	}
 	catch(const std::exception& e)
 	{
-		std::cerr << "!!! (MAYBE STH NEEDS TO BE ADDED TO CONFIG FILE?) - " << e.what() << '\n';
+		std::cerr << "!!! (MAYBE STH NEEDS TO BE ADDED TO CONFIG FILE?) - ";
+		std::cerr << e.what() << '\n';
 	}
 }
 
@@ -101,7 +107,7 @@ void	Connection::handleResponse()
 		return; // JMA: we return here but that means we will also not send or delete the response. Is that a problem?
 	try
 	{
-		if (this->_newResp == nullptr)
+		if (this->_newResp == nullptr) // DM: shouldn't we replace this by a state?
 		{
 			this->_newResp = new Response(*this->_newReq);
 			if (this->_newReq->getState() == ERROR)
@@ -123,11 +129,11 @@ void	Connection::handleResponse()
 			{
 				std::cerr << "method is " << this->_newReq->getMethod() << std::endl;
 				if (this->_newReq->getMethod() == "POST")
-					this->_newResp->prepareResponsePOST();
+					this->_newResp->performPOST();
 				else if (this->_newReq->getMethod() == "DELETE")
-					this->_newResp->prepareResponseDELETE();
+					this->_newResp->performDELETE();
 				else if (this->_newReq->getMethod() == "GET")
-					this->_newResp->prepareResponseGET();
+					this->_newResp->performGET();
 				else
 					this->_newResp->setStatusCode(NOT_IMPLEMENTED);
 			}
@@ -141,14 +147,15 @@ void	Connection::handleResponse()
 			}
 		}
 		if (this->_newResp->getState() == WRITE_CGI || this->_newResp->getState() == READ_CGI)
-			this->_newResp->prepareResponsePOST();
-		if (this->_newResp->getStatusCode() >= 400)
-			this->_newResp->identifyErrorPage(*this->_handlingServer); 
-		if (this->_newResp->getState() == PENDING || this->_newResp->getState() == SENDING || this->_newResp->getState() == ERROR)
+			this->_newResp->performPOST(); // what about when we have a GET request that uses CGI?
+		if (this->_newResp->getState() == PENDING)
+			this->_newResp->prepareResponse(*this->_handlingServer);
+		if (this->_newResp->getState() == SENDING)
 			this->_newResp->sendResponse();
 		if (this->_newResp->getState() == DONE)
 		{
 			this->_newReq->setState(OVERWRITE);
+			std::cout << "changed state to OVERWRITE" << std::endl;
 			delete this->_newResp;
 			this->_newResp = nullptr;
 			delete this->_handlingServer;

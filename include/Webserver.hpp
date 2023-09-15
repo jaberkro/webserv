@@ -3,14 +3,14 @@
 
 // # define MAXLINE 60000 //which value should this be? // JMA: now in request.hpp
 
-#include <iostream>
-#include <algorithm>
-#include <vector>
 #include "Socket.hpp"
 #include "Server.hpp"
 #include "Response.hpp"
 #include "Request.hpp"
 #include "Connection.hpp"
+#include <iostream>
+#include <algorithm>
+#include <vector>
 #include <map>
 
 class Socket;
@@ -38,10 +38,9 @@ class Webserver
 		void						addReadFilter(int fd);
 		void						addTimerFilter(int fd);
 
-
-
 		Webserver(const Webserver &src); //private because shouldn't be instantiated!
 		Webserver& operator=(const Webserver &src); //idem
+
 	public:
 		Webserver(std::vector<Server> servers);
 		~Webserver();
@@ -74,7 +73,6 @@ class Webserver
 		};
 };
 
-
 class serverBlock
 {
 	private:
@@ -90,6 +88,5 @@ class serverBlock
 
 // dummy functions
 void	serverBlockInit(serverBlock & sb);
-
 
 #endif

@@ -18,7 +18,7 @@ void	Request::processReq(void)
 void		Request::readFirstLineAndHeaders(void) 
 {
 	char	socketBuffer[MAXLINE];
-	std::memset(socketBuffer, 0, MAXLINE);
+	std::memset(socketBuffer, 0, MAXLINE); // CHECK IF FAILED
 	std::string	processingBuffer, line;
 	ssize_t		bytesRead = 0;
 	bool		firstLineComplete = false;
@@ -27,7 +27,7 @@ void		Request::readFirstLineAndHeaders(void)
 	{
 		std::string	chunk(socketBuffer, bytesRead);
 		processingBuffer += chunk;
-		std::memset(socketBuffer, 0, MAXLINE);
+		std::memset(socketBuffer, 0, MAXLINE);  // CHECK IF FAILED
 		while (this->_state == READHEADERS && processingBuffer.find('\n') < std::string::npos) // if a whole (first) line is in the buffer
 		{
 			extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
@@ -65,7 +65,7 @@ void		Request::readBody()
 		// std::cout << "[***chunk IS] >" << chunk << "<" << std::endl;
 		this->_body.append(chunk);
 		this->_bodyLength += bytesRead;
-		std::memset(socketBuffer, 0, MAXLINE);
+		std::memset(socketBuffer, 0, MAXLINE); // CHECK IF FAILED
 		if (this->_bodyLength == this->_contentLength || this->_body.find((this->_boundary + "--")) < std::string::npos)
 			this->_state = WRITE;
 	}
@@ -311,12 +311,13 @@ void	Request::printServer(Server const & server)
  */
 void	Request::printRequest()
 {
-	std::cout << "\n\t***" << std::endl;
-	std::cout << "\t" << this->_method << " " << this->_target << " " << this->_protocolVersion << std::endl;
+	std::map<std::string, std::string>::iterator it;
+
+	std::cout << "\n\t***\n\t" << this->_method << " ";
+	std::cout << this->_target << " " << this->_protocolVersion << std::endl;
 	std::cout << "\tQuery string: " << this->_queryString << std::endl;
 	std::cout << "\tBoundary: " << this->_boundary << std::endl;
-	for (std::map<std::string,std::string>::iterator it = this->_headers.begin(); \
-	it != this->_headers.end(); it++)
+	for (it = this->_headers.begin(); it != this->_headers.end(); it++)
 		std::cout << "\t" << it->first << ": " << it->second << std::endl;
 	std::cout << "\tBody length: " << this->getBodyLength() << std::endl;
 	std::cout << "\t***\n" << std::endl;

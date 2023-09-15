@@ -4,8 +4,8 @@
 
 static unsigned int convertBodySize(std::string line, std::string directive)
 {
-	int				multiplier = 1;
-	unsigned int	bodySize = 0;
+	int					multiplier = 1;
+	unsigned long long	bodySize = 0;
 
 	if ((line.back() == 'k' || line.back() == 'K') && line.size() > 1)
 		multiplier = 1000;
@@ -16,6 +16,8 @@ static unsigned int convertBodySize(std::string line, std::string directive)
 	if (multiplier != 1)
 		line.pop_back();
 	bodySize = stoull(line) * multiplier;
+	if (stoull(line) > bodySize)
+		tooBigError(line, "client_max_body_size", "18446744073709551615");
 	return (bodySize);
 }
 

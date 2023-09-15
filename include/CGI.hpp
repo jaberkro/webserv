@@ -6,7 +6,6 @@
 #include "Request.hpp"
 // #include "Response.hpp"
 
-
 #define R 0
 #define W 1
 
@@ -17,11 +16,11 @@ class CGI
 	private:
 		Request		& _req;
 		char		**_arg;
-		char		**_env;//std:string of vector van maken? [Darina: denk dat het zo kan blijven want execve verwacht een **char]
+		char		**_env;
 		pid_t		id;
 		int			_webservToScript[2];
 		int			_scriptToWebserv[2];
-		int			_exitCode;
+		int			_childProcessExitStatus;
 		std::string	_response;
 	public:
 		CGI(Request & req);
@@ -30,14 +29,12 @@ class CGI
 
 		void	run(Response & response);
 		void	prepareArg(std::string const & scriptName);
-		void	prepareEnv(std::string const & scriptName, std::string const & pathInfo);
+		void	prepareEnv(std::string const & scriptName, Response & response);
 		int*	getWebservToScript();
 		int*	getScriptToWebserv();
 		bool	checkIfCgiPipe();
 		void	cgiRead(Response & response, std::string & fullResponse);
 		void	cgiWrite(Response & response);
-
-
 
 		std::string	getResponse();
 };

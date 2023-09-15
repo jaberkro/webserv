@@ -8,21 +8,21 @@ BUILD_DIR = obj
 
 SRC = 	main.cpp \
 		Webserver.cpp \
-		requestProcessing/Request.cpp \
-		requestProcessing/RequestOCF.cpp \
-		requestProcessing/RequestGetters.cpp \
-		requestProcessing/RequestSetters.cpp \
-		requestProcessing/Response.cpp \
-		requestProcessing/ResponseOCF.cpp \
-		requestProcessing/ResponseGetters.cpp \
-		requestProcessing/CGI.cpp \
-		requestProcessing/delete.cpp \
-		requestProcessing/autoindex.cpp \
-		requestProcessing/utils.cpp \
+		request/Request.cpp \
+		request/RequestOCF.cpp \
+		request/RequestGetters.cpp \
+		request/RequestSetters.cpp \
+		request/utils.cpp \
+		response/Response.cpp \
+		response/ResponseOCF.cpp \
+		response/ResponseGetters.cpp \
+		response/CGI.cpp \
+		response/deleteUtils.cpp \
+		response/autoindex.cpp \
 		Socket.cpp \
 		Connection.cpp \
-		classes/Server.cpp \
-		classes/Location.cpp \
+		Server.cpp \
+		Location.cpp \
 		parser/parse.cpp \
 		parser/utils/utils.cpp \
 		parser/utils/trimUtils.cpp \

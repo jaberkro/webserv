@@ -8,12 +8,8 @@ import cgitb # for debugging messages
 import time # for testing
 
 cgitb.enable()
-
-def sendResponseSuccess(fileName):
-	with open("data/www/uploaded.html", 'r') as uploaded:
-		responseBody = uploaded.read()
-		response = "{} 201 Created\r\nContent-Type: text/html\r\nContent-Length: {}\r\nLocation: {}\r\n\r\n".format(os.environ["SERVER_PROTOCOL"], len(responseBody), uploadDir + fileName) + responseBody 
-	sys.stdout.buffer.write(response.encode())
+exitCode = 0
+response = ""
 
 print("PYTHON SCRIPT STARTED", file=sys.stderr)
 
@@ -23,24 +19,25 @@ print("PYTHON SCRIPT STARTED", file=sys.stderr)
 uploadDir = os.getenv("UPLOAD_DIR")
 if os.path.exists(uploadDir) == False or os.path.isdir(uploadDir) == False:
 	os.mkdir(uploadDir, mode = 0o755)
-
-contentLen = os.getenv("CONTENT_LENGTH")
-contentType = os.getenv("CONTENT_TYPE")
 	
 form = cgi.FieldStorage()
 if 'file' in form:
 	fileToUpload = form['file']
-	fileName = fileToUpload.filename
-	open(uploadDir + fileName, 'wb').write(fileToUpload.file.read())
-	sendResponseSuccess(fileName)
+	fileName = uploadDir + "/" + fileToUpload.filename
+	open(fileName, 'wb').write(fileToUpload.file.read())
+	with open("data/www/uploaded.html", 'r') as body:
+		responseBody = body.read()
+		response = os.environ["SERVER_PROTOCOL"] + " 201 Created\r\n"
+		response += "Content-Length: {}\r\n".format(len(responseBody))		
+		response += "Location: {}\r\n\r\n".format(fileName)
+		response += responseBody
 else:
-	redirect_url = "/postFailed.html"
-	with open("data/www/postFailed.html", 'r') as uploaded:
-		responseBody = uploaded.read()
-		response = "{} 400 Bad Request\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\n".format(os.environ["SERVER_PROTOCOL"], len(responseBody)) + responseBody
-	sys.stdout.buffer.write(response.encode())
+	exitCode = 400
 
+print("[script] about to send the following response:  ", response, file=sys.stderr)
+sys.stdout.buffer.write(response.encode())
 sys.stdin.close()
 sys.stdout.close()
 
-print("PYTHON SCRIPT FINISHED", file=sys.stderr)
+print("PYTHON SCRIPT FINISHED, exit code is ", exitCode, file=sys.stderr)
+sys.exit(exitCode)
