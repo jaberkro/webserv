@@ -16,7 +16,8 @@ enum {
 	DONE,
 	WRITE_CGI,
 	READ_CGI,
-	INIT_CGI,
+	INIT_CGI
+	// ERROR
 };
 
 class CGI;
@@ -60,6 +61,7 @@ class Response {
 		void											setState(size_t state);
 		void											addToFullResponse(char *response, size_t length);
 		void											addToFullResponse(std::string chunk);
+		void											setError(int statusCode);
 
 		/* utils */
 		void	splitUri(std::string const & uri, std::vector<std::string> & chunks);

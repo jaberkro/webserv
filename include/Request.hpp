@@ -17,7 +17,8 @@ enum {
 	READHEADERS,
 	READBODY,
 	WRITE,
-	OVERWRITE
+	OVERWRITE,
+	ERROR
 };
 
 class Request 
@@ -58,7 +59,7 @@ class Request
 		void												setHost(std::string host);
 		void												setState(size_t state);
 		void 												setBody(std::string newBody);
-
+		void												setError(int statusCode);
 		void			printRequest();	// for debugging purposes, to be deleted
 		void			printServer(Server const & server); // for debugging purposes, to be deleted
 

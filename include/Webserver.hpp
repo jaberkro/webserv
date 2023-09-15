@@ -20,15 +20,26 @@ class CGI;
 class Webserver
 {
 	private:
-		bool						running; //BS:houden of weg?
+		bool						_running; //BS:houden of weg?
 		std::vector<Socket> 		_sckts;
 		std::map<int, Connection>	_connections;
 		std::map<int, int>			_cgiFds; //first one is cgi Fd, second one is corresponding connFd
 		int							_kq;
+		struct kevent				_evList;
 		int							comparefd(int fd);
 		void						setSignal();
 		void						runWebserver(std::vector<Server> servers);
-		void						eofEvent(int ident);
+		void						newConnection(int eventSocket, int ident);
+		void						eofEvent(int ident, int reason);
+		void						readEvent(std::vector<Server> servers);
+		void						writeEvent();
+		void						addWriteFilter(int fd);
+		void						deleteWriteFilter(int fd);
+		void						addReadFilter(int fd);
+		void						addTimerFilter(int fd);
+
+
+
 		Webserver(const Webserver &src); //private because shouldn't be instantiated!
 		Webserver& operator=(const Webserver &src); //idem
 	public:

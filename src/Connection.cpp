@@ -47,6 +47,8 @@ Connection& Connection::operator=(const Connection &src)
 
 void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 {
+	if (this->_newReq->getState() == ERROR)
+		return ;
 	try
 	{
 		if (this->_newReq->getState() == OVERWRITE)
@@ -54,7 +56,6 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 			delete this->_newReq;
 			this->_newReq = new Request(connfd, this->_address);
 		}
-		// std::cout << "After Request constructor" << std::endl;
 		this->_newReq->processReq();
 		this->_newReq->printRequest();
 		this->_handlingServer = new Server(this->_newReq->identifyServer(servers));
@@ -98,12 +99,13 @@ void	Connection::handleResponse()
 {
 	if (this->_newReq->getMethod() == "")
 		return; // JMA: we return here but that means we will also not send or delete the response. Is that a problem?
-
 	try
 	{
 		if (this->_newResp == nullptr)
 		{
 			this->_newResp = new Response(*this->_newReq);
+			if (this->_newReq->getState() == ERROR)
+				this->_newResp->setError(this->_newReq->getStatusCode());
 			this->_newResp->prepareTargetURI(*this->_handlingServer);
 
 			if (getIsActuallyDelete(this->_newReq))
@@ -142,7 +144,7 @@ void	Connection::handleResponse()
 			this->_newResp->prepareResponsePOST();
 		if (this->_newResp->getStatusCode() >= 400)
 			this->_newResp->identifyErrorPage(*this->_handlingServer); 
-		if (this->_newResp->getState() == PENDING || this->_newResp->getState() == SENDING)
+		if (this->_newResp->getState() == PENDING || this->_newResp->getState() == SENDING || this->_newResp->getState() == ERROR)
 			this->_newResp->sendResponse();
 		if (this->_newResp->getState() == DONE)
 		{
@@ -171,4 +173,9 @@ Request *	Connection::getRequest(void)
 Response *	Connection::getResponse(void)
 {
 	return (this->_newResp);
+}
+
+int		Connection::getListenFd()
+{
+	return (this->_listenfd);
 }

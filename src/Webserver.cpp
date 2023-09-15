@@ -15,16 +15,6 @@
 #include "Response.hpp"
 #include <vector>
 #include "Connection.hpp"
-// #include "CGI.hpp"
-
-void	printAllConnections(std::map<int, Connection> conn)
-{
-	std::cout << "All connection fds: ";
-	std::map<int, Connection>::iterator it;
-	for (it = conn.begin(); it != conn.end(); it++)
-		std::cout << it->first << " ,";
-	std::cout << std::endl;
-}
 
 /**
  * @brief Checks if the fd that an event took place on matches any socket fd's
@@ -52,6 +42,38 @@ int		Webserver::checkIfCgiFd(int evFd)
 	return (evFd);
 }
 
+void	Webserver::addTimerFilter(int fd)
+{
+	struct timespec timeout;
+	timeout.tv_sec = 5;
+	timeout.tv_nsec = 0;
+	EV_SET(&_evList, fd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_ONESHOT, \
+		0, 5000, &timeout);
+	if (kevent(_kq, &_evList, 1, NULL, 0, NULL) == -1)
+		throw Webserver::KeventError();
+}
+
+void	Webserver::addWriteFilter(int evFd)
+{
+	EV_SET(&_evList, (int)evFd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	if (kevent(_kq, &_evList, 1, NULL, 0, NULL) == -1)
+		throw Webserver::KeventError();
+}
+
+void	Webserver::deleteWriteFilter(int fd)
+{
+	EV_SET(&_evList, fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+	if (kevent(_kq, &_evList, 1, NULL, 0, NULL) == -1)
+		throw Webserver::KeventError();
+}
+
+void	Webserver::addReadFilter(int fd)
+{
+	EV_SET(&_evList, fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	if (kevent(_kq, &_evList, 1, NULL, 0, NULL) == -1)
+		throw Webserver::KeventError(); // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR, set Write event!
+}
+
 /**
  * @brief Handles and eof event, where the client disconnects from the server
  * 
@@ -59,11 +81,73 @@ int		Webserver::checkIfCgiFd(int evFd)
  * @param ident 
  */
 
-void	Webserver::eofEvent(/*int connfd, */int ident)
+void	Webserver::eofEvent(int ident, int reason)
 {
-	std::cout << "Disconnect" << std::endl;
+	std::cout << "Disconnect";
+	if (reason == 1)
+		std::cout << " because of inactivity";
+	std::cout << std::endl;
+	// EV_SET(&_evList, ident, EVFILT_TIMER, EV_DELETE, 0, 5000, NULL);//&timeout);//, &timer);
+	// if (kevent(_kq, &_evList, 1, NULL, 0, NULL) == -1)
+	// 	throw Webserver::KeventError(); //Keep or not? See private slack msg!
+
 	if (close(ident) < 0)
 		throw Webserver::CloseError();  // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
+}
+
+void	Webserver::newConnection(int eventSocket, int ident)
+{
+	int connfd;
+	struct sockaddr_storage addr;
+	socklen_t socklen = sizeof(addr);
+
+	std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~Connection accepted~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
+	if ((connfd = accept(ident, (struct sockaddr *)&addr, &socklen)) < 0)
+		throw Webserver::AcceptError(); // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
+	this->_connections[connfd] = Connection(ident, _sckts.at(eventSocket)); // ADD STATUSCODE AS PARAMETER
+	this->_connections[connfd].setRequest(new Request(connfd, _sckts.at(eventSocket).getAddress()));
+	////////Starting from here, request state can be error!!//////////
+	if (fcntl(connfd, F_SETFL, O_NONBLOCK) < 0)
+		_connections[connfd].getRequest()->setError(500);
+	addReadFilter(connfd);
+}
+
+void	Webserver::readEvent(std::vector<Server> servers)
+{
+	int evFd = checkIfCgiFd((int)_evList.ident);
+	if (_connections[evFd].getResponse())
+	{
+		if (_connections[evFd].getResponse()->getState() == READ_CGI)
+			_connections[evFd].handleResponse();
+	}
+	else
+	{
+		std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
+		_connections[(int)evFd].handleRequest(evFd, servers);
+		if (_connections[(int)evFd].getRequest()->getState() == WRITE)
+			addWriteFilter(evFd);
+	}
+}
+
+void	Webserver::writeEvent()
+{
+	int evFd = checkIfCgiFd((int)_evList.ident);
+	std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~WRITE EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
+	std::cout << " Connection id is [" << (int)_evList.ident << "]" << std::endl;
+	_connections[evFd].handleResponse();
+	if (_connections[evFd].getResponse() == nullptr)//In case the Response is sent and finished, the write filter can be deleted
+		deleteWriteFilter(evFd);
+	else if(_connections[evFd].getResponse()->getState() == INIT_CGI && _connections[evFd].getResponse()->cgiOnKqueue == false)
+	{
+		std::cout << "\n\n~~~~~~~~~~~~~~~~~~WRITE event filter added for cgi pipes ~~~~~~~~~~~~~~~~" << std::endl;
+		addWriteFilter(_connections[evFd].getResponse()->getCgi().getScriptToWebserv()[0]);
+		addWriteFilter(_connections[evFd].getResponse()->getCgi().getWebservToScript()[1]);
+		_connections[evFd].getResponse()->cgiOnKqueue = true;
+		_connections[evFd].getResponse()->setState(WRITE_CGI);
+		_cgiFds.insert({evFd, _connections[evFd].getResponse()->getCgi().getScriptToWebserv()[0]});
+		_cgiFds.insert({evFd, _connections[evFd].getResponse()->getCgi().getWebservToScript()[1]});
+	}
+	addTimerFilter(evFd);
 }
 
 /**
@@ -74,141 +158,30 @@ void	Webserver::eofEvent(/*int connfd, */int ident)
 
 void	Webserver::runWebserver(std::vector<Server> servers)
 {
-	int nev, connfd;
-	struct kevent evList;
-	struct sockaddr_storage addr;
-	socklen_t socklen = sizeof(addr);
+	int nev;
 	int	eventSocket;
-
-	struct timespec timeout;
-	timeout.tv_sec = 5;
-	timeout.tv_nsec = 0;
 
 	while (1)
 	{
 		struct timespec *timeout = NULL;
-		running = true;//weg?
-		if ((nev = kevent(_kq, NULL, 0, &evList, 1, timeout)) < 0) //<0 [WAS 1] because the return value is the num of events place in queue
-			throw Webserver::KeventError();
-		if (evList.filter == EVFILT_TIMER)
-		{
-			std::cout << "Timer is triggered for fd " << (int)evList.ident << std::endl;
-			eofEvent(evList.ident);
-		}
-		if (evList.flags & EV_EOF)
-		{
-			eofEvent(evList.ident);
-		}
-		else if ((eventSocket = comparefd((int)evList.ident)) > -1)
-		{
-			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~Connection accepted~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
-			if ((connfd = accept(evList.ident, (struct sockaddr *)&addr, &socklen)) < 0)
-				throw Webserver::AcceptError(); // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
-			this->_connections[connfd] = Connection((int)evList.ident, _sckts.at(eventSocket)); // ADD STATUSCODE AS PARAMETER
-			this->_connections[connfd].setRequest(new Request(connfd, _sckts.at(eventSocket).getAddress()));
-			if (fcntl(connfd, F_SETFL, O_NONBLOCK) < 0)
-			{
-				perror("fcntl");  // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
-				return ;
-			}
-			EV_SET(&evList, connfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-			if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
-				throw Webserver::KeventError(); // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
-		}
-		else if (evList.filter == EVFILT_READ)
-		{
-
-			int evFd = checkIfCgiFd((int)evList.ident);
-			//EV_SET(&evList, evFd, EVFILT_TIMER, EV_DELETE, 0, 0, &timeout);//, &timer);
-			// if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
-			// 	throw Webserver::KeventError();
-			//At each call ofthis event, add a oneshot event for the timeout event (EVFILT_TIMER)!
-			if (_connections[evFd].getResponse())
-			{
-				if (_connections[evFd].getResponse()->getState() == READ_CGI)
-				{
-					std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT FOR CGI~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
-					_connections[evFd].handleResponse();//newReq, newResp, handlingServer);//;connfd, servers); //of moet connfd hier wel evList.ident zijn?
-				}
-			}
-			else
-			{
-				std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl; //(Used to print Here1 here)
-				// std::cout << "Data size to be read: " << evList.data << std::endl;
-				//At each call ofthis event, add a oneshot event for the timeout event (EVFILT_TIMER)!
-				_connections[(int)evFd].handleRequest(evFd, servers);//, handlingServer, newReq);
-				if (_connections[(int)evFd].getRequest()->getState() == WRITE)
-				{
-					// std::cout << "~~~~~~~~~~~~~~~~~~WRITE event filter added for conn fd " << (int)evFd << " with state " << _connections[(int)evFd].getRequest()->getState() << "~~~~~~~~~~~~~~~~\n\n" << std::endl;
-					EV_SET(&evList, (int)evFd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-					if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
-						throw Webserver::KeventError();
-				}
-			}
-			// EV_SET(&evList, evFd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_ONESHOT, 0, 5000, &timeout);//, &timer);
-			// if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
-			// 	throw Webserver::KeventError();
-
-
-		}
-		else if (evList.filter == EVFILT_WRITE)// && _connections[(int)evList.ident].getRequest()->getState() == WRITE)//Hier response senden!
-		{
-			int evFd = checkIfCgiFd((int)evList.ident);
-			std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~WRITE EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
-			std::cout << " Connection id is [" << (int)evList.ident << "]" << std::endl;
-			// printAllConnections(_connections);
-			// if (_connections[evFd].getResponse())
-			// 	std::cout << "State at start write event: " << _connections[evFd].getResponse()->getState() << std::endl;
-			// std::cout << "Space left in writing buffer: " << evList.data << std::endl;
-			// EV_SET(&evList, (int)evList.ident, EVFILT_TIMER, EV_DELETE, 0, 5000, &timeout);//, &timer);
-			if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
-				throw Webserver::KeventError();
-			//send response content that you bind to your request class. When all data is sent, delete TIMEOUT events and close conn
-			_connections[evFd].handleResponse();//newReq, newResp, handlingServer);//;connfd, servers); //of moet connfd hier wel evList.ident zijn?
-			if (_connections[evFd].getResponse() == nullptr)//In case the Response is sent and finished
-			{
-				std::cout << "~~~~~~~~~~~~~~~~~~WRITE event filter deleted for conn fd " << evFd << "~~~~~~~~~~~~~~~~\n\n" << std::endl;
-				EV_SET(&evList, evFd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
-				if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
-					throw Webserver::KeventError();
-			}
-			else if(_connections[evFd].getResponse()->getState() == INIT_CGI && _connections[evFd].getResponse()->cgiOnKqueue == false)
-			{
-				std::cout << "~~~~~~~~~~~~~~~~~~WRITE event filter added for cgi pipes ~~~~~~~~~~~~~~~~\n\n" << std::endl;
-				EV_SET(&evList, _connections[evFd].getResponse()->getCgi().getScriptToWebserv()[0], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-				if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
-					throw Webserver::KeventError();
-				std::cout << " Connection id is [" << evFd << "]" << std::endl;
-				std::cout << "WebservToScript[1] = [" << std::endl;
-				std::cout << "ScriptToWebserv[0] = " << _connections[evFd].getResponse()->getCgi().getScriptToWebserv()[0] << std::endl;
-				std::cout << _connections[evFd].getResponse()->getCgi().getWebservToScript()[1] << "]" << std::endl;
-				EV_SET(&evList, _connections[evFd].getResponse()->getCgi().getWebservToScript()[1], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-				if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
-					throw Webserver::KeventError();  // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
-				_connections[evFd].getResponse()->cgiOnKqueue = true;
-				_connections[evFd].getResponse()->setState(WRITE_CGI);
-				_cgiFds.insert({evFd, _connections[evFd].getResponse()->getCgi().getScriptToWebserv()[0]});
-				_cgiFds.insert({evFd, _connections[evFd].getResponse()->getCgi().getWebservToScript()[1]});
-				std::cout << "PRINT STATEMENT *CHEER*" << std::endl;
-			}
-			EV_SET(&evList, evFd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_ONESHOT, 0, 5000, &timeout);//, &timer);
-			if (kevent(_kq, &evList, 1, NULL, 0, NULL) == -1)
-				throw Webserver::KeventError();
-
-		}
-		// else if (evList.filter == EVFILT_TIMER)
-		// {
-		// 	std::cout << "Time-out!!" << std::endl;
-		// 	//Hier Timeout handlen: bind current request to a 408 response Error, delete read ev and add write ev
-		// }
-		// else if (connfd != 0)
-		// 	close(connfd);
-
+		_running = true;
+		if ((nev = kevent(_kq, NULL, 0, &_evList, 1, timeout)) < 0)
+			continue ;
+		//	throw Webserver::KeventError();//internal server error sturen
+		if (_evList.filter == EVFILT_TIMER)
+			eofEvent(_evList.ident, 1);
+		if (_evList.flags & EV_EOF)
+			eofEvent(_evList.ident, 0);
+		else if ((eventSocket = comparefd((int)_evList.ident)) > -1)
+			newConnection(eventSocket, _evList.ident);
+		else if (_evList.filter == EVFILT_READ)
+			readEvent(servers);
+		else if (_evList.filter == EVFILT_WRITE)
+			writeEvent();
 		//CATCH
 		// KEVENT -> INTERNAL_SERVER_ERROR, NOT AN EXCEPTION
-		
 	}
-	running = false;
+	_running = false;
 }
 
 void	sighandler(int sig)
@@ -255,19 +228,9 @@ Webserver::Webserver(std::vector<Server> servers)
 	runWebserver(servers);
 }
 
-// Webserver::Webserver(const Webserver &src)
-// {
-
-// }
-
-// Webserver::Webserver& operator=(const Webserver &src)
-// {
-// 	running = src.running;
-
-// }
-
-
 Webserver::~Webserver()
 {
-	//Hier nog correcte fd's sluiten!
+	std::map<int, Connection>::iterator it;
+	for (it = _connections.begin(); it != _connections.end(); it++)
+		close(it->second.getListenFd()); //protect!
 }
