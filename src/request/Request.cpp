@@ -311,12 +311,13 @@ void	Request::printServer(Server const & server)
  */
 void	Request::printRequest()
 {
-	std::cout << "\n\t***" << std::endl;
-	std::cout << "\t" << this->_method << " " << this->_target << " " << this->_protocolVersion << std::endl;
+	std::map<std::string, std::string>::iterator it;
+
+	std::cout << "\n\t***\n\t" << this->_method << " ";
+	std::cout << this->_target << " " << this->_protocolVersion << std::endl;
 	std::cout << "\tQuery string: " << this->_queryString << std::endl;
 	std::cout << "\tBoundary: " << this->_boundary << std::endl;
-	for (std::map<std::string,std::string>::iterator it = this->_headers.begin(); \
-	it != this->_headers.end(); it++)
+	for (it = this->_headers.begin(); it != this->_headers.end(); it++)
 		std::cout << "\t" << it->first << ": " << it->second << std::endl;
 	std::cout << "\tBody length: " << this->getBodyLength() << std::endl;
 	std::cout << "\t***\n" << std::endl;

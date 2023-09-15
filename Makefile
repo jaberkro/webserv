@@ -21,8 +21,8 @@ SRC = 	main.cpp \
 		response/autoindex.cpp \
 		Socket.cpp \
 		Connection.cpp \
-		classes/Server.cpp \
-		classes/Location.cpp \
+		Server.cpp \
+		Location.cpp \
 		parser/parse.cpp \
 		parser/utils/utils.cpp \
 		parser/utils/trimUtils.cpp \

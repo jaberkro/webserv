@@ -14,7 +14,6 @@ CGI::CGI(Request & req) : _req(req), id(-1) {}
 
 CGI::~CGI()
 {
-
 		// size_t	i = 0;
 		// while (this->_env[i])
 		// 	delete this->_env[i++];
@@ -119,7 +118,8 @@ void	CGI::cgiWrite(Response & response)
 		// 	// response.setStatusCode(INTERNAL_SERVER_ERROR);
 		// 	std::cout << "BytesSent error, send 500 internal error" << std::endl;
 		// }
-		this->_req.setBody(this->_req.getBody().erase(0, bytesSent)); //JMA: was outside of else statement before
+		if (bytesSent > 0) //JMA: this if statement is important!
+			this->_req.setBody(this->_req.getBody().erase(0, bytesSent));
 		if (this->_req.getBody().size() == 0 || bytesSent == 0)// || bytesSent == -1) // JMA: partly outcommented to prevent early quitting
 		{
 			std::cerr << "[writing to cgi] body size is " << this->_req.getBody().size() << ", BytesSent is " << bytesSent << std::endl;

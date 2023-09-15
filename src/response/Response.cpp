@@ -1,15 +1,13 @@
 #include "Response.hpp"
-
+#include "Webserver.hpp"
+#include "CGI.hpp"
 #include <iostream>
 #include <istream>
 #include <fstream>
 #include <unistd.h>
-#include "Webserver.hpp"
-#include "CGI.hpp"
 #include <cstdio>
 #include <stdio.h>
 #include <sys/stat.h>
-
 #include <vector>
 
 /**
@@ -33,11 +31,17 @@ std::map<int, std::string> 	Response::_responseCodes =
 
 void	Response::performGET(void) 
 {
-	// std::cerr << "prepGET - cgi script name is " << this->_location->getCgiScriptName() << std::endl;
-	if ((!this->_location->getCgiScriptName().empty() && \
-		!this->_req.getQueryString().empty()) || \
-		this->_location->getCgiScriptName().find('*') < std::string::npos)
+	std::string scriptName;
+	std::string queryString;
+
+	scriptName = this->_location->getCgiScriptName();
+	queryString = this->_req.getQueryString();
+	// std::cerr << "prepGET - cgi script name is " << scriptName << std::endl;
+	if ((!scriptName.empty() && !queryString.empty()) || \
+		scriptName.find('*') < std::string::npos)
+	{
 		this->executeCgiScript();
+	}
 }
 
 void	Response::performDELETE(void)	
@@ -50,33 +54,33 @@ void	Response::performDELETE(void)
 		this->_filePath.clear();
 	if (this->_statusCode != OK && this->_statusCode != DELETED)
 	{
+		std::cerr << "DELETE FAILED" << std::endl;
 		if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
 			this->_filePath.clear();
 		else
-			this->_filePath = "data/www/deleteFailed.html"; // This is hardcoded! Remove?
+			this->_filePath = "data/www/deleteFailed.html"; // JMA: This is hardcoded! Remove?
 	}
 }
 
 void	Response::performPOST(void)
 {
+	size_t	bodyLength;
+	unsigned long long	maxBodySize;
+
+	bodyLength = this->_req.getBodyLength(); 
+	maxBodySize = this->_location->getMaxBodySize();
 	if (getState() == PENDING)
 	{
-		std::cout << "Checking if POST is allowed based on the ";
-		std::cout << "client_max_body_size..." << std::endl;
-		std::cout << "max size: " << this->getLocation()->getMaxBodySize();
-		std::cout << " and body length: ";
-		std::cout << this->getRequest().getBodyLength() << std::endl;
-		if (this->getRequest().getBodyLength() > \
-			this->getLocation()->getMaxBodySize() && \
-			this->getLocation()->getMaxBodySize() > 0)
+		if (bodyLength > maxBodySize && maxBodySize > 0)
 		{
-			std::cout << "POST not allowed: Content Too Large. Max size is: ";
-			std::cout << this->getLocation()->getMaxBodySize() << std::endl;
+			std::cerr << "POST not allowed: Content Too Large" << std::endl;
+			// std::cerr << "body length: " << bodyLength << std::endl;
+			// std::cerr << "client_max_body_size: " << maxBodySize << std::endl;
 			this->_statusCode = CONTENT_TOO_LARGE;
 			if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
 				this->_filePath.clear();
 			else
-				this->_filePath = "data/www/postFailed.html";
+				this->_filePath = "data/www/postFailed.html"; // JMA: This is hardcoded! Remove?
 			return ;
 		}
 	}
@@ -85,7 +89,7 @@ void	Response::performPOST(void)
 
 void	Response::executeCgiScript(void)
 {
-	if (this->_state == PENDING)
+	if (getState() == PENDING) // JMA: was PENDING before
 	{
 		CGI	cgi(this->_req);
 		this->_cgi = cgi;
@@ -95,9 +99,10 @@ void	Response::executeCgiScript(void)
 			scriptName = this->_filePath;
 		_cgi.prepareEnv(scriptName, *this);
 		_cgi.prepareArg(scriptName);
+		
 	}
 	if (getState() == PENDING)
-		_cgi.run(*this);
+		_cgi.run(*this);	 // JMA: can this be added to the if-statement above?
 	if (getState() == READ_CGI)// && _cgi.checkIfCgiPipe())
 		_cgi.cgiRead(*this, this->_fullResponse);
 	else if (getState() == WRITE_CGI)// && _cgi.checkIfCgiPipe())
@@ -164,7 +169,7 @@ void	Response::sendResponse(void)
 		bytesSent = send(this->_req.getConnFD(), this->_fullResponse.c_str(), \
 			chunkSize, 0);
 		if (bytesSent < 0)
-			std::cout << "BytesSent error, send 500 internal error" << std::endl; // TO BE HANDLED BY BRITT
+			std::cout << "BytesSent error, send internal error" << std::endl;
 		else
 			this->_fullResponse.erase(0, bytesSent);
 		std::cout << "State is " << this->_state << ", bytesSent = ";
@@ -188,6 +193,7 @@ void	Response::prepareTargetURI(Server const & server)
 	{
 		try 
 		{
+			//////////////////////////////////////////////////////// JMA: this could become one function from here  
 			this->_location = findLocationMatch(targetUri, \
 				server.getLocations());
 			if (targetUri[targetUri.length() - 1] == '/')
@@ -212,6 +218,7 @@ void	Response::prepareTargetURI(Server const & server)
 					this->_statusCode = NOT_FOUND;
 				this->_isReady = true;
 			}
+			//////////////////////////////////////////////////////// JMA: until here. What name should we give it?
 		}
 		catch(const std::ios_base::failure & f)
 		{
@@ -457,9 +464,9 @@ void	Response::prepareFirstLine(void)
 {
 	char		responseBuffer[RESPONSELINE + 1];
 	std::string	responseMessage;
+	std::string	version;
 	
 	std::memset(responseBuffer, 0, RESPONSELINE + 1); // CHECK IF FAILED
-
 	if (this->_location->getReturnMessage().size() > 0)
 		responseMessage = this->_location->getReturnMessage();
 	else
@@ -473,11 +480,9 @@ void	Response::prepareFirstLine(void)
 			responseMessage = "";
 		}
 	}
-
-	snprintf(responseBuffer, RESPONSELINE, "%s %d %s\r\n",	\
-		this->_req.getProtocolVersion().c_str(), this->_statusCode, \
-		responseMessage.c_str());
-	
+	version = this->_req.getProtocolVersion();
+	snprintf(responseBuffer, RESPONSELINE, "%s %d %s\r\n", version.c_str(), \
+		this->_statusCode, responseMessage.c_str());
 	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
 }
 
@@ -586,7 +591,6 @@ void	Response::splitUri(std::string const & uri, \
 
 	while (begin < uri.length() && begin < uri.find_first_of('?'))
 	{
-
 		end = uri[begin];
 		if (uri[begin] == '/') 
 			end = uri.find_first_of('/', begin) + 1;

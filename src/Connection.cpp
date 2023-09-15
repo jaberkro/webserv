@@ -47,6 +47,8 @@ Connection& Connection::operator=(const Connection &src)
 
 void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 {
+	Server	handlingServerToCopy;
+
 	try
 	{
 		if (this->_newReq->getState() == OVERWRITE)
@@ -54,17 +56,21 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 			delete this->_newReq;
 			this->_newReq = new Request(connfd, this->_address);
 		}
-		// std::cout << "After Request constructor" << std::endl;
+		// std::cout << "After Request constructor" << std::endl; // JMA: do we want to remove this?
 		this->_newReq->processReq();
 		this->_newReq->printRequest();
-		this->_handlingServer = new Server(this->_newReq->identifyServer(servers));
-		std::cout << "_Handler info: host: [" << this->_handlingServer->getPort(0) << "], port: [" << this->_handlingServer->getHost(0) << "]" << std::endl;
-		std::cout << "Responsible server is " << 
-		this->_handlingServer->getServerName(0) << std::endl;
+		handlingServerToCopy = this->_newReq->identifyServer(servers);
+		this->_handlingServer = new Server(handlingServerToCopy);
+		std::cout << "_Handler info: host: [";
+		std::cout << this->_handlingServer->getPort(0) << "], port: [";
+		std::cout << this->_handlingServer->getHost(0) << "]" << std::endl;
+		std::cout << "Responsible server is ";
+		std::cout << this->_handlingServer->getServerName(0) << std::endl;
 	}
 	catch(const std::exception& e)
 	{
-		std::cerr << "!!! (MAYBE STH NEEDS TO BE ADDED TO CONFIG FILE?) - " << e.what() << '\n';
+		std::cerr << "!!! (MAYBE STH NEEDS TO BE ADDED TO CONFIG FILE?) - ";
+		std::cerr << e.what() << '\n';
 	}
 }
 
