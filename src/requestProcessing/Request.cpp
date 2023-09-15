@@ -18,7 +18,7 @@ void	Request::processReq(void)
 void		Request::readFirstLineAndHeaders(void) 
 {
 	char	socketBuffer[MAXLINE];
-	std::memset(socketBuffer, 0, MAXLINE);
+	std::memset(socketBuffer, 0, MAXLINE); // CHECK IF FAILED
 	std::string	processingBuffer, line;
 	ssize_t		bytesRead = 0;
 	bool		firstLineComplete = false;
@@ -27,7 +27,7 @@ void		Request::readFirstLineAndHeaders(void)
 	{
 		std::string	chunk(socketBuffer, bytesRead);
 		processingBuffer += chunk;
-		std::memset(socketBuffer, 0, MAXLINE);
+		std::memset(socketBuffer, 0, MAXLINE);  // CHECK IF FAILED
 		while (this->_state == READHEADERS && processingBuffer.find('\n') < std::string::npos) // if a whole (first) line is in the buffer
 		{
 			extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
@@ -65,7 +65,7 @@ void		Request::readBody()
 		// std::cout << "[***chunk IS] >" << chunk << "<" << std::endl;
 		this->_body.append(chunk);
 		this->_bodyLength += bytesRead;
-		std::memset(socketBuffer, 0, MAXLINE);
+		std::memset(socketBuffer, 0, MAXLINE); // CHECK IF FAILED
 		if (this->_bodyLength == this->_contentLength || this->_body.find((this->_boundary + "--")) < std::string::npos)
 			this->_state = WRITE;
 	}
