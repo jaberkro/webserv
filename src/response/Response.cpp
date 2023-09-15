@@ -1,15 +1,13 @@
 #include "Response.hpp"
-
+#include "Webserver.hpp"
+#include "CGI.hpp"
 #include <iostream>
 #include <istream>
 #include <fstream>
 #include <unistd.h>
-#include "Webserver.hpp"
-#include "CGI.hpp"
 #include <cstdio>
 #include <stdio.h>
 #include <sys/stat.h>
-
 #include <vector>
 
 /**
@@ -53,7 +51,7 @@ void	Response::performDELETE(void)
 		if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
 			this->_filePath.clear();
 		else
-			this->_filePath = "data/www/deleteFailed.html"; // This is hardcoded! Remove?
+			this->_filePath = "data/www/deleteFailed.html"; // JMA: This is hardcoded! Remove?
 	}
 }
 
@@ -188,6 +186,7 @@ void	Response::prepareTargetURI(Server const & server)
 	{
 		try 
 		{
+			//////////////////////////////////////////////////////// JMA: this could become one function from here  
 			this->_location = findLocationMatch(targetUri, \
 				server.getLocations());
 			if (targetUri[targetUri.length() - 1] == '/')
@@ -212,6 +211,7 @@ void	Response::prepareTargetURI(Server const & server)
 					this->_statusCode = NOT_FOUND;
 				this->_isReady = true;
 			}
+			//////////////////////////////////////////////////////// JMA: until here. What name should we give it?
 		}
 		catch(const std::ios_base::failure & f)
 		{
