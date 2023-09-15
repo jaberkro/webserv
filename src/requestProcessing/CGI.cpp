@@ -114,7 +114,7 @@ void	CGI::cgiWrite(Response & response)
 		bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), chunkSize);
 		std::cout << "BytesSent in cgiWrite is " << bytesSent << std::endl;
 		if (bytesSent < 0)
-			std::cout << "BytesSent error, send 500 internal error" << std::endl;
+			std::cout << "BytesSent error, send 500 internal error, errno is" << strerror(errno) << std::endl;
 		else
 			this->_req.setBody(this->_req.getBody().erase(0, bytesSent)); //JMA: was outside of else statement before
 		if (this->_req.getBody().size() == 0 || bytesSent == 0)// || bytesSent == -1) // JMA: partly outcommented to prevent early quitting
@@ -209,15 +209,6 @@ void	CGI::run(Response & response)
 			dup2(this->_scriptToWebserv[W], STDOUT_FILENO);
 			close(this->_scriptToWebserv[W]);
 			std::cerr << "trying to run script: [" << this->_arg[0] << "]" << std::endl;
-			// std::cerr << "Arg[0] = " << this->_arg[0] << " , * ALLE ARG VOOR EXECVE *" << std::endl;
-			// int i = 0;
-			// while (this->_arg[i])
-			// 	std::cerr << this->_arg[i++] << std::endl;
-			// std::cerr << "ENV:" << std::endl;
-			// i = 0;
-			// while (this->_env[i])
-			// 	std::cerr << this->_env[i++] << std::endl << std::endl;
-
 			if (execve(this->_arg[0], this->_arg, this->_env) < 0)
 			{
 				std::cerr << strerror(errno) << std::endl;
