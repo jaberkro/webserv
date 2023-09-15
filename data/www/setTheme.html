@@ -7,17 +7,19 @@
 	<body>
 		<div class="container">
 			<div class="topnav">
-				<a class="active" href="/">Home</a>
+				<a href="/">Home</a>
 				<a href="/about.html">About</a>
 				<a href="/contact.html">Contact</a>
 				<a href="/upload.html">Upload</a>
 				<a href="/show.html">Show</a>
 				<a href="/delete.html">Delete</a>
-				<a href="/setTheme.html">Set Theme</a>
+				<a class="active" href="/setTheme.html">Set Theme</a>
 			</div>
-			<h1>Hello World!</h1>
-			<p>Have a look at this cute cat:</p>
-			<img src="images/cat.jpg" alt="Cute cat looking you in the eyes" width="500">
+			<h1>Change the color theme over here!</h1>
+			<form method="GET" enctype="multipart/form-data" action="setTheme.html">
+				<input type="hidden" name ="toggle" value="now"/>
+				<input type="submit" value="Change theme" style="width:100px; height:40px;">
+			</form>
 		</div>
 	</body>
 </html>
