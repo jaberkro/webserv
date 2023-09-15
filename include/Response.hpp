@@ -19,6 +19,8 @@ enum {
 	INIT_CGI,
 };
 
+typedef std::vector<Location>::const_iterator locIterator;
+
 class CGI;
 
 class Response {
@@ -39,7 +41,6 @@ class Response {
 		void	performDELETE(void);
 		void	prepareResponse(Server const & server);
 		void	sendResponse(void);
-		void	deleteFile(void);
 		void	identifyErrorPage(Server const & server);
 		
 		/* getters */
@@ -53,7 +54,7 @@ class Response {
 		void											setFilePath(std::string path);
 		std::string	&									getPathInfo(void);
 		void											setPathInfo(std::string pathInfo);
-		std::vector<Location>::const_iterator	const & getLocation(void) const;
+		locIterator	const & 							getLocation(void) const;
 		std::string										getFullResponse(void);
 		std::string										getMessage(void);
 		void											setMessage(std::string);
@@ -73,7 +74,7 @@ class Response {
 		size_t									_fileLength;
 		std::string								_filePath;
 		bool									_isReady;
-		std::vector<Location>::const_iterator	_location;
+		locIterator								_location;
 		std::string								_fullResponse;
 		std::string								_message;
 		static std::map<int, std::string>		_responseCodes;
@@ -82,11 +83,11 @@ class Response {
 		
 		CGI										_cgi;
 		size_t									getFileSize(std::string filePath);
-		std::vector<Location>::const_iterator 	findLocationMatch(std::string target, std::vector<Location> const & locations);
-		std::vector<Location>::const_iterator	findExactLocationMatch(std::string target, std::vector<Location> const & locations);
-		std::vector<Location>::const_iterator	findWildcardLocationMatch(std::string target, std::vector<Location> const & locations);
-		std::vector<Location>::const_iterator	findClosestLocationMatch(std::string target, std::vector<Location> const & locations);
-		std::string								findIndexPage(std::vector<Location>::const_iterator itLoc);
+		locIterator								findLocationMatch(std::string target, std::vector<Location> const & locations);
+		locIterator								findExactLocationMatch(std::string target, std::vector<Location> const & locations);
+		locIterator								findWildcardLocationMatch(std::string target, std::vector<Location> const & locations);
+		locIterator								findClosestLocationMatch(std::string target, std::vector<Location> const & locations);
+		std::string								findIndexPage(locIterator itLoc);
 		void									extractPathInfo(std::string & targetUri);
 		void									prepareFirstLine(void);
 		void									prepareHeaders(std::string const & root);
@@ -95,8 +96,10 @@ class Response {
 
 };
 
-// std::string	deleteFile(Request request, std::vector<Location>::const_iterator const & location);
-// bool allowedToDelete(std::string toRemove, std::vector<Location>::const_iterator const & location);
+// std::string	deleteFile(Request request, locIterator const & location);
+// bool allowedToDelete(std::string toRemove, locIterator const & location);
+int			deleteFile(Request req, locIterator loc);
+std::string createRemovePath(Request req, locIterator loc);
 bool		forbiddenToDeleteFileOrFolder(std::string toRemove);
 std::string	createAutoindex(void);
 bool		hasReadPermission(std::string filePath);

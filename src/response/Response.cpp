@@ -34,8 +34,9 @@ std::map<int, std::string> 	Response::_responseCodes =
 void	Response::performGET(void) 
 {
 	// std::cerr << "prepGET - cgi script name is " << this->_location->getCgiScriptName() << std::endl;
-	if ((!this->_location->getCgiScriptName().empty() && !this->_req.getQueryString().empty()) || \
-	this->_location->getCgiScriptName().find('*') < std::string::npos)
+	if ((!this->_location->getCgiScriptName().empty() && \
+		!this->_req.getQueryString().empty()) || \
+		this->_location->getCgiScriptName().find('*') < std::string::npos)
 		this->executeCgiScript();
 }
 
@@ -43,49 +44,16 @@ void	Response::performDELETE(void)
 {
 	uint8_t		response[RESPONSELINE + 1];
 
-	std::memset(response, 0, RESPONSELINE);
-	this->deleteFile();
+	std::memset(response, 0, RESPONSELINE); // CHECK IF FAILED
+	this->_statusCode = deleteFile(this->_req, this->_location);
+	if (this->_statusCode == DELETED)
+		this->_filePath.clear();
 	if (this->_statusCode != OK && this->_statusCode != DELETED)
 	{
 		if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
 			this->_filePath.clear();
 		else
-			this->_filePath = "data/www/deleteFailed.html";
-	}
-}
-
-/**
- * @brief execute the DELETE method on the target defined in the request.
- * Sets the _statusCode based on the result. OK or DELETED means that the
- * DELETE is executed succesfully.
- */
-void	Response::deleteFile(void)
-{
-	std::string	toRemove;
-	struct stat fileInfo;
-
-	std::cout << "\nATTEMPT TO DELETE RIGHT NOW!!!" << std::endl;
-	if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
-		toRemove = this->_location->getRoot() + this->_req.getTarget();
-	else
-		toRemove = this->_location->getUploadDir() + "/" + this->_req.getQueryString().substr(this->_req.getQueryString().find_last_of("=") + 1);
-	std::cout << "DELETE path: " << toRemove << "; TO REMOVE IS " << toRemove << std::endl;
-	if (forbiddenToDeleteFileOrFolder(toRemove))
-		this->_statusCode = FORBIDDEN;
-	else if (stat(toRemove.c_str(), &fileInfo) != 0)	// DM: this seems not to be working
-		this->_statusCode = NOT_FOUND;
-	else if (fileInfo.st_mode & S_IFDIR || remove(toRemove.c_str()) != 0)
-		this->_statusCode = BAD_REQUEST;
-	else
-	{
-		std::cout << "DELETE SUCCESSFUL!\n" << this->_req.getHeaders()["User-Agent"] << "\n" << std::endl;
-		if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
-		{
-			this->_statusCode = DELETED;
-			this->_filePath.clear();
-		}
-		else
-			this->_statusCode = OK;
+			this->_filePath = "data/www/deleteFailed.html"; // This is hardcoded! Remove?
 	}
 }
 
@@ -93,11 +61,17 @@ void	Response::performPOST(void)
 {
 	if (getState() == PENDING)
 	{
-		std::cout << "Checking if POST is allowed based om the client_max_body_size..." << std::endl;
-		std::cout << "max size: " << this->getLocation()->getMaxBodySize() << " and body length: " << this->getRequest().getBodyLength() << std::endl;
-		if (this->getRequest().getBodyLength() > this->getLocation()->getMaxBodySize() && this->getLocation()->getMaxBodySize() > 0)
+		std::cout << "Checking if POST is allowed based on the ";
+		std::cout << "client_max_body_size..." << std::endl;
+		std::cout << "max size: " << this->getLocation()->getMaxBodySize();
+		std::cout << " and body length: ";
+		std::cout << this->getRequest().getBodyLength() << std::endl;
+		if (this->getRequest().getBodyLength() > \
+			this->getLocation()->getMaxBodySize() && \
+			this->getLocation()->getMaxBodySize() > 0)
 		{
-			std::cout << "POST not allowed: Content Too Large. Max body size is " << this->getLocation()->getMaxBodySize() << std::endl;
+			std::cout << "POST not allowed: Content Too Large. Max size is: ";
+			std::cout << this->getLocation()->getMaxBodySize() << std::endl;
 			this->_statusCode = CONTENT_TOO_LARGE;
 			if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
 				this->_filePath.clear();
@@ -144,6 +118,7 @@ void	Response::executeCgiScript(void)
 void	Response::prepareResponse(Server const & server)
 {
 	std::ifstream	file;
+	std::string		path = this->_filePath;
 
 	// if (this->_state == PENDING)		// DM: this can be removed because this function is only called if the state is PENDING
 	// {
@@ -160,13 +135,14 @@ void	Response::prepareResponse(Server const & server)
 		if (!this->_filePath.empty())
 		{
 			this->_fileLength = this->getFileSize(this->_filePath);
-			file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
+			file.open(path, std::ifstream::in | std::ifstream::binary);
 			if (!file.is_open())
 				this->_statusCode = INTERNAL_SERVER_ERROR;
 		}
 		prepareFirstLine();
 		prepareHeaders(this->_location->getRoot());
-		if (this->_statusCode > 199 && this->_statusCode != DELETED && this->_statusCode != 304)
+		if (this->_statusCode > 199 && this->_statusCode != DELETED && \
+		this->_statusCode != 304) // JMA: why specifically not 304?
 			prepareContent(file);
 		if (!this->_filePath.empty())
 			file.close();
@@ -177,19 +153,24 @@ void	Response::prepareResponse(Server const & server)
 
 void	Response::sendResponse(void)
 {
-
 	ssize_t bytesSent;
-	ssize_t chunkSize = std::min(this->_fullResponse.length(), static_cast<size_t>(MAXLINE));
+	ssize_t chunkSize = std::min(this->_fullResponse.length(), \
+		static_cast<size_t>(MAXLINE)); // JMA: can min fail?
 	// std::cout << "Chunksize is " << _fullResponse.length() << " or " << static_cast<size_t>(MAXLINE) << std::endl;
 	if (this->_state == SENDING)
 	{
-		std::cerr << "[sendResponse] SENDING to fd " << this->_req.getConnFD() << std::endl;
-		bytesSent = send(this->_req.getConnFD(), this->_fullResponse.c_str(), chunkSize, 0);
+		std::cerr << "[sendResponse] SENDING to fd " << this->_req.getConnFD();
+		std::cerr << std::endl;
+		bytesSent = send(this->_req.getConnFD(), this->_fullResponse.c_str(), \
+			chunkSize, 0);
 		if (bytesSent < 0)
-			std::cout << "BytesSent error, send 500 internal error" << std::endl; // TO BE HANDLED
+			std::cout << "BytesSent error, send 500 internal error" << std::endl; // TO BE HANDLED BY BRITT
 		else
 			this->_fullResponse.erase(0, bytesSent);
-		std::cout << "State is " << this->_state << ", bytesSent = " << bytesSent << ", response leftover size is " << this->_fullResponse.size() << ", chunkSize = " << chunkSize << std::endl;
+		std::cout << "State is " << this->_state << ", bytesSent = ";
+		std::cout << bytesSent << ", response leftover size is ";
+		std::cout << this->_fullResponse.size() << ", chunkSize = ";
+		std::cout << chunkSize << std::endl;
 		if (/* this->_fullResponse.size() == 0 ||  */bytesSent == 0)
 		{
 			this->_state = DONE;
@@ -251,7 +232,8 @@ void	Response::prepareTargetURI(Server const & server)
 
 void	Response::identifyErrorPage(Server const & server)
 {
-	std::map<int, std::string> const & errorPages = this->_location->getErrorPages();
+	std::map<int, std::string> const & errorPages = \
+		this->_location->getErrorPages();
 	std::string	targetUri;
 
 	std::cerr << "[identifyErrorPage] ";
@@ -296,11 +278,10 @@ void	Response::identifyErrorPage(Server const & server)
  * that is either the exact match for the target, if available, or the 
  * closest one.
  */
-std::vector<Location>::const_iterator \
-	Response::findLocationMatch(std::string target, \
+locIterator Response::findLocationMatch(std::string target, \
 	std::vector<Location> const & locations)
 {
-	std::vector<Location>::const_iterator	itLoc;
+	locIterator	itLoc;
 
 	itLoc = findExactLocationMatch(target, locations);
 	if (itLoc == locations.end())
@@ -325,11 +306,10 @@ std::vector<Location>::const_iterator \
  * that is the exact match for the target. If no exact match was found, an 
  * iterator pointing to the end of the locations vector is returned.
  */
-std::vector<Location>::const_iterator	\
-	Response::findExactLocationMatch(std::string target, \
+locIterator	Response::findExactLocationMatch(std::string target, \
 	std::vector<Location> const & locations)
 {
-	std::vector<Location>::const_iterator it;
+	locIterator it;
 	
 	for (it = locations.begin(); it != locations.end(); it++)
 	{
@@ -341,11 +321,10 @@ std::vector<Location>::const_iterator	\
 	return (it);
 }
 
-std::vector<Location>::const_iterator	\
-	Response::findWildcardLocationMatch(std::string target, \
+locIterator	Response::findWildcardLocationMatch(std::string target, \
 	std::vector<Location> const & locations)
 {
-	std::vector<Location>::const_iterator	it;
+	locIterator	it;
 	std::vector<std::string>				targetSplit;
 
 	for (it = locations.begin(); it != locations.end(); it++)
@@ -381,13 +360,12 @@ std::vector<Location>::const_iterator	\
  * that is the closest match for the target. If no location is found, iterator 
  * to the end of the locations vector is returned.
  */
-std::vector<Location>::const_iterator	\
-	Response::findClosestLocationMatch(std::string target, \
+locIterator	Response::findClosestLocationMatch(std::string target, \
 	std::vector<Location> const & locations)
 {
 	size_t									overlap = 0;
 	std::vector<std::string>				targetSplit;
-	std::vector<Location>::const_iterator	longest = locations.end();
+	locIterator	longest = locations.end();
 	size_t									idx;
 	size_t									len = 0;
 
@@ -435,8 +413,7 @@ std::vector<Location>::const_iterator	\
  * @return std::string - the filename of the index corresponding to the 
  * location. 
  */
-std::string	\
-	Response::findIndexPage(std::vector<Location>::const_iterator itLoc)
+std::string	Response::findIndexPage(locIterator itLoc)
 {
 	std::string					filePath;
 	std::vector<std::string>	indexes = itLoc->getIndexes();
@@ -522,14 +499,17 @@ void	Response::prepareHeaders(std::string const & root)
 	std::memset(responseBuffer, 0, RESPONSELINE); // CHECK IF FAILED
 	
 	if (!this->_filePath.empty())
-		contentType = root == "data" ? \
-		"image/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
-		std::string::npos) : "text/" + this->_filePath.substr(this->_filePath.find_last_of('.') + 1);
+		contentType = root == "data" ? "image/" + \
+			this->_filePath.substr(this->_filePath.find_last_of('.') + 1, \
+			std::string::npos) : "text/" + \
+			this->_filePath.substr(this->_filePath.find_last_of('.') + 1);
 
 	contentLength = (this->_fileLength == 0 && this->_message.length() > 0) ? \
 	this->_message.length() : this->_fileLength;
 
-	snprintf(responseBuffer, RESPONSELINE, "Content-Type: %s\r\nContent-Length: %zu\r\n", contentType.c_str(), contentLength);
+	snprintf(responseBuffer, RESPONSELINE, \
+		"Content-Type: %s\r\nContent-Length: %zu\r\n", \
+		contentType.c_str(), contentLength);
 	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
 
 	if (this->_location->getReturnLink().size() > 0)

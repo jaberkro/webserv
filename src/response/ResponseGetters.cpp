@@ -31,7 +31,7 @@ bool	Response::getIsReady(void)
 	return (this->_isReady);
 }
 
-std::vector<Location>::const_iterator const & Response::getLocation(void) const
+locIterator const & Response::getLocation(void) const
 {
 	return (this->_location);
 }

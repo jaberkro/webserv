@@ -2,12 +2,12 @@
 #include <iostream>
 #include <string>
 
-static bool allowedDir(std::string line) // IS HTIS TOO HARDCODED?
-{
-	if (line == "/www" || line == "/images")
-		return (false);
-	return (true);
-}
+// static bool allowedDir(std::string line) // IS THIS TOO HARDCODED? // PROBABLY, SO OUTCOMMENTED
+// {
+// 	if (line == "/www" || line == "/images")
+// 		return (false);
+// 	return (true);
+// }
 
 /**
  * @brief parse a upload_dir directive
@@ -28,11 +28,11 @@ t_values	parseUploadDir(std::string line, t_values values)
 	checkStartingSlash(line, "upload_dir");
 	line = protectedSubstr(line, 1, line.size() - 1);
 	checkNoEndingSlash(line, "upload_dir");
-	if (!allowedDir(line))
-	{
-		std::cerr << "Error: invalid upload_dir: " << line;
-		std::cerr << ": already exists" << std::endl;
-	}
+	// if (!allowedDir(line))
+	// {
+	// 	std::cerr << "Error: invalid upload_dir: " << line;
+	// 	std::cerr << ": already exists" << std::endl;
+	// }
 	values.uploadDir = line;
 	return (values);
 }
