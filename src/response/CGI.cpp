@@ -14,7 +14,6 @@ CGI::CGI(Request & req) : _req(req), id(-1) {}
 
 CGI::~CGI()
 {
-
 		// size_t	i = 0;
 		// while (this->_env[i])
 		// 	delete this->_env[i++];
