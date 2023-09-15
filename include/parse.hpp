@@ -10,7 +10,7 @@ typedef struct s_values
 	std::string					root = ""; // is this allowed?
 	std::vector<std::string>	indexes;
 	bool						autoindex = false;
-	unsigned int				maxBodySize = 1000000;
+	unsigned long long			maxBodySize = 1000000;
 	std::map<int, std::string>	errorPages;
 	std::vector<std::string>	allowed;
 	std::vector<std::string>	denied;

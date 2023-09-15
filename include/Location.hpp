@@ -29,8 +29,8 @@ class Location
 		void								setAutoindex(bool autoindex);
 		bool								getAutoindex() const;
 		
-		void								setMaxBodySize(unsigned int maxBodySize);
-		unsigned int						getMaxBodySize() const;
+		void								setMaxBodySize(unsigned long long maxBodySize);
+		unsigned long long					getMaxBodySize() const;
 		
 		void								setErrorPages(std::map<int, std::string> errorPages);
 		std::map<int, std::string> const &	getErrorPages() const;
