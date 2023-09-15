@@ -1,10 +1,10 @@
 #ifndef REQUEST_HPP
 # define REQUEST_HPP
 
+# include "Server.hpp"
 # include <string>
 # include <map>
 # include <sys/socket.h>
-# include "Server.hpp"
 
 # define HEADER_END "\r\n\r\n"
 # define SPACES " \t\v\r\f"
@@ -17,7 +17,8 @@ enum {
 	READHEADERS,
 	READBODY,
 	WRITE,
-	OVERWRITE
+	OVERWRITE,
+	ERROR
 };
 
 class Request 
@@ -58,6 +59,7 @@ class Request
 		void									setHost(std::string host);
 		void									setState(size_t state);
 		void 									setBody(std::string newBody);
+		void									setError(int statusCode);							
 
 		void	printRequest();	// for debugging purposes, to be deleted
 		void	printServer(Server const & server); // for debugging purposes, to be deleted
@@ -97,7 +99,5 @@ size_t		countOverlapLeading(std::vector<std::string> & hostSplit, std::vector<st
 size_t		countOverlapTrailing(std::vector<std::string> & hostSplit, std::vector<std::string> & nameSplit);
 void		makeLowercase(std::string & str);
 void		splitServerName(std::string const & name, std::vector<std::string> & chunks);
-
-
 
 #endif

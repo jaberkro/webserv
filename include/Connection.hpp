@@ -25,6 +25,7 @@ class Connection
 		void			setRequest(Request *request);
 		Request *		getRequest(void);
 		Response *		getResponse(void);
+		int				getListenFd();
 
 
 		Connection();

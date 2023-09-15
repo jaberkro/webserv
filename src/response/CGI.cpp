@@ -9,7 +9,6 @@
 #include <cstdlib>
 #include <fcntl.h>
 
-
 CGI::CGI(Request & req) : _req(req), id(-1) {}
 
 CGI::~CGI()
@@ -137,6 +136,23 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse)
 {
 	ssize_t bytesRead = 0;
 	char	buf[RESPONSELINE];
+
+	// if ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) > 0)
+	// {
+	// 	std::cout << "Read call for cgi, bytesRead = " << bytesRead << std::endl;
+	// 	std::string	chunk(buf, bytesRead);
+	// 	response.addToFullResponse(chunk);
+	// }
+	// if (bytesRead == 0 && (waitpid(id, &(this->_exitCode), WUNTRACED | WNOHANG) != 0))
+	// {
+	// 	close(this->_scriptToWebserv[R]);
+	// 	if (WIFEXITED(this->_exitCode))
+	// 		std::cout << "Script exited with exit code " << this->_exitCode << std::endl;
+	// 	if (this->_exitCode > 0)
+	// 	{
+	// 		response.setStatusCode(INTERNAL_SERVER_ERROR);
+	// 		response.setFilePath("");
+	// 		fullResponse.clear();
 	int		exitCode = 0;
 	// std::cout << "Starting Cgi read" << std::endl;
 	// if (response.getState() == READ_CGI && checkIfCgiPipe())
@@ -159,24 +175,22 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse)
 					response.setFilePath("");
 					fullResponse.clear();
 				}
-			}
-			response.setState(PENDING);
-			size_t	i = 0;
-			std::cout << "Cleaning up cgi vars" << std::endl;
-			while (this->_env[i])
-				delete this->_env[i++];
-			delete[] this->_env;
-			delete this->_arg[0];
-			delete[] this->_arg;
+			// }
 		// std::cout << "End of cgiRead func, bytesRead = " << bytesRead << " , state is " << response.getState() << std::endl;
 		}
+		response.setState(PENDING);
+		size_t	i = 0;
+		std::cout << "Cleaning up cgi vars" << std::endl;
+		while (this->_env[i])
+			delete this->_env[i++];
+		delete[] this->_env;
+		delete this->_arg[0];
+		delete[] this->_arg;
+	}
 }
 
 void	CGI::run(Response & response)
 {
-	// char	buf[RESPONSELINE];
-	// ssize_t	bytesRead = 0;
-
 	try //when anything fails in this try block, remember to reset the state and handle correctly!
 	{
 		// if (id != 0)
@@ -216,15 +230,6 @@ void	CGI::run(Response & response)
 			dup2(this->_scriptToWebserv[W], STDOUT_FILENO);
 			close(this->_scriptToWebserv[W]);
 			std::cerr << "trying to run script: [" << this->_arg[0] << "]" << std::endl;
-			// std::cerr << "Arg[0] = " << this->_arg[0] << " , * ALLE ARG VOOR EXECVE *" << std::endl;
-			// int i = 0;
-			// while (this->_arg[i])
-			// 	std::cerr << this->_arg[i++] << std::endl;
-			// std::cerr << "ENV:" << std::endl;
-			// i = 0;
-			// while (this->_env[i])
-			// 	std::cerr << this->_env[i++] << std::endl << std::endl;
-
 			if (execve(this->_arg[0], this->_arg, this->_env) < 0)
 			{
 				std::cerr << strerror(errno) << std::endl;
@@ -239,53 +244,8 @@ void	CGI::run(Response & response)
 		{
 			std::cerr << "In else statement of cgi call. State: " << response.getState() << std::endl;
 			response.setState(WRITE_CGI);
-			// std::string const & body = this->_req.getBody();
-			// MAKE THEM NON-BLOCKING
-			// if (response.getState() == WRITE_CGI && checkIfCgiPipe())
-			// {
-			// 	ssize_t bytesSent;
-			// 	ssize_t chunkSize = std::min(this->_req.getBody().length(), static_cast<size_t>(MAXLINE));
-			// 	bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), chunkSize);
-			// 	std::cout << "BytesSent is " << bytesSent << std::endl;
-			// 	if (bytesSent < 0)
-			// 		std::cout << "BytesSent error, send 500 internal error" << std::endl;
-			// 	this->_req.setBody(this->_req.getBody().erase(0, bytesSent)); //
-			// 	if (this->_req.getBody().size() == 0 || bytesSent == 0)
-			// 	{
-			// 		response.setState(READ_CGI);
-			// 		close(this->_scriptToWebserv[W]);
-			// 		close(this->_webservToScript[R]);
-			// 		close(this->_webservToScript[W]);
-			// 		std::cout << "Closing webservToScript[W]" << std::endl;
-			// 	}
-			// }
-			// if (response.getState() == READ_CGI && checkIfCgiPipe())
-			// {
-			// 	if ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) > 0)
-			// 	{
-			// 		std::string	chunk(buf, bytesRead);
-			// 		response.addToFullResponse(chunk);
-			// 	}
-				// std::cout << "Parent received this response: [" << response.getFullResponse() << "]" << std::endl;
-				// if (bytesRead == 0)
-				// {
-			// if ((waitpid(id, &(this->_childProcessExitStatus), WUNTRACED | WNOHANG)) != 0) //BS: what if we don't wait for the script to finish, will the kq timer ring in time?
-			// {
-			// 		close(this->_scriptToWebserv[R]);
-			// 		if (WIFEXITED(this->_childProcessExitStatus))
-			// 			std::cout << "Script exited with exit code " << this->_childProcessExitStatus << std::endl;
-			// 		response.setState(PENDING);
-					// size_t	i = 0;
-					// std::cout << "Cleaning up cgi vars" << std::endl;
-					// while (this->_env[i])
-					// 	delete this->_env[i++];
-					// delete[] this->_env;
-					// delete this->_arg[0];
-					// delete[] this->_arg;
-			// }
-				// }
-			}
 		}
+	}
 	catch (std::runtime_error &re)
 	{
 		std::cerr << re.what() << std::endl;

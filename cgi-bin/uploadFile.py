@@ -1,14 +1,19 @@
 #!/usr/local/bin/python3
-# !/usr/bin/python3
+
+#!/usr/bin/python3
+
 
 import cgi, sys, os #, urllib.parse
 import cgitb # for debugging messages
+import time # for testing
 
 cgitb.enable()
 exitCode = 0
 response = ""
 
 print("PYTHON SCRIPT STARTED", file=sys.stderr)
+
+# time.sleep(10)
 
 # if the upload directory does not exist, it will be created
 uploadDir = os.getenv("UPLOAD_DIR")

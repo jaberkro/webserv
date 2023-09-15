@@ -1,11 +1,11 @@
 #ifndef RESPONSE_HPP
 # define RESPONSE_HPP
 
-# include <string>
 # include "Request.hpp"
 # include "responseCodes.hpp"
 # include "Location.hpp"
 # include "CGI.hpp"
+# include <string>
 // # include "Webserver.hpp"
 
 #define DEFAULT_ERROR_PAGE "/defaultError.html"
@@ -16,7 +16,8 @@ enum {
 	DONE,
 	WRITE_CGI,
 	READ_CGI,
-	INIT_CGI,
+	INIT_CGI
+	// ERROR
 };
 
 typedef std::vector<Location>::const_iterator locIterator;
@@ -62,6 +63,7 @@ class Response {
 		void				setState(size_t state);
 		void				addToFullResponse(char *response, size_t length);
 		void				addToFullResponse(std::string chunk);
+		void				setError(int statusCode);
 
 		/* utils */
 		void	splitUri(std::string const & uri, std::vector<std::string> & chunks);

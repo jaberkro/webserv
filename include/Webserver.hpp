@@ -3,14 +3,14 @@
 
 // # define MAXLINE 60000 //which value should this be? // JMA: now in request.hpp
 
-#include <iostream>
-#include <algorithm>
-#include <vector>
 #include "Socket.hpp"
 #include "Server.hpp"
 #include "Response.hpp"
 #include "Request.hpp"
 #include "Connection.hpp"
+#include <iostream>
+#include <algorithm>
+#include <vector>
 #include <map>
 
 class Socket;
@@ -20,17 +20,27 @@ class CGI;
 class Webserver
 {
 	private:
-		bool						running; //BS:houden of weg?
+		bool						_running; //BS:houden of weg?
 		std::vector<Socket> 		_sckts;
 		std::map<int, Connection>	_connections;
 		std::map<int, int>			_cgiFds; //first one is cgi Fd, second one is corresponding connFd
 		int							_kq;
+		struct kevent				_evList;
 		int							comparefd(int fd);
 		void						setSignal();
 		void						runWebserver(std::vector<Server> servers);
-		void						eofEvent(int ident, struct kevent evList);
+		void						newConnection(int eventSocket, int ident);
+		void						eofEvent(int ident, int reason);
+		void						readEvent(std::vector<Server> servers);
+		void						writeEvent();
+		void						addWriteFilter(int fd);
+		void						deleteWriteFilter(int fd);
+		void						addReadFilter(int fd);
+		void						addTimerFilter(int fd);
+
 		Webserver(const Webserver &src); //private because shouldn't be instantiated!
 		Webserver& operator=(const Webserver &src); //idem
+
 	public:
 		Webserver(std::vector<Server> servers);
 		~Webserver();
@@ -63,7 +73,6 @@ class Webserver
 		};
 };
 
-
 class serverBlock
 {
 	private:
@@ -79,6 +88,5 @@ class serverBlock
 
 // dummy functions
 void	serverBlockInit(serverBlock & sb);
-
 
 #endif

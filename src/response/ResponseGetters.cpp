@@ -91,3 +91,9 @@ void	Response::setState(size_t state)
 {
 	this->_state = state;
 }
+
+void	Response::setError(int statusCode)
+{
+	this->_state = ERROR;
+	this->_statusCode = statusCode;
+}

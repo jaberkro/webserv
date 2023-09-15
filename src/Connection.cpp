@@ -47,6 +47,8 @@ Connection& Connection::operator=(const Connection &src)
 
 void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 {
+	if (this->_newReq->getState() == ERROR)
+		return ;
 	Server	handlingServerToCopy;
 
 	try
@@ -56,7 +58,6 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 			delete this->_newReq;
 			this->_newReq = new Request(connfd, this->_address);
 		}
-		// std::cout << "After Request constructor" << std::endl; // JMA: do we want to remove this?
 		this->_newReq->processReq();
 		this->_newReq->printRequest();
 		handlingServerToCopy = this->_newReq->identifyServer(servers);
@@ -104,12 +105,13 @@ void	Connection::handleResponse()
 {
 	if (this->_newReq->getMethod() == "")
 		return; // JMA: we return here but that means we will also not send or delete the response. Is that a problem?
-
 	try
 	{
 		if (this->_newResp == nullptr) // DM: shouldn't we replace this by a state?
 		{
 			this->_newResp = new Response(*this->_newReq);
+			if (this->_newReq->getState() == ERROR)
+				this->_newResp->setError(this->_newReq->getStatusCode());
 			this->_newResp->prepareTargetURI(*this->_handlingServer);
 
 			if (getIsActuallyDelete(this->_newReq))
@@ -178,4 +180,9 @@ Request *	Connection::getRequest(void)
 Response *	Connection::getResponse(void)
 {
 	return (this->_newResp);
+}
+
+int		Connection::getListenFd()
+{
+	return (this->_listenfd);
 }
