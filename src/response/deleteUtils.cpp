@@ -59,9 +59,9 @@ int	deleteFile(Request req, locIterator loc)
 	std::string	toRemove;
 	struct stat fileInfo;
 
-	std::cout << "\nATTEMPT TO DELETE RIGHT NOW!!!" << std::endl;
+	std::cout << "\nDELETE method requested" << std::endl;
 	toRemove = createRemovePath(req, loc);
-	std::cout << "DELETE path: " << toRemove << std::endl;
+	// std::cout << "DELETE path: " << toRemove << std::endl;
 	if (forbiddenToDeleteFileOrFolder(toRemove))
 		return (FORBIDDEN);
 	if (stat(toRemove.c_str(), &fileInfo) != 0)	// DM: this seems not to be working
@@ -69,7 +69,6 @@ int	deleteFile(Request req, locIterator loc)
 	if (fileInfo.st_mode & S_IFDIR || remove(toRemove.c_str()) != 0)
 		return (BAD_REQUEST);
 	std::cout << "DELETED!\n";
-	std::cout << req.getHeaders()["User-Agent"] << "\n" << std::endl;
 	if (req.getHeaders()["User-Agent"].find("curl") == 0)
 		return (DELETED);
 	return (OK);
