@@ -13,7 +13,8 @@ _statusCode (OK), \
 _address (address), \
 _contentLength (0), \
 _state (READHEADERS) {
-	std::cout << "***REQUEST CONSTRUCTOR CALLED, connfd is " << connfd << " ***" << std::endl;
+	std::cout << "***REQUEST CONSTRUCTOR CALLED, connfd is ";
+	std::cout << connfd << " ***" << std::endl;
 	makeLowercase(this->_address); // not sure this is necessary
 }
 
