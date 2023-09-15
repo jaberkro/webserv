@@ -1,11 +1,7 @@
 #!/usr/local/bin/python3
-<<<<<<< HEAD
 
 #!/usr/bin/python3
 
-=======
-# !/usr/bin/python3
->>>>>>> 97308604edda1f671eca24e78a1c01bfa3547ac0
 
 import cgi, sys, os #, urllib.parse
 import cgitb # for debugging messages
