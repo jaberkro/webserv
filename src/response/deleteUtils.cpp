@@ -13,7 +13,7 @@
  * @return true it is forbidden to delete this, based on location
  * @return false it is not forbidden to delete this, based on location
  */
-bool forbiddenToDeleteFileOrFolder(std::string toRemove)
+bool forbiddenToDeleteFileOrFolder(std::string toRemove) // JMA: should these ones be removed? data/www, data/images?
 {
 	if (toRemove.find("../") != std::string::npos || \
 		toRemove.find("./") == 0 || \
@@ -68,8 +68,8 @@ int	deleteFile(Request req, locIterator loc)
 		return (NOT_FOUND);
 	if (fileInfo.st_mode & S_IFDIR || remove(toRemove.c_str()) != 0)
 		return (BAD_REQUEST);
-	std::cout << "DELETE SUCCESSFUL!\n" << req.getHeaders()["User-Agent"];
-	std::cout << "\n" << std::endl;
+	std::cout << "DELETED!\n";
+	std::cout << req.getHeaders()["User-Agent"] << "\n" << std::endl;
 	if (req.getHeaders()["User-Agent"].find("curl") == 0)
 		return (DELETED);
 	return (OK);
