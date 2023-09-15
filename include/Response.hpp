@@ -103,5 +103,4 @@ bool		forbiddenToDeleteFileOrFolder(std::string toRemove);
 std::string	createAutoindex(void);
 bool		hasReadPermission(std::string filePath);
 
-
 #endif
