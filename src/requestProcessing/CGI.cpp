@@ -112,7 +112,7 @@ void	CGI::cgiWrite(Response & response)
 		ssize_t bytesSent;
 		ssize_t chunkSize = std::min(this->_req.getBody().length(), static_cast<size_t>(MAXLINE));
 		bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), chunkSize);
-		// std::cout << "BytesSent is " << bytesSent << std::endl;
+		std::cout << "BytesSent in cgiWrite is " << bytesSent << std::endl;
 		if (bytesSent < 0)
 			std::cout << "BytesSent error, send 500 internal error" << std::endl;
 		else
@@ -138,7 +138,7 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse)
 	// {
 		if ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) > 0)
 		{
-			// std::cout << "Read call for cgi, bytesRead = " << bytesRead << std::endl;
+			std::cout << "Read call for cgi, bytesRead = " << bytesRead << std::endl;
 			std::string	chunk(buf, bytesRead);
 			response.addToFullResponse(chunk);
 		}
