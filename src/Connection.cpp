@@ -47,9 +47,8 @@ Connection& Connection::operator=(const Connection &src)
 
 void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 {
-	if (this->_newReq->getState() == ERROR)
+	if (this->_newReq->getState() == REQ_ERROR)
 		return ;
-	Server	handlingServerToCopy;
 
 	try
 	{
@@ -59,19 +58,17 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 			this->_newReq = new Request(connfd, this->_address);
 		}
 		this->_newReq->processReq();
-		this->_newReq->printRequest();
-		handlingServerToCopy = this->_newReq->identifyServer(servers);
-		this->_handlingServer = new Server(handlingServerToCopy);
-		std::cout << "_Handler info: host: [";
-		std::cout << this->_handlingServer->getPort(0) << "], port: [";
-		std::cout << this->_handlingServer->getHost(0) << "]" << std::endl;
-		std::cout << "Responsible server is ";
-		std::cout << this->_handlingServer->getServerName(0) << std::endl;
+		this->_newReq->printRequest(); // DEBUG - TO BE DELETED
+		this->_handlingServer = new Server(this->_newReq->identifyServer(servers));
+		std::cout << "Responsible server is "; // DEBUG - TO BE DELETED
+		std::cout << this->_handlingServer->getServerName(0) << std::endl; // DEBUG - TO BE DELETED
 	}
 	catch(const std::exception& e)
 	{
-		std::cerr << "!!! (MAYBE STH NEEDS TO BE ADDED TO CONFIG FILE?) - ";
-		std::cerr << e.what() << '\n';
+		std::cerr << "!!! [handleRequest] this exception should not be happening: "; // DEBUG - TO BE DELETED
+		std::cerr << e.what() << '\n'; // DEBUG - TO BE DELETED
+		this->_newReq->setState(REQ_ERROR);
+		this->_newReq->setStatusCode(INTERNAL_SERVER_ERROR);
 	}
 }
 
@@ -104,39 +101,29 @@ static bool getIsActuallyDelete(Request *request)
 void	Connection::handleResponse()
 {
 	if (this->_newReq->getMethod() == "")
-		return; // JMA: we return here but that means we will also not send or delete the response. Is that a problem?
+		return;
 	try
 	{
 		if (this->_newResp == nullptr) // DM: shouldn't we replace this by a state?
 		{
 			this->_newResp = new Response(*this->_newReq);
-			if (this->_newReq->getState() == ERROR)
+			if (this->_newReq->getState() == REQ_ERROR)
 				this->_newResp->setError(this->_newReq->getStatusCode());
-			this->_newResp->prepareTargetURI(*this->_handlingServer);
-
+	// DM starting from here this should be only if state == PENDING (also, this needs to be split into separate functions)
+			this->_newResp->processTarget(*this->_handlingServer);
 			if (getIsActuallyDelete(this->_newReq))
 				this->_newReq->setMethod("DELETE");
 			if (!allowedInLocation(this->_newReq->getMethod(), this->_newResp->getLocation()))
 			{
-				std::cout << "Method not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl; // JMA: remove later?
+				this->_newResp->setStatusCode(METHOD_NOT_ALLOWED);
+				std::cout << "Method not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl; // JMA: remove later? // DEBUG - TO BE DELETED
+				// DM the below can be removed
 				if (this->_newResp->getRequest().getHeaders()["User-Agent"].find("curl") == 0)
 					this->_newResp->setFilePath("");
-				this->_newResp->setStatusCode(METHOD_NOT_ALLOWED);
-				//this should be something that overwrites all variables that matter for the response sending
 			}
 
-			else if (this->_newResp->getStatusCode() == OK) // DM: only do this if the status code is OK (200)
-			{
-				std::cerr << "method is " << this->_newReq->getMethod() << std::endl;
-				if (this->_newReq->getMethod() == "POST")
-					this->_newResp->performPOST();
-				else if (this->_newReq->getMethod() == "DELETE")
-					this->_newResp->performDELETE();
-				else if (this->_newReq->getMethod() == "GET")
-					this->_newResp->performGET();
-				else
-					this->_newResp->setStatusCode(NOT_IMPLEMENTED);
-			}
+			else if (this->_newResp->getStatusCode() == OK)
+				this->_newResp->performRequest();
 			// DM: does the below belong in the scope of the else{} statement?
 			//JMA: maybe returnCode, returnLink and returnMessage? seperate, because the message can also be empty
 			if (this->_newResp->getLocation()->getReturnCode()) // DM should we only do this for status codes < 500? // JMA: good question. Maybe also above 500 should be allowed, up to the creator of the config file to make a valid file? (we can also forbid it in the parsing)
@@ -147,7 +134,7 @@ void	Connection::handleResponse()
 			}
 		}
 		if (this->_newResp->getState() == WRITE_CGI || this->_newResp->getState() == READ_CGI)
-			this->_newResp->performPOST(); // what about when we have a GET request that uses CGI?
+			this->_newResp->executeCgiScript();
 		if (this->_newResp->getState() == PENDING)
 			this->_newResp->prepareResponse(*this->_handlingServer);
 		if (this->_newResp->getState() == SENDING)
@@ -155,10 +142,11 @@ void	Connection::handleResponse()
 		if (this->_newResp->getState() == DONE)
 		{
 			this->_newReq->setState(OVERWRITE);
-			std::cout << "changed state to OVERWRITE" << std::endl;
+			std::cout << "changed state to OVERWRITE" << std::endl; // DEBUG - TO BE DELETED
 			delete this->_newResp;
 			this->_newResp = nullptr;
 			delete this->_handlingServer;
+	// DM up until here
 		}
 	}
 	catch(const std::exception& e)

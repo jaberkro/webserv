@@ -5,19 +5,17 @@
 # include "responseCodes.hpp"
 # include "Location.hpp"
 # include "CGI.hpp"
-# include <string>
-// # include "Webserver.hpp"
 
 #define DEFAULT_ERROR_PAGE "/defaultError.html"
 
-enum {
+enum resp {
 	PENDING,
 	SENDING,
 	DONE,
 	WRITE_CGI,
 	READ_CGI,
-	INIT_CGI
-	// ERROR
+	INIT_CGI,
+	RES_ERROR
 };
 
 typedef std::vector<Location>::const_iterator locIterator;
@@ -36,13 +34,15 @@ class Response {
 		bool	cgiOnKqueue;
 		
 		/* functions */
-		void	prepareTargetURI(Server const & server);
+		void	processTarget(Server const & server);
+		void	performRequest(void);
 		void	performPOST(void);
 		void	performGET(void);
 		void	performDELETE(void);
 		void	prepareResponse(Server const & server);
 		void	sendResponse(void);
 		void	identifyErrorPage(Server const & server);
+		void	executeCgiScript(void);
 		
 		/* getters */
 		size_t				getFileLength(void) const;
@@ -65,8 +65,6 @@ class Response {
 		void				addToFullResponse(std::string chunk);
 		void				setError(int statusCode);
 
-		/* utils */
-		void	splitUri(std::string const & uri, std::vector<std::string> & chunks);
 		void	printResponse(void) const;	// for debugging purposes
 
 	private:
@@ -84,25 +82,32 @@ class Response {
 		std::string							_pathInfo;
 		CGI									_cgi;
 	
-		size_t		getFileSize(std::string filePath);
 		locIterator	findLocationMatch(std::string target, std::vector<Location> const & locations);
-		locIterator	findExactLocationMatch(std::string target, std::vector<Location> const & locations);
-		locIterator	findWildcardLocationMatch(std::string target, std::vector<Location> const & locations);
-		locIterator	findClosestLocationMatch(std::string target, std::vector<Location> const & locations);
+		
 		std::string	findIndexPage(locIterator itLoc);
+		void		prepareFilePath(std::string & targetUri);
 		void		extractPathInfo(std::string & targetUri);
+		std::string	getErrorPageUri(void);
 		void		prepareFirstLine(void);
 		void		prepareHeaders(std::string const & root);
+		std::string	prepareHeaderContentType(std::string const & root);
+		size_t		prepareHeaderContentLength(void);
+		void		prepareHeaderLocation(void);
 		void		prepareContent(std::ifstream &file);
-		void		executeCgiScript(void);
+		void		checkIfRedirectNecessary(void);
+
 };
 
-// std::string	deleteFile(Request request, locIterator const & location);
 // bool allowedToDelete(std::string toRemove, locIterator const & location);
 int			deleteFile(Request req, locIterator loc);
 std::string createRemovePath(Request req, locIterator loc);
 bool		forbiddenToDeleteFileOrFolder(std::string toRemove);
 std::string	createAutoindex(void);
 bool		hasReadPermission(std::string filePath);
+locIterator	findExactLocationMatch(std::string target, std::vector<Location> const & locations);
+locIterator	findWildcardLocationMatch(std::string target, std::vector<Location> const & locations);
+locIterator	findClosestLocationMatch(std::string target, std::vector<Location> const & locations);
+void		splitUri(std::string const & uri, std::vector<std::string> & chunks);
+size_t		getFileSize(std::string filePath);
 
 #endif

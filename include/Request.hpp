@@ -13,12 +13,12 @@
 # define MAXLINE 6000
 # define RESPONSELINE 5000 //test, was 5000
 
-enum {
+enum req {
 	READHEADERS,
 	READBODY,
 	WRITE,
 	OVERWRITE,
-	ERROR
+	REQ_ERROR
 };
 
 class Request 
@@ -84,11 +84,16 @@ class Request
 		
 		void	readFirstLineAndHeaders(void);
 		void	readBody(void);
+		void	parseLines(std::string & processingBuffer);
 		bool	parseStartLine(std::string &line);
 		void	parseFieldLine(std::string &line);
-		void	findHostMatch(std::vector<Server> const & servers, std::vector<int> & matches, int *zero);
-		int		findServerNameMatch(std::vector<Server> const & servers, std::vector<int>	& matches);
+		void	findHostMatch(std::vector<Server> const & servers, std::vector<size_t> & matches, int *zero);
+		size_t	findServerNameMatch(std::vector<Server> const & servers, std::vector<size_t>	& matches);
 		bool	isLocalhost(std::string const & address);
+		std::vector<size_t>::iterator	findExactServerNameMatch(std::vector<Server> const & servers, std::vector<size_t>	& matches);
+		std::vector<size_t>::iterator	findLeadingServerNameMatch(std::vector<Server> const & servers, std::vector<size_t> & matches, std::vector<std::string> & hostSplit);
+		std::vector<size_t>::iterator	findTrailingServerNameMatch(std::vector<Server> const & servers, std::vector<size_t> & matches, std::vector<std::string> & hostSplit);
+
 };
 
 void		removeTrailingSpaces(std::string &line);
@@ -98,6 +103,7 @@ void		extractStr(std::string &buffer, std::string &line, size_t pos);
 size_t		countOverlapLeading(std::vector<std::string> & hostSplit, std::vector<std::string> & nameSplit);
 size_t		countOverlapTrailing(std::vector<std::string> & hostSplit, std::vector<std::string> & nameSplit);
 void		makeLowercase(std::string & str);
-void		splitServerName(std::string const & name, std::vector<std::string> & chunks);
+std::vector<std::string>		splitServerName(std::string const & name);
+// void		splitServerName(std::string const & name, std::vector<std::string> & chunks);
 
 #endif

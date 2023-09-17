@@ -94,6 +94,6 @@ void	Response::setState(size_t state)
 
 void	Response::setError(int statusCode)
 {
-	this->_state = ERROR;
+	this->_state = RES_ERROR;
 	this->_statusCode = statusCode;
 }

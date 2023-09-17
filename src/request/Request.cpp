@@ -17,33 +17,21 @@ void	Request::processReq(void)
 
 void		Request::readFirstLineAndHeaders(void) 
 {
-	char	socketBuffer[MAXLINE];
-	std::memset(socketBuffer, 0, MAXLINE); // CHECK IF FAILED
-	std::string	processingBuffer, line;
+	char		socketBuffer[MAXLINE];
+	std::string	processingBuffer;
 	ssize_t		bytesRead = 0;
-	bool		firstLineComplete = false;
 
+	std::memset(socketBuffer, 0, MAXLINE); // CHECK IF FAILED
 	if (this->_state == READHEADERS && (bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0)
 	{
 		std::string	chunk(socketBuffer, bytesRead);
 		processingBuffer += chunk;
 		std::memset(socketBuffer, 0, MAXLINE);  // CHECK IF FAILED
-		while (this->_state == READHEADERS && processingBuffer.find('\n') < std::string::npos) // if a whole (first) line is in the buffer
-		{
-			extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
-			if (!firstLineComplete)
-				firstLineComplete = this->parseStartLine(line);
-			else
-			{
-				this->parseFieldLine(line);
-				if (processingBuffer.find("\r\n") == 0)
-					this->_state = this->_method == "POST" ? READBODY : WRITE;
-			}
-		}
+		this->parseLines(processingBuffer);
 	}
 	// BYTESREAD < 0? INTERNAL_SERVER_ERROR
 	if (bytesRead == 0)
-		this->_state = OVERWRITE;
+		this->_state = OVERWRITE; // DM Why?
 	if (this->_state == READBODY && this->_contentLength > 0)
 	{
 		this->_body = processingBuffer.substr(2);
@@ -52,15 +40,33 @@ void		Request::readFirstLineAndHeaders(void)
 	processingBuffer.clear();
 }
 
+void	Request::parseLines(std::string & processingBuffer)
+{
+	std::string	line;
+
+	while (this->_state == READHEADERS && processingBuffer.find('\n') < std::string::npos)
+	{
+		extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
+		if (this->_method.empty())
+			this->parseStartLine(line);
+		else
+		{
+			this->parseFieldLine(line);
+			if (processingBuffer.find("\r\n") == 0)
+				this->_state = this->_method == "POST" ? READBODY : WRITE;
+		}
+	}
+}
+
 void		Request::readBody() 
 {
 	char	socketBuffer[MAXLINE];
 	ssize_t	bytesRead = 0;
-	std::memset(socketBuffer, 0, MAXLINE);
 	
+	std::memset(socketBuffer, 0, MAXLINE);
 	if ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && this->_state != WRITE)
 	{
-		std::cout << "Read " << bytesRead << " bytes, total is now " << this->_bodyLength << std::endl;
+		std::cout << "Read " << bytesRead << " bytes, total is now " << this->_bodyLength << std::endl; // DEBUG - TO BE DELETED
 		std::string	chunk(socketBuffer, bytesRead);
 		// std::cout << "[***chunk IS] >" << chunk << "<" << std::endl;
 		this->_body.append(chunk);
@@ -73,17 +79,10 @@ void		Request::readBody()
 	{
 		// INTERNAL_SERVER_ERROR STATUSCODE
 		// STATE SEND_RESPONSE OID
-
-			// // std::string lastpart = _body.substr(_body.size() - 42);
-			// // std::cerr << "[processReq] (read "  << this->_bodyLength << "/" << this->_contentLength << "), leaving loop. Last part of body is: [" << lastpart << "]" << std::endl;
-			// if (this->_bodyLength == this->_contentLength || this->_body.find((this->_boundary + "--")) < std::string::npos)
-			// 	this->_state = WRITE;
-			// else
-			// 	this->_state = READBODY;
-			// std::cout << "State is now: " << this->_state << std::endl;
+		// DM: I don't think it is an error
 	}
 	else if (bytesRead == 0)
-		std::cerr << "[processReq] READ 0; total read body length is " << this->_bodyLength << ", contentlength is " << this->_contentLength << std::endl;
+		std::cerr << "[processReq] READ 0; total read body length is " << this->_bodyLength << ", contentlength is " << this->_contentLength << std::endl; // DEBUG - TO BE DELETED
 	// std::cout <<"***** WHOLE BODY IS ****" << this->_body << "****" << std::endl;
 }
 
@@ -135,10 +134,7 @@ void	Request::parseFieldLine(std::string &line)
 	else if (key == "Content-Length")
 		setContentLength(value);
 	else if (key == "Content-Type" && value.find("boundary=") < std::string::npos)
-	{
 		setBoundary(value.substr(value.find("boundary=") + 9));
-		std::cout << "[parsing Field] line is >" << line << "< and boundary is now >" << this->_boundary << std::endl;
-	}
 	try
 	{
 		this->_headers.at(key) += ", " + value;
@@ -159,8 +155,8 @@ void	Request::parseFieldLine(std::string &line)
  */
 Server const &	Request::identifyServer(std::vector<Server> const & servers)
 {
-	std::vector<int>	matches;
-	int					bestMatch = -1;
+	std::vector<size_t>	matches;
+	size_t				bestMatch = 0;
 	int					zero = -1;
 	
 	findHostMatch(servers, matches, &zero);
@@ -187,7 +183,7 @@ Server const &	Request::identifyServer(std::vector<Server> const & servers)
  * @param zero index of the server that listens on 0.0.0.0 (if any)
  */
 void	Request::findHostMatch(std::vector<Server> const & servers, \
-std::vector<int> & matches, int *zero)
+std::vector<size_t> & matches, int *zero)
 {
 	for (size_t idx = 0; idx < servers.size(); idx++)
 	{
@@ -213,57 +209,98 @@ std::vector<int> & matches, int *zero)
  * @param matches vector of integers with indexes of matching servers
  * @return int index of best matching server
  */
-int	Request::findServerNameMatch(std::vector<Server> const & servers, \
-std::vector<int>	& matches)
+size_t	Request::findServerNameMatch(std::vector<Server> const & servers, \
+std::vector<size_t>	& matches)
 {
-	int							longestLeading = -1;
-	size_t						overlapLeading = 0;
-	int							longestTrailing = -1;
-	size_t						overlapTrailing = 0;
-	std::vector<std::string>	hostSplit;
-	
+	std::vector<size_t>::iterator	it;
 	// std::cout << "[FINDSERVERMATCH] about to split " << this->_hostname << std::endl;
-	splitServerName(this->_hostname, hostSplit);
-	for (auto it = matches.begin(); it != matches.end(); it++)
+
+	it = findExactServerNameMatch(servers, matches);
+	if (it == matches.end())
+	{
+		std::vector<std::string>	hostSplit = splitServerName(this->_hostname);
+		it = findLeadingServerNameMatch(servers, matches, hostSplit);
+		if (it == matches.end())
+			it = findTrailingServerNameMatch(servers, matches, hostSplit);
+		if (it == matches.end())
+			return (*matches.begin());
+	}
+	return (*it);
+}
+
+
+std::vector<size_t>::iterator	Request::findExactServerNameMatch(std::vector<Server> \
+const & servers, std::vector<size_t>	& matches) 
+{
+	std::vector<size_t>::iterator	it;
+
+	for (it = matches.begin(); it != matches.end(); it++)
 	{
 		std::vector<std::string> const &	names = servers[*it].getServerNames();
 		for (auto itName = names.begin(); itName != names.end(); itName++)
 		{
 			if (this->_hostname == *itName)
-				return (*it);
-			
-			std::vector<std::string>	nameSplit;
-			splitServerName(*itName, nameSplit);
-			if ((*itName)[0] == '*' && (*itName)[1] == '.') // als server name only a "*" is --> segfault
+				return (it);
+		}
+	}
+	return (it);
+}
+
+std::vector<size_t>::iterator	Request::findLeadingServerNameMatch(std::vector<Server> \
+const & servers, std::vector<size_t> & matches, std::vector<std::string> & hostSplit) 
+{
+	size_t							maxOverlap = 0;
+	std::vector<size_t>::iterator	it;
+	std::vector<size_t>::iterator	longest = matches.end();
+
+	for (it = matches.begin(); it != matches.end(); it++)
+	{
+		std::vector<std::string> const &	names = servers[*it].getServerNames();
+		for (auto itName = names.begin(); itName != names.end(); itName++)
+		{
+			std::vector<std::string>	srvrNameSplit = splitServerName(*itName);
+			if ((*itName)[0] == '*' && itName->length() > 1 && (*itName)[1] == '.')
 			{
-				size_t	overlap = countOverlapLeading(hostSplit, nameSplit);
-				// std::cout << this->_hostname << " and " << *itName << " overlap: " << overlap << std::endl;
-				if (overlap > overlapLeading)
+				size_t	overlap = countOverlapLeading(hostSplit, srvrNameSplit);
+				if (overlap > maxOverlap)
 				{
-					overlapLeading = overlap;
-					longestLeading = *it;
-				}
-			}
-			else if ((*itName)[(*itName).length() - 1] == '*' && \
-			(*itName)[(*itName).length() - 2] == '.')
-			{
-				size_t	overlap = countOverlapTrailing(hostSplit, nameSplit);
-				// std::cout << this->_hostname << " and " << *itName << " overlap: " << overlap << std::endl;
-				if (overlap > overlapTrailing)
-				{
-					overlapTrailing = overlap;
-					longestTrailing = *it;
+					maxOverlap = overlap;
+					longest = it;
 				}
 			}
 		}
 	}
-	if (overlapLeading > 0)
-		return (longestLeading);
-	else if (overlapTrailing > 0)
-		return (longestTrailing);
-	else
-		return (*matches.begin());
+	return (longest);
 }
+
+std::vector<size_t>::iterator	Request::findTrailingServerNameMatch(std::vector<Server> \
+const & servers, std::vector<size_t> & matches, std::vector<std::string> & hostSplit) 
+{
+	size_t							maxOverlap = 0;
+	std::vector<size_t>::iterator	it;
+	std::vector<size_t>::iterator	longest = matches.end();
+
+	for (it = matches.begin(); it != matches.end(); it++)
+	{
+		std::vector<std::string> const &	names = servers[*it].getServerNames();
+		for (auto itName = names.begin(); itName != names.end(); itName++)
+		{
+			std::vector<std::string>	srvrNameSplit = splitServerName(*itName);
+			if ((*itName)[(*itName).length() - 1] == '*' && \
+			(*itName)[(*itName).length() - 2] == '.')
+			{
+				size_t	overlap = countOverlapTrailing(hostSplit, srvrNameSplit);
+				if (overlap > maxOverlap)
+				{
+					maxOverlap = overlap;
+					longest = it;
+				}
+			}
+		}
+	}
+	return (longest);
+}
+
 
 
 /**

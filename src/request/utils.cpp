@@ -130,10 +130,12 @@ void	makeLowercase(std::string & str)
  * @param name domain name to be split
  * @param chunks vector in which the elements are saved
  */
-void	splitServerName(std::string const & name, std::vector<std::string> & chunks)
+
+std::vector<std::string>	splitServerName(std::string const & name)
 {
 	size_t	begin = 0;
 	size_t	end;
+	std::vector<std::string>	chunks;
 
 	while (begin < name.length())
 	{
@@ -141,6 +143,7 @@ void	splitServerName(std::string const & name, std::vector<std::string> & chunks
 		chunks.push_back(name.substr(begin, end - begin));
 		begin = end;
 	}
+	return (chunks);
 }
 
 bool	hasReadPermission(std::string filePath)
