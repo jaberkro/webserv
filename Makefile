@@ -18,6 +18,8 @@ SRC = 	main.cpp \
 		response/ResponseGetters.cpp \
 		response/CGI.cpp \
 		response/deleteUtils.cpp \
+		response/locationUtils.cpp \
+		response/utils.cpp \
 		response/autoindex.cpp \
 		Socket.cpp \
 		Connection.cpp \

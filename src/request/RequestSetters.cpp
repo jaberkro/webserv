@@ -58,6 +58,6 @@ void Request::setBody(std::string newBody)
 
 void	Request::setError(int statusCode)
 {
-	this->_state = ERROR;
+	this->_state = REQ_ERROR;
 	this->_statusCode = statusCode;
 }

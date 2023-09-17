@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3
+#!/usr/bin/python3			# TO BE DELETED BEFORE SUBMISSION
 
-#!/usr/bin/python3
 
 
 import cgi, sys, os #, urllib.parse
@@ -11,7 +11,7 @@ cgitb.enable()
 exitCode = 0
 response = ""
 
-print("PYTHON SCRIPT STARTED", file=sys.stderr)
+print("PYTHON SCRIPT STARTED", file=sys.stderr) # DEBUG - TO BE DELETED
 
 # time.sleep(10)
 
@@ -34,10 +34,10 @@ if 'file' in form:
 else:
 	exitCode = 400
 
-print("[script] about to send the following response:  ", response, file=sys.stderr)
+print("[script] about to send the following response:  ", response, file=sys.stderr) # DEBUG - TO BE DELETED
 sys.stdout.buffer.write(response.encode())
 sys.stdin.close()
 sys.stdout.close()
 
-print("PYTHON SCRIPT FINISHED, exit code is ", exitCode, file=sys.stderr)
+print("PYTHON SCRIPT FINISHED, exit code is ", exitCode, file=sys.stderr) # DEBUG - TO BE DELETED
 sys.exit(exitCode)

@@ -1,5 +1,5 @@
 #!/usr/local/bin/python3
-# !/usr/bin/python3
+#!/usr/bin/python3			# TO BE DELETED BEFORE SUBMISSION
 
 import os, sys
 
@@ -9,7 +9,7 @@ response = ""
 responseBody = ""
 exitCode = 0
 
-print("Get script started", file=sys.stderr)
+print("Get script started", file=sys.stderr) # DEBUG - TO BE DELETED
 
 # checking whether the file exists
 if not os.path.isfile(fileName):
@@ -21,11 +21,12 @@ elif not os.access(fileName, os.R_OK):
 
 # if all is ok, send the selected file:
 else:
+	contentLength = os.path.getsize(fileName)
 	with open(fileName, 'rb') as image:
 		response = os.environ["SERVER_PROTOCOL"] + " 200 OK\r\n"
 		response += "Content-Type: {}\r\n".format("image/" + fileName[fileName.find('.') + 1:])
-		response += "Content-Length: {}\r\n\r\n".format(len(responseBody))
-		print("[script] response: ", response, file=sys.stderr)
+		response += "Content-Length: {}\r\n\r\n".format(contentLength)
+		print("[script] response: ", response, file=sys.stderr) # DEBUG - TO BE DELETED
 		sys.stdout.buffer.write(response.encode())
 		while 1:
 			responseBody = image.read(5000)
