@@ -217,7 +217,7 @@ void	Response::sendResponse(void)
 		else
 			this->_fullResponse.erase(0, bytesSent);
 		std::cout << "State is " << this->_state << ", bytesSent = ";// DEBUG - TO BE DELETED
-		std::cout << bytesSent << ", resp// DEBUG - TO BE DELETEDonse leftover size is ";// DEBUG - TO BE DELETED
+		std::cout << bytesSent << ", response leftover size is ";// DEBUG - TO BE DELETED
 		std::cout << this->_fullResponse.size() << ", chunkSize = ";// DEBUG - TO BE DELETED
 		std::cout << chunkSize << std::endl;// DEBUG - TO BE DELETED
 		if (/* this->_fullResponse.size() == 0 ||  */bytesSent == 0)
