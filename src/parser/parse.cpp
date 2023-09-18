@@ -81,17 +81,10 @@ void parse(std::vector<Server> &servers, char *configFile)
 		}
 		else if (line == "server {" || line.find("location") == 0 || \
 		hasDirective(line) != -1)
-		{
-			std::cerr << "Error: [" << line << "]: should be inside ";
-			std::cerr << "http block: \nhttp {\n\n}" << std::endl;
-			exit(EXIT_FAILURE);
-		}
+			notImplementedError(line, "outer layer of configuration file", \
+				"http block: \nhttp {\n\n}");
 		else
 			notRecognizedError(line, "configuration file");
 	}
-	if (servers.size() == 0)
-	{
-		std::cerr << "Error: http block missing: \nhttp {\n\n}" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+	checkMissingHTTP(servers);
 }
