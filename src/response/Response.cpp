@@ -188,7 +188,7 @@ void	Response::sendResponse(void)
 	ssize_t chunkSize = std::min(this->_fullResponse.length(), \
 		static_cast<size_t>(MAXLINE)); // JMA: can min fail?
 	// std::cout << "Chunksize is " << _fullResponse.length() << " or " << static_cast<size_t>(MAXLINE) << std::endl;
-	std::cerr << "[sendResponse] response is " << this->_fullResponse << ", message is " << this->_message << std::endl;
+	// std::cerr << "[sendResponse] response is " << this->_fullResponse << ", message is " << this->_message << std::endl;
 	if (this->_state == SENDING)
 	{
 		// std::cerr << "[sendResponse] SENDING to fd " << this->_req.getConnFD();// DEBUG - TO BE DELETED

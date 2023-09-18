@@ -52,7 +52,7 @@ void	Webserver::addTimerFilter(int fd)
 	if (kevent(_kq, &_evList, 1, NULL, 0, NULL) == -1)
 		throw Webserver::KeventError();
 	_connections[fd].setTimer(true);
-	std::cout << "Timer set for fd " << fd << std::endl;
+	// std::cout << "Timer set for fd " << fd << std::endl;
 }
 
 void	Webserver::addWriteFilter(int evFd)
