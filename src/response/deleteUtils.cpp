@@ -62,7 +62,7 @@ int	deleteFile(Request req, locIterator loc)
 	// std::cout << "DELETE path: " << toRemove << std::endl;
 	if (forbiddenToDeleteFileOrFolder(toRemove))
 		return (FORBIDDEN);
-	if (stat(toRemove.c_str(), &fileInfo) != 0)	// DM: this seems not to be working
+	if (stat(toRemove.c_str(), &fileInfo) != 0)
 		return (NOT_FOUND);
 	if (fileInfo.st_mode & S_IFDIR || remove(toRemove.c_str()) != 0)
 		return (BAD_REQUEST);
