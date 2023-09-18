@@ -38,8 +38,8 @@ void portError(std::string notPort)
 
 void hostError(std::string notHost)
 {
-	std::cerr << "Error: can't parse listen directive: invalid host: [" << \
-		notHost << "]: invalid IP address" << std::endl;
+	std::cerr << "Error: can't parse listen directive: invalid host: [";
+	std::cerr << notHost << "]: invalid IP address" << std::endl;
 	exit(EXIT_FAILURE);
 }
 
