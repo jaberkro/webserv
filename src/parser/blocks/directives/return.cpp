@@ -1,13 +1,6 @@
 #include "parse.hpp"
 #include <string>
 
-/**
- * @brief checks if argument is one quote startign and ending with '"'
- * 
- * @param text the text to check
- * @return true if the text is one quote
- * @return false if the text is not one quote
- */
 static bool quotedArgument(std::string text)
 {
 	if (text.size() < 2 || text.at(0) != '"' || text.back() != '"')
@@ -22,13 +15,6 @@ static bool quotedArgument(std::string text)
 	return (true);
 }
 
-/**
- * @brief parse a return directive and store it in values
- * 
- * @param line the line to parse
- * @param values the values to be updated
- * @return t_values the updated values
- */
 t_values	parseReturn(std::string line, t_values values)
 {
 	std::string	reason = "needs at least one argument: return <code> [text];";

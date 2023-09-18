@@ -21,14 +21,6 @@ static unsigned int convertBodySize(std::string line, std::string directive)
 	return (bodySize);
 }
 
-/**
- * @brief parse a client_max_body_size directive
- * 
- * @param line the line to parse
- * @param values the struct to update
- * @return t_values the updated struct containing the parsed 
- * client_max_body_size.
- */
 t_values		parseMaxBodySize(std::string line, t_values values)
 {
 	std::string reason = "needs one argument: client_max_body_size <size>;";
