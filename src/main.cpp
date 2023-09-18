@@ -25,7 +25,7 @@ int	main(int argc, char **argv)
 		parse(servers, argv[1]);
 	try
 	{
-		printServers(servers); // turn on to see parsed configuration settings
+		// printServers(servers); // turn on to see parsed configuration settings
 	} 
 	catch (const std::exception& e)
 	{

@@ -59,7 +59,7 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers, int data
 			this->_newReq = new Request(connfd, this->_address);
 		}
 		this->_newReq->processReq(dataSize);
-		this->_newReq->printRequest(); // DEBUG - TO BE DELETED
+		// this->_newReq->printRequest(); // DEBUG - TO BE DELETED
 		this->_handlingServer = new Server(this->_newReq->identifyServer(servers));
 		std::cout << "Server: "; // DEBUG - TO BE DELETED
 		std::cout << this->_handlingServer->getServerName(0) << std::endl; // DEBUG - TO BE DELETED
@@ -102,7 +102,7 @@ void Connection::checkIfGetIsActuallyDelete(Request &request)
 	}
 }
 
-void	Connection::handleResponse()
+void	Connection::handleResponse()//int evFd)
 {
 	if (this->_newReq->getMethod() == "")
 		return;
@@ -142,6 +142,7 @@ void	Connection::handleResponse()
 		if (this->_newResp->getState() == DONE)
 		{
 			this->_newReq->setState(OVERWRITE);
+			// close(evFd);//BS to test if Siege is faster now
 			delete this->_newResp;
 			this->_newResp = nullptr;
 			delete this->_handlingServer;

@@ -8,19 +8,14 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fcntl.h>
-#include <ctime> //for std::time
+#include <ctime> 	//for std::time
 #include <signal.h> //for killing child
 
 CGI::CGI(Request & req) : _req(req), id(-1) {}
 
 CGI::~CGI()
 {
-		// size_t	i = 0;
-		// while (this->_env[i])
-		// 	delete this->_env[i++];
-		// delete[] this->_env;
-		// delete this->_arg[0];
-		// delete[] this->_arg;
+
 }
 
 CGI &	CGI::operator=(CGI &r)
@@ -59,9 +54,8 @@ bool	CGI::checkIfCgiPipe()
 void	CGI::prepareArg(std::string const & scriptName)
 {
 	this->_arg = new char*[2];
-	this->_arg[0] = strdup(scriptName.c_str()); // DM: this was hardcoded "cgi-bin/uploadFile.py"
+	this->_arg[0] = strdup(scriptName.c_str());
 	this->_arg[1] = NULL;
-
 	std::cout << "* ARGUMENTS *" << std::endl;
 	size_t	i = 0;
 	while (this->_arg[i])
@@ -85,9 +79,9 @@ void	CGI::prepareEnv(std::string const & scriptName, Response & response)
 	this->_env[i++] = strdup(("CONTENT_TYPE=" + reqHeaders["Content-Type"]).c_str());
 	this->_env[i++] = strdup("GATEWAY_INTERFACE=CGI/1.1");
 	this->_env[i++] = strdup(("REMOTE_HOST=" + reqHeaders["Host"]).c_str());
-	this->_env[i++] = strdup(("SCRIPT_FILENAME=" + scriptName).c_str());	// DM: this was "SCRIPT_FILENAME=cgi-bin/uploadFile.py"
-	this->_env[i++] = strdup(("SCRIPT_NAME=" + scriptName).c_str());	// DM: this was "SCRIPT_NAME=uploadFile.py"
-	this->_env[i++] = strdup(("REQUEST_METHOD=" + this->_req.getMethod()).c_str());	// DM: this was "REQUEST_METHOD=POST"
+	this->_env[i++] = strdup(("SCRIPT_FILENAME=" + scriptName).c_str());
+	this->_env[i++] = strdup(("SCRIPT_NAME=" + scriptName).c_str());
+	this->_env[i++] = strdup(("REQUEST_METHOD=" + this->_req.getMethod()).c_str());
 	this->_env[i++] = strdup(("UPLOAD_DIR=" + response.getLocation()->getUploadDir()).c_str());
 	//Should check and adjust the env following
 	this->_env[i++] = strdup("HTTP_COOKIE=");
@@ -109,9 +103,7 @@ void	CGI::prepareEnv(std::string const & scriptName, Response & response)
 int		CGI::checkTimeoutChild()
 {
 	auto	currentTime = std::chrono::system_clock::now();
-	// std::cerr << "CHECKING TIMEOUT FOR CHILD" << std::endl;
 	std::chrono::duration<double> elapsedSeconds = currentTime - _startTimeChild;
-	// std::cerr << "elapsed Sec: " << elapsedSeconds.count() << std::endl;
 	if (elapsedSeconds.count() > 5.0)
 		return (-1);
 	return (0);
@@ -123,7 +115,7 @@ void	CGI::cgiWrite(Response & response)
 	ssize_t chunkSize = std::min(this->_req.getBody().length(), static_cast<size_t>(MAXLINE));
 	if (checkTimeoutChild() < 0)
 	{
-		std::cerr << "TIMEOUT FOR CHILD PROCESS" << std::endl;//Hier setten dat er 408 Timeout is en child killen!
+		std::cerr << "Timeout for CGI script" << std::endl;
 		kill(id, SIGKILL);
 		response.setStatusCode(REQUEST_TIMEOUT);
 		response.setFilePath("");
