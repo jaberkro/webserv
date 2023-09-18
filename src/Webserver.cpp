@@ -122,7 +122,7 @@ void	Webserver::readEvent(std::vector<Server> servers)
 	}
 	else
 	{
-		std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
+		// std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
 		_connections[(int)evFd].handleRequest(evFd, servers);
 		if (_connections[(int)evFd].getRequest()->getState() == WRITE)
 			addWriteFilter(evFd);
@@ -132,14 +132,14 @@ void	Webserver::readEvent(std::vector<Server> servers)
 void	Webserver::writeEvent()
 {
 	int evFd = checkIfCgiFd((int)_evList.ident);
-	std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~WRITE EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
-	std::cout << " Connection id is [" << (int)_evList.ident << "]" << std::endl;
+	// std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~WRITE EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
+	// std::cout << "Connection id is [" << (int)_evList.ident << "]" << std::endl;
 	_connections[evFd].handleResponse();
 	if (_connections[evFd].getResponse() == nullptr)//In case the Response is sent and finished, the write filter can be deleted
 		deleteWriteFilter(evFd);
 	else if(_connections[evFd].getResponse()->getState() == INIT_CGI && _connections[evFd].getResponse()->cgiOnKqueue == false)
 	{
-		std::cout << "\n\n~~~~~~~~~~~~~~~~~~WRITE event filter added for cgi pipes ~~~~~~~~~~~~~~~~" << std::endl;
+		// std::cout << "\n\n~~~~~~~~~~~~~~~~~~WRITE event filter added for cgi pipes ~~~~~~~~~~~~~~~~" << std::endl;
 		addWriteFilter(_connections[evFd].getResponse()->getCgi().getScriptToWebserv()[0]);
 		addWriteFilter(_connections[evFd].getResponse()->getCgi().getWebservToScript()[1]);
 		_connections[evFd].getResponse()->cgiOnKqueue = true;
@@ -221,7 +221,7 @@ Webserver::Webserver(std::vector<Server> servers)
 	{
 		for (size_t j = 0; j < servers.at(i).getListens().size(); j++)
 		{
-			Socket sock(servers.at(i).getListens().at(j).first, servers.at(i).getListens().at(j).second, _kq, evSet); // JMA: Can be written slightly shorter: Socket sock(servers.at(i).getHost(j), servers.at(i).getPort(j), kq, evSet);
+			Socket sock(servers.at(i).getHost(j), servers.at(i).getPort(j), _kq, evSet);
 			_sckts.push_back(sock);
 		}
 	}
