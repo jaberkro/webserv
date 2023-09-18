@@ -21,7 +21,7 @@ class Connection
 		bool			_timer;
 		//std::string	_serverNames; BS: Deze nodig?
 	public:
-		void			handleRequest(int connfd, std::vector<Server> servers);//, Server *& handlingServer, Request *& newReq);
+		void			handleRequest(int connfd, std::vector<Server> servers, int dataSize);//, Server *& handlingServer, Request *& newReq);
 		void			handleResponse();//Request *& newReq, Response *& newResp, Server *& handlingServer);//int connfd, std::vector<Server> servers)
 		void			setRequest(Request *request);
 		Request *		getRequest(void);
