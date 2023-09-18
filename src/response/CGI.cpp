@@ -109,9 +109,9 @@ void	CGI::prepareEnv(std::string const & scriptName, Response & response)
 int		CGI::checkTimeoutChild()
 {
 	auto	currentTime = std::chrono::system_clock::now();
-	std::cerr << "CHECKING TIMEOUT FOR CHILD" << std::endl;
+	// std::cerr << "CHECKING TIMEOUT FOR CHILD" << std::endl;
 	std::chrono::duration<double> elapsedSeconds = currentTime - _startTimeChild;
-	std::cerr << "elapsed Sec: " << elapsedSeconds.count() << std::endl;
+	// std::cerr << "elapsed Sec: " << elapsedSeconds.count() << std::endl;
 	if (elapsedSeconds.count() > 5.0)
 		return (-1);
 	return (0);
@@ -199,15 +199,16 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse)
 		delete this->_arg[0];
 		delete[] this->_arg;
 	}
-	if (bytesRead < 0)
-	{
-		close(this->_scriptToWebserv[R]);
-		kill(id, SIGKILL);
-		response.setStatusCode(INTERNAL_SERVER_ERROR);
-		response.setState(RES_ERROR);
-		response.setFilePath("");
-		fullResponse.clear();
-	}
+	// if (bytesRead < 0) // this breaks the code. BS solves this
+	// {
+	// 	std::cerr << "oepsie" << std::endl;
+	// 	close(this->_scriptToWebserv[R]);
+	// 	kill(id, SIGKILL);
+	// 	response.setStatusCode(INTERNAL_SERVER_ERROR);
+	// 	response.setState(RES_ERROR);
+	// 	response.setFilePath("");
+	// 	fullResponse.clear();
+	// }
 }
 
 void	CGI::run(Response & response)
@@ -256,7 +257,7 @@ void	CGI::run(Response & response)
 				std::cerr << strerror(errno) << std::endl;
 				std::cerr << "FAIL: script: [" << this->_arg[0] << "]" << std::endl;
 				std::cerr << response.getRequest().getProtocolVersion() << " 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
-				std::cout << response.getRequest().getProtocolVersion() << " 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
+				std::cerr << response.getRequest().getProtocolVersion() << " 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
 				std::cerr << "just wrote in the pipe ? " << std::endl;
 				exit(INTERNAL_SERVER_ERROR);
 			}
