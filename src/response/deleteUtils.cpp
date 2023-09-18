@@ -53,7 +53,6 @@ int	deleteFile(Request req, locIterator loc)
 		return (NOT_FOUND);
 	if (fileInfo.st_mode & S_IFDIR || remove(toRemove.c_str()) != 0)
 		return (BAD_REQUEST);
-	std::cout << "DELETED!\n";
 	if (req.getHeaders()["User-Agent"].find("curl") == 0)
 		return (DELETED);
 	return (OK);
