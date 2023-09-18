@@ -74,6 +74,7 @@ void		checkMissingHTTP(std::vector<Server> & servers);
 void		notImplementedError(std::string line, std::string here, std::string block);
 void		notClosedError(std::string);
 void 		notRecognizedError(std::string line, std::string here);
+void		noLocationError(void);
 void		noServerError(void);
 void		methodError(std::string line, std::string directive, std::string allowed);
 void		portError(std::string notPort);

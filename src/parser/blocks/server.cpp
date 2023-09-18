@@ -5,12 +5,7 @@
 static void storeValuesInServer(Server &newServer, t_values values) // only error pages and missing listen
 {
 	if (newServer.getLocations().size() == 0)
-	{
-		std::cerr << "Error: can't parse server block without location block ";
-		std::cerr << "inside of it: \nserver {\n\tlocation <optional";
-		std::cerr << " modifier> <match>{\n\n\t}\n}" << std::endl;
-		exit(EXIT_FAILURE);
-	}
+		noLocationError();
 	if (newServer.getListens().size() == 0)
 		newServer.addListen(std::make_pair("0.0.0.0", 80));
 	if (!values.errorPages.empty())
