@@ -9,6 +9,8 @@ t_values	fillDefaultErrorPages(t_values values)
 	values.errorPages[405] = "/4xx.html";
 	values.errorPages[408] = "/408.html";
 	values.errorPages[413] = "/4xx.html";
+	values.errorPages[500] = "/500.html";
+	values.errorPages[501] = "/501.html";
 	return (values);
 }
 
