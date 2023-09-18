@@ -20,7 +20,7 @@ enum resp {
 
 typedef std::vector<Location>::const_iterator locIterator;
 
-class CGI;
+class CGI; // why?
 
 class Response {
 
@@ -95,14 +95,13 @@ class Response {
 		void		prepareHeaderLocation(void);
 		void		prepareContent(std::ifstream &file);
 		void		checkIfRedirectNecessary(void);
-
 };
 
 // bool allowedToDelete(std::string toRemove, locIterator const & location);
 int			deleteFile(Request req, locIterator loc);
 std::string createRemovePath(Request req, locIterator loc);
 bool		forbiddenToDeleteFileOrFolder(std::string toRemove);
-std::string	createAutoindex(void);
+std::string	createAutoindex(Response &response);
 bool		hasReadPermission(std::string filePath);
 locIterator	findExactLocationMatch(std::string target, std::vector<Location> const & locations);
 locIterator	findWildcardLocationMatch(std::string target, std::vector<Location> const & locations);

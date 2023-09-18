@@ -27,7 +27,7 @@ std::string Socket::getAddress() const
 
 void	Socket::setAddressHostPort(std::string address)
 {
-	std::memset(&_servAddr, '\0', sizeof(_servAddr)); // CHECK IF FAILS, INTERNAL_SERVER_ERROR
+	std::memset(&_servAddr, '\0', sizeof(_servAddr));
 	_servAddr.sin_family		= AF_INET;
 	_servAddr.sin_port		= htons(_port);
 	printf("port: [%d] address: [%s]\n", this->_port, address.c_str());
@@ -36,7 +36,7 @@ void	Socket::setAddressHostPort(std::string address)
 	// Als onderstaande niet nodg is, dan ook std::string address niet meer doorsturen naar deze func!
 	/////begin/////
 	struct addrinfo hints, *res;
-	std::memset(&hints, 0, sizeof(hints)); // CHECK IF FAILS, INTERNAL_SERVER_ERROR
+	std::memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	if (getaddrinfo(address.c_str(), nullptr, &hints, &res) != 0)
@@ -51,7 +51,6 @@ void	Socket::setAddressHostPort(std::string address)
 	else
 		throw Socket::AddressConversionError();  // INTERNAL_SERVER_ERROR
 	////////end////////
-
 }
 
 /**

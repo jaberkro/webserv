@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string>
 
-// static bool allowedDir(std::string line) // IS THIS TOO HARDCODED? // PROBABLY, SO OUTCOMMENTED
+// static bool allowedDir(std::string line) // IS THIS TOO HARDCODED? // PROBABLY, SO OUTCOMMENTED --> DELETE
 // {
 // 	if (line == "/www" || line == "/images")
 // 		return (false);

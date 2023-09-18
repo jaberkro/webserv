@@ -1,10 +1,13 @@
+#include "Response.hpp"
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <dirent.h>
 #include <sys/stat.h>
 
-static std::string createAutoindexEnd(void)
+static std::string createAutoindexMiddle(std::string oldPath, Response &response);
+
+static std::string createAutoindexEnd(Response &response)
 {
 	std::fstream	endFile;
 	std::string		line;
@@ -13,12 +16,11 @@ static std::string createAutoindexEnd(void)
 	endFile.open("data/www/.autoindexEnd.html", std::fstream::in);
 	if (!endFile.is_open())
 	{
-		std::cout << "OPENING ENDFILE FAILED!" << std::endl;
+		response.setStatusCode(NOT_FOUND);
 		return ("");
 	}
 	else
 	{
-		std::cout << "OPENING ENDFILE WORKED!" << std::endl;
 		while (std::getline(endFile, line))
 		{
 			endMessage.append(line);
@@ -29,56 +31,59 @@ static std::string createAutoindexEnd(void)
 	return (endMessage);
 }
 
-static std::string createAutoindexMiddle(std::string oldPath)
+static void	createNewPath(std::string oldPath, struct dirent entry, \
+	struct stat pathInfo, Response &response, std::string &fileRefs)
+{
+	std::string		newPath;
+	std::string		newPathURI;
+
+	newPath = oldPath + "/" + entry.d_name;
+	if (stat(newPath.c_str(), &pathInfo) != 0)
+	{
+		response.setStatusCode(NOT_FOUND);
+		return ;
+	}
+	else if (S_ISDIR(pathInfo.st_mode))
+		fileRefs.append(createAutoindexMiddle(newPath, response));
+	else
+	{
+		newPath = newPath.substr(5);
+		if (newPath.find("www/") == 0)
+			newPathURI = newPath.substr(4);
+		else
+			newPathURI = newPath;
+		fileRefs.append("\t\t\t<a href=" + newPathURI + ">" + newPath + \
+			"</a><br>\n");
+	}
+}
+
+static std::string createAutoindexMiddle(std::string oldPath, Response &response)
 {
 	std::string		fileRefs = "";
 	DIR				*directory;
 	struct dirent	*entry;
-	std::string		newPath;
-	std::string		newPathURI;
 	struct stat		pathInfo;
 
 	directory = opendir(oldPath.c_str());
 	if (directory == NULL)
 	{
-		std::cerr << "OPENDIR FAILED" << std::endl;
+		response.setStatusCode(NOT_FOUND);
 		return (fileRefs);
 	}
 	entry = readdir(directory);
 	while (entry != NULL)
 	{
 		if (entry->d_name[0] != '.')
-		{
-			newPath = oldPath + "/" + entry->d_name;
-			if (stat(newPath.c_str(), &pathInfo) != 0)
-			{
-				std::cerr << "STAT FAILED" << std::endl;
-				return ("");
-			}
-			else if (S_ISDIR(pathInfo.st_mode))
-			{
-				fileRefs.append(createAutoindexMiddle(newPath));
-			}
-			else
-			{
-				newPath = newPath.substr(5);
-				if (newPath.find("www/") == 0)
-					newPathURI = newPath.substr(4);
-				// else if (newPath.find("uploads/") == 0)
-				// 	newPathURI = newPath.substr(8);
-				else
-					newPathURI = newPath;
-				fileRefs.append("\t\t\t<a href=" + newPathURI + ">" + newPath + "</a><br>\n");
-			}
-
-		}
+			createNewPath(oldPath, *entry, pathInfo, response, fileRefs);
+		if (response.getStatusCode() == NOT_FOUND)
+			return "";
 		entry = readdir(directory);
 	}
 	closedir(directory);
 	return (fileRefs);
 }
 
-static std::string createAutoindexStart(void)
+static std::string createAutoindexStart(Response &response)
 {
 	std::fstream	startFile;
 	std::string		line;
@@ -87,12 +92,11 @@ static std::string createAutoindexStart(void)
 	startFile.open("data/www/.autoindexStart.html", std::fstream::in);
 	if (!startFile.is_open())
 	{
-		std::cout << "OPENING STARTFILE FAILED!" << std::endl;
+		response.setStatusCode(NOT_FOUND);
 		return ("");
 	}
 	else
 	{
-		std::cout << "OPENING STARTFILE WORKED!" << std::endl;
 		while (std::getline(startFile, line))
 		{
 			startMessage.append(line);
@@ -103,15 +107,13 @@ static std::string createAutoindexStart(void)
 	return (startMessage);
 }
 
-std::string createAutoindex(void)
+std::string createAutoindex(Response &response)
 {
 	std::string		message;
 	std::fstream	endFile;
 
-	message.append(createAutoindexStart());
-	message.append(createAutoindexMiddle("data"));
-	message.append(createAutoindexEnd());
-
-	std::cout << "AUTOINDEX CREATION:\n\n" << message << std::endl;
+	message.append(createAutoindexStart(response));
+	message.append(createAutoindexMiddle("data", response));
+	message.append(createAutoindexEnd(response));
 	return (message);
 }

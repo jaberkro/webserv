@@ -132,7 +132,7 @@ void	CGI::cgiWrite(Response & response)
 			return ;
 		}
 		bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), chunkSize);
-		std::cerr << "[writing to cgi] chunk size is " << chunkSize << ", BytesSent is " << bytesSent << std::endl;
+		// std::cerr << "[writing to cgi] chunk size is " << chunkSize << ", BytesSent is " << bytesSent << std::endl;
 		// if (bytesSent < 0)	// DM: THIS NEEDS TO BE REMOVED, BECAUSE SOMETIMES WE GET A -1 BETWEEN READING STUFF.
 		// {
 		// 	// response.setStatusCode(INTERNAL_SERVER_ERROR);
@@ -142,12 +142,12 @@ void	CGI::cgiWrite(Response & response)
 			this->_req.setBody(this->_req.getBody().erase(0, bytesSent));
 		if (this->_req.getBody().size() == 0 || bytesSent == 0)// || bytesSent == -1) // JMA: partly outcommented to prevent early quitting
 		{
-			std::cerr << "[writing to cgi] body size is " << this->_req.getBody().size() << ", BytesSent is " << bytesSent << std::endl;
+			// std::cerr << "[writing to cgi] body size is " << this->_req.getBody().size() << ", BytesSent is " << bytesSent << std::endl;
 			response.setState(READ_CGI);
 			close(this->_scriptToWebserv[W]);
 			close(this->_webservToScript[R]);
 			close(this->_webservToScript[W]);
-			std::cout << "Closing webservToScript[W]" << std::endl;
+			// std::cout << "Closing webservToScript[W]" << std::endl;
 			// waitpid(id, &(this->_childProcessExitStatus), 0);
 		}
 	// }
@@ -188,7 +188,7 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse)
 		}
 		else if ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) > 0)
 		{
-			std::cout << "Read call for cgi, bytesRead = " << bytesRead << std::endl;
+			// std::cout << "Read call for cgi, bytesRead = " << bytesRead << std::endl;
 			std::string	chunk(buf, bytesRead);
 			response.addToFullResponse(chunk);
 		}
@@ -197,7 +197,7 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse)
 			close(this->_scriptToWebserv[R]);
 			if (WIFEXITED(this->_childProcessExitStatus)) {
 				exitCode = WEXITSTATUS(this->_childProcessExitStatus);
-				std::cout << "Script exited with exit code " << exitCode << " (so " << exitCode + 256 << ")" << std::endl;
+				// std::cout << "Script exited with exit code " << exitCode << " (so " << exitCode + 256 << ")" << std::endl;
 				if (exitCode > 0)
 				{
 					response.setStatusCode(exitCode == 1 ? INTERNAL_SERVER_ERROR : exitCode + 256);

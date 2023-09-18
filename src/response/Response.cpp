@@ -35,7 +35,7 @@ std::map<int, std::string> 	Response::_responseCodes =
 void	Response::processTarget(Server const & server)
 {
 	// std::string	targetUri = this->_req.getTarget().substr(0, \
-	// 	this->_req.getTarget().find_first_of('?'));
+	// 	this->_req.getTarget().find_first_of('?')); // JMA: can this go?
 	std::string	targetUri = this->_req.getTarget();
 	while (!this->_isReady)
 	{
@@ -50,21 +50,21 @@ void	Response::processTarget(Server const & server)
 			std::cerr << "IOS exception caught (something went wrong with ";
 			std::cerr << "opening the file " << this->_filePath << "): "; // DEBUG - TO BE DELETED
 			std::cerr << f.what() << std::endl;
-			this->_statusCode = NOT_FOUND;
+			this->setStatusCode(NOT_FOUND);
 		}
 		catch(const std::range_error &re)
 		{
 			std::cerr << "Range exception caught: (no location match found ";
 			std::cerr << "for target " << this->_req.getTarget() << "): "; // DEBUG - TO BE DELETED
 			std::cerr << re.what() << std::endl;
-			this->_statusCode = INTERNAL_SERVER_ERROR;
+			this->setStatusCode(INTERNAL_SERVER_ERROR);
 		}
 	}
 }
 
 void	Response::prepareFilePath(std::string & targetUri)
 {
-	std::cerr << "preparing FilePath - targetUri is " << targetUri << std::endl; // DEBUG - TO BE DELETED
+	std::cerr << "TargetUri: " << targetUri << std::endl; // DEBUG - TO BE DELETED // JMA: maybe keep it
 	if (targetUri[targetUri.length() - 1] == '/')
 	{
 		if (this->_req.getMethod() == "GET" && \
@@ -73,9 +73,9 @@ void	Response::prepareFilePath(std::string & targetUri)
 		else 
 		{
 			if (this->_location->getAutoindex())
-				this->_message = createAutoindex();
+				this->_message = createAutoindex(*this);
 			else
-				this->_statusCode = NOT_FOUND;
+				this->setStatusCode(NOT_FOUND);
 			this->_isReady = true;
 		}
 	}
@@ -84,14 +84,14 @@ void	Response::prepareFilePath(std::string & targetUri)
 		this->extractPathInfo(targetUri);
 		this->_filePath = this->_location->getRoot() + targetUri;
 		if (!hasReadPermission(this->_filePath))
-			this->_statusCode = NOT_FOUND;
+			this->setStatusCode(NOT_FOUND);
 		this->_isReady = true;
 	}
 }
 
 void	Response::performRequest(void)
 {
-	std::cerr << "method is " << this->_req.getMethod() << std::endl;
+	std::cerr << "Method: " << this->_req.getMethod() << std::endl;
 	if (this->_req.getMethod() == "POST")
 		this->performPOST();
 	else if (this->_req.getMethod() == "DELETE")
@@ -114,21 +114,9 @@ void	Response::performGET(void)
 
 void	Response::performDELETE(void)	
 {
-	this->_statusCode = deleteFile(this->_req, this->_location);
-	if (this->_statusCode == DELETED)
-		this->_filePath.clear();
-
-	// DM If we add the deleteFailed.html as an error page in the config file, 
-	// (I've done that) we can delete the loop below. No need to distinguish 
-	// between curl and browser. The same applies to POST
-	if (this->_statusCode != OK && this->_statusCode != DELETED)
-	{
-		std::cerr << "DELETE FAILED" << std::endl;
-		if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
-			this->_filePath.clear();
-		else
-			this->_filePath = "data/www/deleteFailed.html"; // JMA: This is hardcoded! Remove? 
-	}
+	this->setStatusCode(deleteFile(this->_req, this->_location));
+	// if (this->_statusCode == DELETED) // JMA: needed? Guess not
+	// 	this->_filePath.clear();
 }
 
 void	Response::performPOST(void)
@@ -136,17 +124,11 @@ void	Response::performPOST(void)
 	size_t				bodyLength = this->_req.getBodyLength();
 	unsigned long long	maxBodySize = this->_location->getMaxBodySize();
 
-	if (getState() == PENDING)
+	if (this->getState() == PENDING)
 	{
 		if (bodyLength > maxBodySize && maxBodySize > 0)
 		{
-			std::cerr << "POST not allowed: Content Too Large" << std::endl;
-			this->_statusCode = CONTENT_TOO_LARGE;
-			// DM: same comment here as above
-			if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
-				this->_filePath.clear();
-			else
-				this->_filePath = "data/www/postFailed.html"; // JMA: This is hardcoded! Remove?
+			this->setStatusCode(CONTENT_TOO_LARGE);
 			return ;
 		}
 	}
@@ -155,7 +137,7 @@ void	Response::performPOST(void)
 
 void	Response::executeCgiScript(void)
 {
-	if (getState() == PENDING) // JMA: was PENDING before - DM: it's good as it is
+	if (this->getState() == PENDING)
 	{
 		CGI	cgi(this->_req);
 		this->_cgi = cgi;
@@ -167,9 +149,9 @@ void	Response::executeCgiScript(void)
 		_cgi.prepareArg(scriptName);
 		_cgi.run(*this);
 	}
-	if (getState() == READ_CGI)// && _cgi.checkIfCgiPipe())
+	if (this->getState() == READ_CGI)// && _cgi.checkIfCgiPipe())
 		_cgi.cgiRead(*this, this->_fullResponse);
-	else if (getState() == WRITE_CGI)// && _cgi.checkIfCgiPipe())
+	else if (this->getState() == WRITE_CGI)// && _cgi.checkIfCgiPipe())
 		_cgi.cgiWrite(*this);
 }
 
@@ -188,17 +170,17 @@ void	Response::prepareResponse(Server const & server)
 			this->_fileLength = getFileSize(this->_filePath);
 			file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
 			if (!file.is_open())
-				this->_statusCode = INTERNAL_SERVER_ERROR;
+				this->setStatusCode(INTERNAL_SERVER_ERROR);
 		}
-		prepareFirstLine();
-		prepareHeaders(this->_location->getRoot());
+		this->prepareFirstLine();
+		this->prepareHeaders(this->_location->getRoot());
 		if (this->_statusCode > 199 && this->_statusCode != DELETED && \
-		this->_statusCode != 304) // JMA: why specifically not 304? DM: because these status codes cannot have a body
-			prepareContent(file);
+		this->_statusCode != 304) // JMA & DM: put in bool allowedToHaveContent() function to make it more readable
+			this->prepareContent(file);
 		if (!this->_filePath.empty())
 			file.close();
 	}
-	this->_state = SENDING;
+	this->setState(SENDING);
 }
 
 void	Response::sendResponse(void)
@@ -209,22 +191,25 @@ void	Response::sendResponse(void)
 	// std::cout << "Chunksize is " << _fullResponse.length() << " or " << static_cast<size_t>(MAXLINE) << std::endl;
 	if (this->_state == SENDING)
 	{
-		std::cerr << "[sendResponse] SENDING to fd " << this->_req.getConnFD();// DEBUG - TO BE DELETED
-		std::cerr << ", status code is " << this->_statusCode << std::endl;// DEBUG - TO BE DELETED
+		// std::cerr << "[sendResponse] SENDING to fd " << this->_req.getConnFD();// DEBUG - TO BE DELETED
+		// std::cerr << ", status code is " << this->_statusCode << std::endl;// DEBUG - TO BE DELETED
 		bytesSent = send(this->_req.getConnFD(), this->_fullResponse.c_str(), \
 			chunkSize, 0);
 		if (bytesSent < 0)
-			std::cout << "BytesSent error, send internal error" << std::endl;// DEBUG - TO BE DELETED
-		else
-			this->_fullResponse.erase(0, bytesSent);
-		std::cout << "State is " << this->_state << ", bytesSent = ";// DEBUG - TO BE DELETED
-		std::cout << bytesSent << ", response leftover size is ";// DEBUG - TO BE DELETED
-		std::cout << this->_fullResponse.size() << ", chunkSize = ";// DEBUG - TO BE DELETED
-		std::cout << chunkSize << std::endl;// DEBUG - TO BE DELETED
-		if (/* this->_fullResponse.size() == 0 ||  */bytesSent == 0)
 		{
-			this->_state = DONE;
-			std::cout << "changed state to DONE" << std::endl; // DEBUG - TO BE DELETED
+			std::cout << "BytesSent error, send internal error" << std::endl;// DEBUG - TO BE DELETED
+			// this->_state = ERROR; // JMA: should it be like this?
+			// CLOSE CONNECTION
+			return ;
+		}
+		this->_fullResponse.erase(0, bytesSent);
+		// std::cout << "State is " << this->_state << ", bytesSent = ";// DEBUG - TO BE DELETED
+		// std::cout << bytesSent << ", response leftover size is ";// DEBUG - TO BE DELETED
+		// std::cout << this->_fullResponse.size() << ", chunkSize = ";// DEBUG - TO BE DELETED
+		// std::cout << chunkSize << std::endl;// DEBUG - TO BE DELETED
+		if (bytesSent == 0)
+		{
+			this->setState(DONE);
 		}
 	}
 	// BOUNCE CLIENT WHEN: INTERNAL_SERVER_ERROR
@@ -239,7 +224,7 @@ void	Response::checkIfRedirectNecessary()
 	(this->_req.getTarget().rfind("/images") < std::string::npos && \
 	this->_req.getTarget().rfind("/images") > 0))
 	{
-		this->_statusCode = TEMPORARY_REDIRECT;
+		this->setStatusCode(TEMPORARY_REDIRECT);
 		this->_filePath.clear();
 	}
 }
@@ -272,7 +257,7 @@ void	Response::identifyErrorPage(Server const & server)
 std::string	Response::getErrorPageUri(void)
 {
 	std::map<int, std::string> const & errorPages = \
-		this->_location->getErrorPages();
+	this->_location->getErrorPages();
 	try
 	{
 		return (errorPages.at(this->_statusCode));
@@ -305,7 +290,7 @@ locIterator Response::findLocationMatch(std::string target, \
 		itLoc = findClosestLocationMatch(target, locations);
 	if (itLoc == locations.end())
 	{
-		this->_statusCode = INTERNAL_SERVER_ERROR;
+		this->setStatusCode(INTERNAL_SERVER_ERROR);
 		throw(std::range_error("No location match")); // further handle
 	}
 	// std::cerr << "Found location " << itLoc->getMatch() << std::endl; // DEBUG - TO BE DELETED
@@ -334,7 +319,7 @@ std::string	Response::findIndexPage(locIterator itLoc)
 		if (access(filePath.c_str(), F_OK) == 0)
 			return (*itIdx);
 	}
-	this->_statusCode = NOT_FOUND;
+	this->setStatusCode(NOT_FOUND);
 	throw std::ios_base::failure("Index file not found");
 }
 
@@ -349,8 +334,8 @@ void	Response::extractPathInfo(std::string & targetUri)
 		beginPathInfo = targetUri.find(needle) + needle.length();
 		this->_pathInfo = targetUri.substr(beginPathInfo);
 		targetUri.erase(beginPathInfo);
-		std::cerr << "[pathInfo extraction] targetUri is " << targetUri; // DEBUG - TO BE DELETED
-		std::cerr << ", pathInfo is " << this->_pathInfo << std::endl; // DEBUG - TO BE DELETED
+		// std::cerr << "[pathInfo extraction] targetUri is " << targetUri; // DEBUG - TO BE DELETED
+		// std::cerr << ", pathInfo is " << this->_pathInfo << std::endl; // DEBUG - TO BE DELETED
 	}
 }
 
@@ -366,7 +351,7 @@ void	Response::prepareFirstLine(void)
 	std::string	responseMessage;
 	std::string	version = this->_req.getProtocolVersion();
 	
-	std::memset(responseBuffer, 0, RESPONSELINE + 1); // CHECK IF FAILED
+	std::memset(responseBuffer, 0, RESPONSELINE + 1);
 	if (this->_location->getReturnMessage().size() > 0)
 		responseMessage = this->_location->getReturnMessage();
 	else
@@ -399,7 +384,7 @@ void	Response::prepareHeaders(std::string const & root)
 	std::string	contentType = "text/html";
 	size_t		contentLength = this->prepareHeaderContentLength();
 
-	std::memset(responseBuffer, 0, RESPONSELINE); // CHECK IF FAILED
+	std::memset(responseBuffer, 0, RESPONSELINE);
 
 	if (!this->_filePath.empty())
 		contentType = this->prepareHeaderContentType(root);
@@ -409,9 +394,9 @@ void	Response::prepareHeaders(std::string const & root)
 	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
 
 	if (this->_location->getReturnLink().size() > 0 || \
-	(this->_statusCode >= MULTIPLE_CHOICES && this->_statusCode <= PERMANENT_REDIRECT))
+	(this->_statusCode >= MULTIPLE_CHOICES && \
+	this->_statusCode <= PERMANENT_REDIRECT))
 		this->prepareHeaderLocation();
-	
 	this->addToFullResponse("\r\n");
 }
 
@@ -449,7 +434,6 @@ void	Response::prepareHeaderLocation(void)
 		this->addToFullResponse("Location: " + location + "\r\n");
 }
 
-
 void	Response::prepareContent(std::ifstream	&file)
 {
 	std::string		body;
@@ -466,7 +450,6 @@ void	Response::prepareContent(std::ifstream	&file)
 		this->_fullResponse.append(body);
 	}
 }
-
 
 /* TO BE DELETED */
 void	Response::printResponse(void) const
