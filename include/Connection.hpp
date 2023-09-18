@@ -18,6 +18,7 @@ class Connection
 		int				_listenfd;
 		std::string		_address;
 		unsigned short	_port;
+		bool			_timer;
 		//std::string	_serverNames; BS: Deze nodig?
 	public:
 		void			handleRequest(int connfd, std::vector<Server> servers);//, Server *& handlingServer, Request *& newReq);
@@ -26,7 +27,8 @@ class Connection
 		Request *		getRequest(void);
 		Response *		getResponse(void);
 		int				getListenFd();
-
+		bool			getTimer();
+		void			setTimer(bool state);
 
 		Connection();
 		Connection(int listenfd, Socket sckt);

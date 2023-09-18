@@ -30,7 +30,7 @@ class Webserver
 		void						setSignal();
 		void						runWebserver(std::vector<Server> servers);
 		void						newConnection(int eventSocket, int ident);
-		void						eofEvent(int ident, int reason);
+		void						eofEvent(int ident);
 		void						readEvent(std::vector<Server> servers);
 		void						writeEvent();
 		void						addWriteFilter(int fd);
