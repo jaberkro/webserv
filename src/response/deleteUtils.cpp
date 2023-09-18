@@ -6,13 +6,6 @@
 #include <iostream>
 #include <sys/stat.h>
 
-/**
- * @brief predefined directories and files that are not accessible for delete
- * 
- * @param toRemove the file that the user wants to remove
- * @return true it is forbidden to delete this, based on location
- * @return false it is not forbidden to delete this, based on location
- */
 bool forbiddenToDeleteFileOrFolder(std::string toRemove)
 {
 	if (toRemove.find("../") != std::string::npos || \
@@ -47,17 +40,11 @@ std::string createRemovePath(Request req, locIterator loc)
 	return (toRemove);
 }
 
-/**
- * @brief execute the DELETE method on the target defined in the request.
- * Sets the _statusCode based on the result. OK or DELETED means that the
- * DELETE is executed succesfully.
- */
 int	deleteFile(Request req, locIterator loc)
 {
 	std::string	toRemove;
 	struct stat fileInfo;
 
-	std::cout << "\nDELETE method requested" << std::endl;
 	toRemove = createRemovePath(req, loc);
 	// std::cout << "DELETE path: " << toRemove << std::endl;
 	if (forbiddenToDeleteFileOrFolder(toRemove))
