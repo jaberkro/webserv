@@ -13,15 +13,13 @@
  * @return true it is forbidden to delete this, based on location
  * @return false it is not forbidden to delete this, based on location
  */
-bool forbiddenToDeleteFileOrFolder(std::string toRemove) // JMA: should these ones be removed? data/www, data/images?
+bool forbiddenToDeleteFileOrFolder(std::string toRemove)
 {
 	if (toRemove.find("../") != std::string::npos || \
 		toRemove.find("./") == 0 || \
 		toRemove.find(".github/") == 0 || \
 		toRemove.find("cgi-bin/") == 0 || \
 		toRemove.find("config/") == 0 || \
-		toRemove.find("data/www/") == 0 || \
-		toRemove.find("data/images/") == 0 || \
 		toRemove.find("error_tests/") == 0 || \
 		toRemove.find("src/") == 0 || \
 		toRemove.find("include/") == 0 || \

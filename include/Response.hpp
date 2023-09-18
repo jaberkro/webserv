@@ -20,7 +20,7 @@ enum resp {
 
 typedef std::vector<Location>::const_iterator locIterator;
 
-class CGI;
+class CGI; // why?
 
 class Response {
 

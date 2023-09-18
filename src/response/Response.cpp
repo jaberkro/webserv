@@ -120,13 +120,13 @@ void	Response::performDELETE(void)
 	// DM If we add the deleteFailed.html as an error page in the config file, 
 	// (I've done that) we can delete the loop below. No need to distinguish 
 	// between curl and browser. The same applies to POST
-	if (this->_statusCode != OK && this->_statusCode != DELETED)
+	if (this->_statusCode != OK && this->_statusCode != DELETED) 
 	{
-		std::cerr << "DELETE FAILED" << std::endl;
-		if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
+		std::cerr << "DELETE FAILED" << std::endl; // keep this + statusCode
+		if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)// JMA & DM: remove this
 			this->_filePath.clear();
 		else
-			this->_filePath = "data/www/deleteFailed.html"; // JMA: This is hardcoded! Remove? 
+			this->_filePath = "data/www/deleteFailed.html"; // JMA: This is hardcoded! Remove? DM: YES!
 	}
 }
 
@@ -142,10 +142,10 @@ void	Response::performPOST(void)
 			std::cerr << "POST not allowed: Content Too Large" << std::endl;
 			this->_statusCode = CONTENT_TOO_LARGE;
 			// DM: same comment here as above
-			if (this->_req.getHeaders()["User-Agent"].find("curl") == 0)
+			if (this->_req.getHeaders()["User-Agent"].find("curl") == 0) // also remove
 				this->_filePath.clear();
 			else
-				this->_filePath = "data/www/postFailed.html"; // JMA: This is hardcoded! Remove?
+				this->_filePath = "data/www/postFailed.html"; // JMA: This is hardcoded! Remove? YES
 			return ;
 		}
 	}
@@ -154,7 +154,7 @@ void	Response::performPOST(void)
 
 void	Response::executeCgiScript(void)
 {
-	if (getState() == PENDING) // JMA: was PENDING before - DM: it's good as it is
+	if (getState() == PENDING)
 	{
 		CGI	cgi(this->_req);
 		this->_cgi = cgi;
@@ -192,7 +192,7 @@ void	Response::prepareResponse(Server const & server)
 		prepareFirstLine();
 		prepareHeaders(this->_location->getRoot());
 		if (this->_statusCode > 199 && this->_statusCode != DELETED && \
-		this->_statusCode != 304) // JMA: why specifically not 304? DM: because these status codes cannot have a body
+		this->_statusCode != 304) // JMA & DM: put in bool allowedToHaveContent() function to make it more readable
 			prepareContent(file);
 		if (!this->_filePath.empty())
 			file.close();
@@ -213,9 +213,9 @@ void	Response::sendResponse(void)
 		bytesSent = send(this->_req.getConnFD(), this->_fullResponse.c_str(), \
 			chunkSize, 0);
 		if (bytesSent < 0)
-			std::cout << "BytesSent error, send internal error" << std::endl;// DEBUG - TO BE DELETED
+			std::cout << "BytesSent error, send internal error" << std::endl;// DEBUG - TO BE DELETED // CLOSE CONNECTION, STATE = ERROR, RETURN
 		else
-			this->_fullResponse.erase(0, bytesSent);
+			this->_fullResponse.erase(0, bytesSent); // move outside else statement
 		std::cout << "State is " << this->_state << ", bytesSent = ";// DEBUG - TO BE DELETED
 		std::cout << bytesSent << ", response leftover size is ";// DEBUG - TO BE DELETED
 		std::cout << this->_fullResponse.size() << ", chunkSize = ";// DEBUG - TO BE DELETED
@@ -234,9 +234,9 @@ void	Response::checkIfRedirectNecessary()
 	std::cerr << "[preparing response] match is " << this->_location->getMatch() << ", status code is " << this->_statusCode << std::endl; // DEBUG - TO BE DELETED
 
 	if ((this->_req.getTarget().find("styles.css") < std::string::npos && \
-	this->_req.getTarget().find("/") != this->_req.getTarget().rfind("/")) || \
-	(this->_req.getTarget().rfind("/images") < std::string::npos && \
-	this->_req.getTarget().rfind("/images") > 0))
+		this->_req.getTarget().find("/") != this->_req.getTarget().rfind("/")) || \
+		(this->_req.getTarget().rfind("/images") < std::string::npos && \
+		this->_req.getTarget().rfind("/images") > 0))
 	{
 		this->_statusCode = TEMPORARY_REDIRECT;
 		this->_filePath.clear();
@@ -296,7 +296,7 @@ locIterator Response::findLocationMatch(std::string target, \
 {
 	locIterator	itLoc;
 
-	std::cerr << "Finding a location for target " << target << ", len locations is " << locations.size() << std::endl; // DEBUG - TO BE DELETED
+	// std::cerr << "Finding a location for target " << target << ", len locations is " << locations.size() << std::endl; // DEBUG - TO BE DELETED
 	itLoc = findExactLocationMatch(target, locations);
 	if (itLoc == locations.end())
 		itLoc = findWildcardLocationMatch(target, locations);
@@ -307,7 +307,7 @@ locIterator Response::findLocationMatch(std::string target, \
 		this->_statusCode = INTERNAL_SERVER_ERROR;
 		throw(std::range_error("No location match")); // further handle
 	}
-	std::cerr << "Found location " << itLoc->getMatch() << std::endl; // DEBUG - TO BE DELETED
+	// std::cerr << "Found location " << itLoc->getMatch() << std::endl; // DEBUG - TO BE DELETED
 	return (itLoc);
 }
 
@@ -365,7 +365,7 @@ void	Response::prepareFirstLine(void)
 	std::string	responseMessage;
 	std::string	version = this->_req.getProtocolVersion();
 	
-	std::memset(responseBuffer, 0, RESPONSELINE + 1); // CHECK IF FAILED
+	std::memset(responseBuffer, 0, RESPONSELINE + 1);
 	if (this->_location->getReturnMessage().size() > 0)
 		responseMessage = this->_location->getReturnMessage();
 	else
@@ -398,7 +398,7 @@ void	Response::prepareHeaders(std::string const & root)
 	std::string	contentType = "text/html";
 	size_t		contentLength = this->prepareHeaderContentLength();
 
-	std::memset(responseBuffer, 0, RESPONSELINE); // CHECK IF FAILED
+	std::memset(responseBuffer, 0, RESPONSELINE);
 
 	if (!this->_filePath.empty())
 		contentType = this->prepareHeaderContentType(root);
@@ -408,8 +408,10 @@ void	Response::prepareHeaders(std::string const & root)
 	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
 
 	if (this->_location->getReturnLink().size() > 0 || \
-	(this->_statusCode >= MULTIPLE_CHOICES && this->_statusCode <= PERMANENT_REDIRECT))
+	(this->_statusCode >= MULTIPLE_CHOICES && \
+	this->_statusCode <= PERMANENT_REDIRECT))
 		this->prepareHeaderLocation();
+
 	
 	this->addToFullResponse("\r\n");
 }

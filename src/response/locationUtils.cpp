@@ -1,7 +1,6 @@
 #include "Response.hpp"
 #include <iostream>
 
-
 /**
  * @brief iterates over locations and identifies the location with the exact
  * match for the target URI, if available
@@ -75,8 +74,6 @@ locIterator	findClosestLocationMatch(std::string target, \
 
 	std::cerr << "Finding closest loc match" << std::endl;
 	splitUri(target, targetSplit);
-	// for (std::vector<std::string>::iterator i = targetSplit.begin(); \
-	// 	i != targetSplit.end(); i++) // JMA: what does this do? Can it go?
 	for (auto it = locations.begin(); it != locations.end(); it++)
 	{
 		if (it->getModifier() == "=")

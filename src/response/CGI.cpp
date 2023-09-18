@@ -106,30 +106,21 @@ void	CGI::prepareEnv(std::string const & scriptName, Response & response)
 
 void	CGI::cgiWrite(Response & response)
 {
-	// if (response.getState() == WRITE_CGI && checkIfCgiPipe())
-	// {
-		ssize_t bytesSent;
-		ssize_t chunkSize = std::min(this->_req.getBody().length(), static_cast<size_t>(MAXLINE));
-		bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), chunkSize);
-		std::cerr << "[writing to cgi] chunk size is " << chunkSize << ", BytesSent is " << bytesSent << std::endl;
-		// if (bytesSent < 0)	// DM: THIS NEEDS TO BE REMOVED, BECAUSE SOMETIMES WE GET A -1 BETWEEN READING STUFF.
-		// {
-		// 	// response.setStatusCode(INTERNAL_SERVER_ERROR);
-		// 	std::cout << "BytesSent error, send 500 internal error" << std::endl;
-		// }
-		if (bytesSent > 0) //JMA: this if statement is important!
-			this->_req.setBody(this->_req.getBody().erase(0, bytesSent));
-		if (this->_req.getBody().size() == 0 || bytesSent == 0)// || bytesSent == -1) // JMA: partly outcommented to prevent early quitting
-		{
-			std::cerr << "[writing to cgi] body size is " << this->_req.getBody().size() << ", BytesSent is " << bytesSent << std::endl;
-			response.setState(READ_CGI);
-			close(this->_scriptToWebserv[W]);
-			close(this->_webservToScript[R]);
-			close(this->_webservToScript[W]);
-			std::cout << "Closing webservToScript[W]" << std::endl;
-			// waitpid(id, &(this->_childProcessExitStatus), 0);
-		}
-	// }
+	ssize_t bytesSent;
+	ssize_t chunkSize = std::min(this->_req.getBody().length(), static_cast<size_t>(MAXLINE));
+	bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), chunkSize);
+	std::cerr << "[writing to cgi] chunk size is " << chunkSize << ", BytesSent is " << bytesSent << std::endl;
+	if (bytesSent > 0) //JMA: this if statement is important!
+		this->_req.setBody(this->_req.getBody().erase(0, bytesSent));
+	if (this->_req.getBody().size() == 0 || bytesSent == 0)
+	{
+		std::cerr << "[writing to cgi] body size is " << this->_req.getBody().size() << ", BytesSent is " << bytesSent << std::endl;
+		response.setState(READ_CGI);
+		close(this->_scriptToWebserv[W]);
+		close(this->_webservToScript[R]);
+		close(this->_webservToScript[W]);
+		std::cout << "Closing webservToScript[W]" << std::endl;
+	}
 }
 
 void	CGI::cgiRead(Response & response, std::string & fullResponse)

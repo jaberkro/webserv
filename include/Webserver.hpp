@@ -1,9 +1,7 @@
 #ifndef WEBSERVER_HPP
 # define WEBSERVER_HPP
 
-// # define MAXLINE 60000 //which value should this be? // JMA: now in request.hpp
-
-#include "Socket.hpp"
+#include "Socket.hpp" // check all headers still needed
 #include "Server.hpp"
 #include "Response.hpp"
 #include "Request.hpp"
@@ -13,7 +11,7 @@
 #include <vector>
 #include <map>
 
-class Socket;
+class Socket; // why is this here?
 class Response;
 class CGI;
 

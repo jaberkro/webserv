@@ -90,11 +90,9 @@ static bool	allowedInLocation(std::string method, std::vector<Location>::const_i
 static bool getIsActuallyDelete(Request *request)
 {
 	if (request->getMethod() == "GET" && \
-		request->getTarget() == "/deleted.html" && \
-		request->getQueryString() != "")
-	{
+	request->getTarget() == "/deleted.html" && \
+	request->getQueryString() != "")
 		return (1);
-	}
 	return (0);
 }
 
@@ -104,29 +102,25 @@ void	Connection::handleResponse()
 		return;
 	try
 	{
-		if (this->_newResp == nullptr) // DM: shouldn't we replace this by a state?
+		if (this->_newResp == nullptr)
 		{
 			this->_newResp = new Response(*this->_newReq);
 			if (this->_newReq->getState() == REQ_ERROR)
 				this->_newResp->setError(this->_newReq->getStatusCode());
-	// DM starting from here this should be only if state == PENDING (also, this needs to be split into separate functions)
+	// DM starting from here this should be split into separate functions)
 			this->_newResp->processTarget(*this->_handlingServer);
 			if (getIsActuallyDelete(this->_newReq))
 				this->_newReq->setMethod("DELETE");
-			if (!allowedInLocation(this->_newReq->getMethod(), this->_newResp->getLocation()))
+			if (!allowedInLocation(this->_newReq->getMethod(), this->_newResp->getLocation())) // JMA & DM: this should be moved inside the allowedInLocation() function, which will be renamed to checkIfMethdAllowed()
 			{
 				this->_newResp->setStatusCode(METHOD_NOT_ALLOWED);
-				std::cout << "Method not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl; // JMA: remove later? // DEBUG - TO BE DELETED
-				// DM the below can be removed
-				if (this->_newResp->getRequest().getHeaders()["User-Agent"].find("curl") == 0)
-					this->_newResp->setFilePath("");
+				std::cout << "Method not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl; // JMA: remove later? // DEBUG - TO BE DELETED	// CREATE UNIFORM ERROR LOG FUNCTION WITH REASON/OCCASION + STATUSCODE IN THE SETMETHOD() FUNCTION		
 			}
 
 			else if (this->_newResp->getStatusCode() == OK)
 				this->_newResp->performRequest();
-			// DM: does the below belong in the scope of the else{} statement?
-			//JMA: maybe returnCode, returnLink and returnMessage? seperate, because the message can also be empty
-			if (this->_newResp->getLocation()->getReturnCode()) // DM should we only do this for status codes < 500? // JMA: good question. Maybe also above 500 should be allowed, up to the creator of the config file to make a valid file? (we can also forbid it in the parsing)
+			if (this->_newResp->getStatusCode() < INTERNAL_SERVER_ERROR && \
+			this->_newResp->getLocation()->getReturnCode())
 			{
 				this->_newResp->setStatusCode(this->_newResp->getLocation()->getReturnCode());
 				this->_newResp->setMessage(this->_newResp->getLocation()->getReturnMessage());
@@ -141,7 +135,7 @@ void	Connection::handleResponse()
 			this->_newResp->sendResponse();
 		if (this->_newResp->getState() == DONE)
 		{
-			this->_newReq->setState(OVERWRITE);
+			this->_newReq->setState(OVERWRITE); // give setter a debug message
 			std::cout << "changed state to OVERWRITE" << std::endl; // DEBUG - TO BE DELETED
 			delete this->_newResp;
 			this->_newResp = nullptr;
