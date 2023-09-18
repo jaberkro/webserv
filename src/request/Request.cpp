@@ -3,8 +3,8 @@
 #include "Webserver.hpp"
 
 /**
- * @brief reads a request from the socket, splits it into separate lines 
-	and sends each line to the corresponding parsing function for further processing
+ * @brief reads a request from the socket, splits it into separate lines and 
+ * sends each line to the corresponding parsing function for further processing
  * 
  */
 void	Request::processReq(void) 
