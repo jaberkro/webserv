@@ -24,6 +24,8 @@ class Connection
 		Request *		getRequest(void);
 		Response *		getResponse(void);
 		int				getListenFd();
+		bool			getTimer();
+		void			setTimer(bool state);
 		void			checkIfMethodAllowed(std::string method, locIterator location);
 		void			checkIfGetIsActuallyDelete(Request &request);
 
