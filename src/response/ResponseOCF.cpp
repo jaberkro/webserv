@@ -33,6 +33,5 @@ Response &	Response::operator=(Response & r)
 	this->_location = r.getLocation();
 	this->_message = r.getMessage();
 	this->_state = r.getState();
-
 	return (*this);
 }
