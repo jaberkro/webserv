@@ -14,13 +14,6 @@ t_values	fillDefaultErrorPages(t_values values)
 	return (values);
 }
 
-/**
- * @brief parse an error_page directive
- * 
- * @param line the line to parse
- * @param values the struct to update
- * @return t_values the updated struct containing the parsed error_page.
- */
 t_values	parseErrorPage(std::string line, t_values values)
 {
 	std::string	reason = "needs at least two arguments: error_page";
@@ -32,7 +25,6 @@ t_values	parseErrorPage(std::string line, t_values values)
 	line = ltrim(line);
 	checkEmptyString(line, "error_page", reason + " <code> <file>");
 	checkNotPreviousDirectory(line, "error_page");
-	// values.errorPages.clear(); //use if error_page should overwrite itself
 	lastWhitespace = line.find_last_of(" \t\v\b") + 1;
 	file = protectedSubstr(line, lastWhitespace, line.size() - lastWhitespace);
 	checkStartingSlash(file, "error_page");

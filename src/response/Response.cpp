@@ -375,8 +375,8 @@ void	Response::prepareFirstLine(void)
 }
 
 /**
- * @brief composes the headers of a response, writing them into the response buffer.
- * After sending, it clears the buffer with std::memset().
+ * @brief composes the headers of a response, writing them into the response 
+ * buffer. After sending, it clears the buffer with std::memset().
  * 
  * @param response the buffer into which the response is written
  * @param root the root directory (from the location block; used to distinguish

@@ -2,12 +2,6 @@
 #include "parse.hpp"
 #include <string>
 
-/**
- * @brief parse a server_name command
- * 
- * @param server the server where found serverNames should be added to
- * @param line the std::string to parse the serverNames from
- */
 void parseServerNames(Server &server, std::string &line)
 {
 	std::string reason = "needs at least one argument: server_name <name>";

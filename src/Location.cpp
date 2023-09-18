@@ -1,14 +1,22 @@
 #include "Location.hpp"
 
-Location::Location() // SET EVERYTHING TO 0 MANUALLY?
+Location::Location()
 {
-	// std::cout << "Default constructor called on Location" << std::endl;
+	this->_autoindex = false;
+	this->_locationMatch = "";
+	this->_locationModifier = "";
+	this->_maxBodySize = 1000000;
+	this->_returnCode = 0;
+	this->_returnLink = "";
+	this->_returnMessage = "";
+	this->_root = "";
+	this->_uploadDir = "";
+	this->_cgiScriptName = "";
 }
 
 Location::Location(const Location &src)
 {
 	*this = src;
-	// std::cout << "Copy constructor called on Location" << std::endl;
 }
 
 Location& Location::operator=(const Location &src)
@@ -28,14 +36,10 @@ Location& Location::operator=(const Location &src)
 	this->_root = src._root;
 	this->_uploadDir = src._uploadDir;
 	this->_cgiScriptName = src._cgiScriptName;
-	// std::cout << "Copy assignment operator called on Location" << std::endl;
 	return (*this);
 }
 
-Location::~Location(void)
-{
-	// std::cout << "Destructor called on Location" << std::endl;
-}
+Location::~Location(){}
 
 void    Location::setModifier(std::string modifier)
 {
@@ -82,7 +86,6 @@ std::string	Location::getIndex(size_t i) const
 	return (this->_indexes.at(i));
 }
 
-
 void	Location::setAutoindex(bool autoindex)
 {
 	this->_autoindex = autoindex;
@@ -107,7 +110,6 @@ void	Location::setErrorPages(std::map<int, std::string> errorPages)
 {
 	this->_errorPages = errorPages;
 }
-
 
 std::map<int, std::string> const &	Location::getErrorPages(void) const
 {
