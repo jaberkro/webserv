@@ -95,7 +95,6 @@ class Response {
 		void		prepareHeaderLocation(void);
 		void		prepareContent(std::ifstream &file);
 		void		checkIfRedirectNecessary(void);
-
 };
 
 // bool allowedToDelete(std::string toRemove, locIterator const & location);
