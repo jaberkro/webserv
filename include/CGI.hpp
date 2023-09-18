@@ -21,7 +21,10 @@ class CGI
 		int			_webservToScript[2];
 		int			_scriptToWebserv[2];
 		int			_childProcessExitStatus;
+		std::chrono::system_clock::time_point		_startTimeChild;
 		std::string	_response;
+
+		int			checkTimeoutChild();
 	public:
 		CGI(Request & req);
 		~CGI();
