@@ -10,13 +10,9 @@ Connection::Connection()
 	this->_address = "";
 	this->_port = 0;
 	this->_timer = false;
-	// std::cout << "Default constructor called on Connection" << std::endl;
 }
 
 Connection::~Connection()
-{
-	// std::cout << "Destructor called on Connection" << std::endl;
-}
 
 Connection::Connection(int listenfd, Socket sckt) : _listenfd(listenfd) // ADD STATUSCODE
 {
@@ -26,13 +22,11 @@ Connection::Connection(int listenfd, Socket sckt) : _listenfd(listenfd) // ADD S
 	this->_address = sckt.getAddress();
 	this->_port = sckt.getPort();
 	this->_timer = false;
-	// std::cout << "Parametric constructor called on Connection" << std::endl;
 }
 
 Connection::Connection(const Connection &src)
 {
 	*this = src;
-	// std::cout << "Copy constructor called on Connection" << std::endl;
 }
 
 Connection& Connection::operator=(const Connection &src)
@@ -43,7 +37,6 @@ Connection& Connection::operator=(const Connection &src)
 	this->_listenfd = src._listenfd;
 	this->_address = src._address;
 	this->_port = src._port;
-	// std::cout << "Copy assignment operator called on Connection" << std::endl;
 	return (*this);
 }
 
