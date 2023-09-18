@@ -108,5 +108,7 @@ locIterator	findWildcardLocationMatch(std::string target, std::vector<Location> 
 locIterator	findClosestLocationMatch(std::string target, std::vector<Location> const & locations);
 void		splitUri(std::string const & uri, std::vector<std::string> & chunks);
 size_t		getFileSize(std::string filePath);
+bool		isContentAllowed(int statusCode);
+bool		isRequestedByCurl(std::string userAgent);
 
 #endif
