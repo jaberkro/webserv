@@ -8,6 +8,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fcntl.h>
+#include <ctime> //for std::time
+#include <signal.h> //for killing child
 
 CGI::CGI(Request & req) : _req(req), id(-1) {}
 
@@ -104,23 +106,51 @@ void	CGI::prepareEnv(std::string const & scriptName, Response & response)
 		std::cout << this->_env[i++] << std::endl;
 }
 
+int		CGI::checkTimeoutChild()
+{
+	auto	currentTime = std::chrono::system_clock::now();
+	std::cerr << "CHECKING TIMEOUT FOR CHILD" << std::endl;
+	std::chrono::duration<double> elapsedSeconds = currentTime - _startTimeChild;
+	std::cerr << "elapsed Sec: " << elapsedSeconds.count() << std::endl;
+	if (elapsedSeconds.count() > 5.0)
+		return (-1);
+	return (0);
+}
+
 void	CGI::cgiWrite(Response & response)
 {
-	ssize_t bytesSent;
-	ssize_t chunkSize = std::min(this->_req.getBody().length(), static_cast<size_t>(MAXLINE));
-	bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), chunkSize);
-	// std::cerr << "[writing to cgi] chunk size is " << chunkSize << ", BytesSent is " << bytesSent << std::endl;
-	if (bytesSent > 0)
-		this->_req.setBody(this->_req.getBody().erase(0, bytesSent));
-	if (this->_req.getBody().size() == 0 || bytesSent == 0)
-	{
-		// std::cerr << "[writing to cgi] body size is " << this->_req.getBody().size() << ", BytesSent is " << bytesSent << std::endl;
-		response.setState(READ_CGI);
-		close(this->_scriptToWebserv[W]);
-		close(this->_webservToScript[R]);
-		close(this->_webservToScript[W]);
-		// std::cout << "Closing webservToScript[W]" << std::endl;
-	}
+	// if (response.getState() == WRITE_CGI && checkIfCgiPipe())
+	// {
+		ssize_t bytesSent;
+		ssize_t chunkSize = std::min(this->_req.getBody().length(), static_cast<size_t>(MAXLINE));
+		if (checkTimeoutChild() < 0)
+		{
+			std::cerr << "TIMEOUT FOR CHILD PROCESS" << std::endl;//Hier setten dat er 408 Timeout is en child killen!
+			kill(id, SIGKILL);
+			response.setStatusCode(REQUEST_TIMEOUT);
+			response.setFilePath("");
+			return ;
+		}
+		bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), chunkSize);
+		// std::cerr << "[writing to cgi] chunk size is " << chunkSize << ", BytesSent is " << bytesSent << std::endl;
+		// if (bytesSent < 0)	// DM: THIS NEEDS TO BE REMOVED, BECAUSE SOMETIMES WE GET A -1 BETWEEN READING STUFF.
+		// {
+		// 	// response.setStatusCode(INTERNAL_SERVER_ERROR);
+		// 	std::cout << "BytesSent error, send 500 internal error" << std::endl;
+		// }
+		if (bytesSent > 0) //JMA: this if statement is important!
+			this->_req.setBody(this->_req.getBody().erase(0, bytesSent));
+		if (this->_req.getBody().size() == 0 || bytesSent == 0)// || bytesSent == -1) // JMA: partly outcommented to prevent early quitting
+		{
+			// std::cerr << "[writing to cgi] body size is " << this->_req.getBody().size() << ", BytesSent is " << bytesSent << std::endl;
+			response.setState(READ_CGI);
+			close(this->_scriptToWebserv[W]);
+			close(this->_webservToScript[R]);
+			close(this->_webservToScript[W]);
+			// std::cout << "Closing webservToScript[W]" << std::endl;
+			// waitpid(id, &(this->_childProcessExitStatus), 0);
+		}
+	// }
 }
 
 void	CGI::cgiRead(Response & response, std::string & fullResponse)
@@ -148,7 +178,15 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse)
 	// std::cout << "Starting Cgi read" << std::endl;
 	// if (response.getState() == READ_CGI && checkIfCgiPipe())
 	// {
-		if ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) > 0)
+		if (checkTimeoutChild() < 0)
+		{
+			std::cerr << "TIMEOUT FOR CHILD PROCESS" << std::endl;//Hier setten dat er 408 Timeout is en child killen!
+			kill(id, SIGKILL);
+			response.setStatusCode(REQUEST_TIMEOUT);
+			response.setFilePath("");
+			fullResponse.clear();
+		}
+		else if ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) > 0)
 		{
 			// std::cout << "Read call for cgi, bytesRead = " << bytesRead << std::endl;
 			std::string	chunk(buf, bytesRead);
@@ -233,7 +271,8 @@ void	CGI::run(Response & response)
 		}
 		else
 		{
-			std::cerr << "In else statement of cgi call. State: " << response.getState() << std::endl;
+			_startTimeChild = std::chrono::system_clock::now();
+			std::cerr << "In else statement of cgi call. State: " << response.getState() << /*", start time: " << _startTimeChild <<*/ std::endl;
 			response.setState(WRITE_CGI);
 		}
 	}

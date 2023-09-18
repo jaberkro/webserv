@@ -9,6 +9,7 @@ Connection::Connection()
 	this->_handlingServer = nullptr;
 	this->_address = "";
 	this->_port = 0;
+	this->_timer = false;
 	// std::cout << "Default constructor called on Connection" << std::endl;
 }
 
@@ -24,6 +25,7 @@ Connection::Connection(int listenfd, Socket sckt) : _listenfd(listenfd) // ADD S
 	this->_handlingServer = nullptr;
 	this->_address = sckt.getAddress();
 	this->_port = sckt.getPort();
+	this->_timer = false;
 	// std::cout << "Parametric constructor called on Connection" << std::endl;
 }
 
@@ -166,4 +168,14 @@ Response *	Connection::getResponse(void)
 int		Connection::getListenFd()
 {
 	return (this->_listenfd);
+}
+
+bool	Connection::getTimer()
+{
+	return (this->_timer);
+}
+
+void	Connection::setTimer(bool state)
+{
+	this->_timer = state;
 }

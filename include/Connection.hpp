@@ -34,8 +34,8 @@ class Connection
 		int				_listenfd;
 		std::string		_address;
 		unsigned short	_port;
+		bool			_timer;
 		//std::string	_serverNames; BS: Deze nodig?
-	
 };
 
 #endif

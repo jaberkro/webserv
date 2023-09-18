@@ -26,6 +26,7 @@ std::map<int, std::string> 	Response::_responseCodes =
 	{FORBIDDEN, "Forbidden"},
 	{NOT_FOUND, "Not Found"},
 	{METHOD_NOT_ALLOWED, "Method Not Allowed"},
+	{REQUEST_TIMEOUT, "Request Timeout"},
 	{CONTENT_TOO_LARGE, "Content Too Large"},
 	{INTERNAL_SERVER_ERROR, "Internal Server Error"},
 	{NOT_IMPLEMENTED, "Not Implemented"}
