@@ -10,10 +10,10 @@
 #include <fstream>
 #include <fcntl.h>
 #include <csignal>
+#include <vector>
 
 #include "Request.hpp"
 #include "Response.hpp"
-#include <vector>
 #include "Connection.hpp"
 
 /**
