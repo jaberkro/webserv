@@ -26,6 +26,7 @@ std::map<int, std::string> 	Response::_responseCodes =
 	{FORBIDDEN, "Forbidden"},
 	{NOT_FOUND, "Not Found"},
 	{METHOD_NOT_ALLOWED, "Method Not Allowed"},
+	{REQUEST_TIMEOUT, "Request Timeout"},
 	{CONTENT_TOO_LARGE, "Content Too Large"},
 	{INTERNAL_SERVER_ERROR, "Internal Server Error"},
 	{NOT_IMPLEMENTED, "Not Implemented"}
@@ -296,7 +297,7 @@ locIterator Response::findLocationMatch(std::string target, \
 {
 	locIterator	itLoc;
 
-	std::cerr << "Finding a location for target " << target << ", len locations is " << locations.size() << std::endl; // DEBUG - TO BE DELETED
+	// std::cerr << "Finding a location for target " << target << ", len locations is " << locations.size() << std::endl; // DEBUG - TO BE DELETED
 	itLoc = findExactLocationMatch(target, locations);
 	if (itLoc == locations.end())
 		itLoc = findWildcardLocationMatch(target, locations);
@@ -307,7 +308,7 @@ locIterator Response::findLocationMatch(std::string target, \
 		this->_statusCode = INTERNAL_SERVER_ERROR;
 		throw(std::range_error("No location match")); // further handle
 	}
-	std::cerr << "Found location " << itLoc->getMatch() << std::endl; // DEBUG - TO BE DELETED
+	// std::cerr << "Found location " << itLoc->getMatch() << std::endl; // DEBUG - TO BE DELETED
 	return (itLoc);
 }
 

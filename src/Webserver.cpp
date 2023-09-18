@@ -10,10 +10,10 @@
 #include <fstream>
 #include <fcntl.h>
 #include <csignal>
+#include <vector>
 
 #include "Request.hpp"
 #include "Response.hpp"
-#include <vector>
 #include "Connection.hpp"
 
 /**
@@ -51,6 +51,8 @@ void	Webserver::addTimerFilter(int fd)
 		0, 5000, &timeout);
 	if (kevent(_kq, &_evList, 1, NULL, 0, NULL) == -1)
 		throw Webserver::KeventError();
+	_connections[fd].setTimer(true);
+	std::cout << "Timer set for fd " << fd << std::endl;
 }
 
 void	Webserver::addWriteFilter(int evFd)
@@ -81,18 +83,16 @@ void	Webserver::addReadFilter(int fd)
  * @param ident 
  */
 
-void	Webserver::eofEvent(int ident, int reason)
+void	Webserver::eofEvent(int ident)
 {
-	std::cout << "Disconnect";
-	if (reason == 1)
-		std::cout << " because of inactivity";
-	std::cout << std::endl;
-	// EV_SET(&_evList, ident, EVFILT_TIMER, EV_DELETE, 0, 5000, NULL);//&timeout);//, &timer);
-	// if (kevent(_kq, &_evList, 1, NULL, 0, NULL) == -1)
-	// 	throw Webserver::KeventError(); //Keep or not? See private slack msg!
-
-	if (close(ident) < 0)
-		throw Webserver::CloseError();  // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
+	if (fcntl(ident, F_GETFD) > -1)
+	{
+		std::cout << "Disconnect for fd " << ident;
+		_connections[ident].setTimer(false);
+		std::cout << std::endl;
+			if (close(ident) < 0)
+				throw Webserver::CloseError();  // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
+	}
 }
 
 void	Webserver::newConnection(int eventSocket, int ident)
@@ -137,7 +137,7 @@ void	Webserver::writeEvent()
 	_connections[evFd].handleResponse();
 	if (_connections[evFd].getResponse() == nullptr)//In case the Response is sent and finished, the write filter can be deleted
 		deleteWriteFilter(evFd);
-	else if(_connections[evFd].getResponse()->getState() == INIT_CGI && _connections[evFd].getResponse()->cgiOnKqueue == false)
+	else if (_connections[evFd].getResponse()->getState() == INIT_CGI && _connections[evFd].getResponse()->cgiOnKqueue == false)
 	{
 		std::cout << "\n\n~~~~~~~~~~~~~~~~~~WRITE event filter added for cgi pipes ~~~~~~~~~~~~~~~~" << std::endl;
 		addWriteFilter(_connections[evFd].getResponse()->getCgi().getScriptToWebserv()[0]);
@@ -168,10 +168,10 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 		if ((nev = kevent(_kq, NULL, 0, &_evList, 1, timeout)) < 0)
 			continue ;
 		//	throw Webserver::KeventError();//internal server error sturen
-		if (_evList.filter == EVFILT_TIMER)
-			eofEvent(_evList.ident, 1);
-		if (_evList.flags & EV_EOF)
-			eofEvent(_evList.ident, 0);
+		if (_evList.filter == EVFILT_TIMER || _evList.flags & EV_EOF)
+			eofEvent(_evList.ident);
+		// if (_evList.flags & EV_EOF)
+		// 	eofEvent(_evList.ident);
 		else if ((eventSocket = comparefd((int)_evList.ident)) > -1)
 			newConnection(eventSocket, _evList.ident);
 		else if (_evList.filter == EVFILT_READ)
