@@ -60,7 +60,7 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 		this->_newReq->processReq();
 		this->_newReq->printRequest(); // DEBUG - TO BE DELETED
 		this->_handlingServer = new Server(this->_newReq->identifyServer(servers));
-		std::cout << "Responsible server is "; // DEBUG - TO BE DELETED
+		std::cout << "Server: "; // DEBUG - TO BE DELETED
 		std::cout << this->_handlingServer->getServerName(0) << std::endl; // DEBUG - TO BE DELETED
 	}
 	catch(const std::exception& e)
@@ -72,28 +72,33 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 	}
 }
 
-static bool	allowedInLocation(std::string method, std::vector<Location>::const_iterator location)
+void	Connection::checkIfMethodAllowed(std::string method, locIterator location)
 {
 	for (size_t i = 0; i < location->getAllowed().size(); i++)
 	{
 		if (location->getAllowed().at(i) == method)
-			return (true);
+			return ;
 	}
 	for (size_t i = 0; i < location->getDenied().size(); i++)
 	{
 		if (location->getDenied().at(i) == method || location->getDenied().at(i) == "all")
-			return (false);
+		{
+			this->_newResp->setStatusCode(METHOD_NOT_ALLOWED);
+			std::cout << "Location: " << location->getMatch() << std::endl;		
+			return ;
+		}
 	}
-	return (true);
+	return ;
 }
 
-static bool getIsActuallyDelete(Request *request)
+void Connection::checkIfGetIsActuallyDelete(Request &request)
 {
-	if (request->getMethod() == "GET" && \
-	request->getTarget() == "/deleted.html" && \
-	request->getQueryString() != "")
-		return (1);
-	return (0);
+	if (request.getMethod() == "GET" && \
+	request.getTarget() == "/deleted.html" && \
+	request.getQueryString() != "")
+	{
+		request.setMethod("DELETE");
+	}
 }
 
 void	Connection::handleResponse()
@@ -109,15 +114,10 @@ void	Connection::handleResponse()
 				this->_newResp->setError(this->_newReq->getStatusCode());
 	// DM starting from here this should be split into separate functions)
 			this->_newResp->processTarget(*this->_handlingServer);
-			if (getIsActuallyDelete(this->_newReq))
-				this->_newReq->setMethod("DELETE");
-			if (!allowedInLocation(this->_newReq->getMethod(), this->_newResp->getLocation())) // JMA & DM: this should be moved inside the allowedInLocation() function, which will be renamed to checkIfMethdAllowed()
-			{
-				this->_newResp->setStatusCode(METHOD_NOT_ALLOWED);
-				std::cout << "Method not allowed! " << this->_newReq->getMethod() << " in " << this->_newResp->getLocation()->getMatch() << std::endl; // JMA: remove later? // DEBUG - TO BE DELETED	// CREATE UNIFORM ERROR LOG FUNCTION WITH REASON/OCCASION + STATUSCODE IN THE SETMETHOD() FUNCTION		
-			}
-
-			else if (this->_newResp->getStatusCode() == OK)
+			checkIfGetIsActuallyDelete(this->_newResp->getRequest());
+			checkIfMethodAllowed(this->_newResp->getRequest().getMethod(), this->_newResp->getLocation());
+			
+			if (this->_newResp->getStatusCode() == OK)
 				this->_newResp->performRequest();
 			if (this->_newResp->getStatusCode() < INTERNAL_SERVER_ERROR && \
 			this->_newResp->getLocation()->getReturnCode())
@@ -135,8 +135,7 @@ void	Connection::handleResponse()
 			this->_newResp->sendResponse();
 		if (this->_newResp->getState() == DONE)
 		{
-			this->_newReq->setState(OVERWRITE); // give setter a debug message
-			std::cout << "changed state to OVERWRITE" << std::endl; // DEBUG - TO BE DELETED
+			this->_newReq->setState(OVERWRITE);
 			delete this->_newResp;
 			this->_newResp = nullptr;
 			delete this->_handlingServer;
