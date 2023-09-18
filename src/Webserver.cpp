@@ -122,9 +122,9 @@ void	Webserver::readEvent(std::vector<Server> servers)
 	}
 	else
 	{
-		// std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
-		_connections[(int)evFd].handleRequest(evFd, servers);
-		if (_connections[(int)evFd].getRequest()->getState() == WRITE)
+		std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
+		_connections[(int)evFd].handleRequest(evFd, servers, _evList.data);
+		if (_connections[(int)evFd].getRequest()->getState() == WRITE || _connections[(int)evFd].getRequest()->getState() == REQ_ERROR)
 			addWriteFilter(evFd);
 	}
 }
@@ -170,12 +170,13 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 		//	throw Webserver::KeventError();//internal server error sturen
 		if (_evList.filter == EVFILT_TIMER || _evList.flags & EV_EOF)
 			eofEvent(_evList.ident);
-		// if (_evList.flags & EV_EOF)
-		// 	eofEvent(_evList.ident);
 		else if ((eventSocket = comparefd((int)_evList.ident)) > -1)
 			newConnection(eventSocket, _evList.ident);
 		else if (_evList.filter == EVFILT_READ)
+		{
+			std::cout << "Data size to be read: " << _evList.data << std::endl;
 			readEvent(servers);
+		}
 		else if (_evList.filter == EVFILT_WRITE)
 			writeEvent();
 		//CATCH

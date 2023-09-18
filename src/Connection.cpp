@@ -47,11 +47,10 @@ Connection& Connection::operator=(const Connection &src)
 	return (*this);
 }
 
-void	Connection::handleRequest(int connfd, std::vector<Server> servers)
+void	Connection::handleRequest(int connfd, std::vector<Server> servers, int dataSize)
 {
 	if (this->_newReq->getState() == REQ_ERROR)
 		return ;
-
 	try
 	{
 		if (this->_newReq->getState() == OVERWRITE)
@@ -59,7 +58,7 @@ void	Connection::handleRequest(int connfd, std::vector<Server> servers)
 			delete this->_newReq;
 			this->_newReq = new Request(connfd, this->_address);
 		}
-		this->_newReq->processReq();
+		this->_newReq->processReq(dataSize);
 		this->_newReq->printRequest(); // DEBUG - TO BE DELETED
 		this->_handlingServer = new Server(this->_newReq->identifyServer(servers));
 		std::cout << "Server: "; // DEBUG - TO BE DELETED
@@ -113,8 +112,13 @@ void	Connection::handleResponse()
 		{
 			this->_newResp = new Response(*this->_newReq);
 			if (this->_newReq->getState() == REQ_ERROR)
+			{
 				this->_newResp->setError(this->_newReq->getStatusCode());
+
+			}
+	// DM starting from here this should be only if state == PENDING (also, this needs to be split into separate functions)
 	// DM starting from here this should be split into separate functions)
+
 			this->_newResp->processTarget(*this->_handlingServer);
 			checkIfGetIsActuallyDelete(this->_newResp->getRequest());
 			checkIfMethodAllowed(this->_newResp->getRequest().getMethod(), this->_newResp->getLocation());
@@ -131,7 +135,7 @@ void	Connection::handleResponse()
 		}
 		if (this->_newResp->getState() == WRITE_CGI || this->_newResp->getState() == READ_CGI)
 			this->_newResp->executeCgiScript();
-		if (this->_newResp->getState() == PENDING)
+		if (this->_newResp->getState() == PENDING || this->_newResp->getState() == RES_ERROR)
 			this->_newResp->prepareResponse(*this->_handlingServer);
 		if (this->_newResp->getState() == SENDING)
 			this->_newResp->sendResponse();

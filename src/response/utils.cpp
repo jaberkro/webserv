@@ -1,3 +1,4 @@
+#include "responseCodes.hpp"
 #include <fstream>
 
 /**
@@ -20,4 +21,18 @@ size_t	getFileSize(std::string filePath)
 		return (len);
 	}
 	return (0);
+}
+
+bool	isContentAllowed(int statusCode)
+{
+	if (statusCode >= OK && statusCode != DELETED && statusCode != NOT_MODIFIED)
+		return (true);
+	return (false);
+}
+
+bool	isRequestedByCurl(std::string userAgent)
+{
+	if (userAgent.find("curl") == 0)
+		return (true);
+	return (false);
 }

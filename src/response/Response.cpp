@@ -149,9 +149,9 @@ void	Response::executeCgiScript(void)
 		_cgi.prepareArg(scriptName);
 		_cgi.run(*this);
 	}
-	if (this->getState() == READ_CGI)// && _cgi.checkIfCgiPipe())
+	if (getState() == READ_CGI)
 		_cgi.cgiRead(*this, this->_fullResponse);
-	else if (this->getState() == WRITE_CGI)// && _cgi.checkIfCgiPipe())
+	else if (getState() == WRITE_CGI)
 		_cgi.cgiWrite(*this);
 }
 
@@ -161,7 +161,7 @@ void	Response::prepareResponse(Server const & server)
 
 	if (this->_statusCode > BAD_REQUEST && this->_statusCode <= METHOD_NOT_ALLOWED)
 		this->checkIfRedirectNecessary();
-	if (this->_statusCode >= 400)
+	if (this->_statusCode >= BAD_REQUEST)
 			this->identifyErrorPage(server);
 	if (this->_fullResponse.empty()) // here we check whether response was already prepared by a CGI script
 	{
@@ -174,8 +174,7 @@ void	Response::prepareResponse(Server const & server)
 		}
 		this->prepareFirstLine();
 		this->prepareHeaders(this->_location->getRoot());
-		if (this->_statusCode > 199 && this->_statusCode != DELETED && \
-		this->_statusCode != 304) // JMA & DM: put in bool allowedToHaveContent() function to make it more readable
+		if (isContentAllowed(this->_statusCode))
 			this->prepareContent(file);
 		if (!this->_filePath.empty())
 			file.close();
@@ -189,6 +188,7 @@ void	Response::sendResponse(void)
 	ssize_t chunkSize = std::min(this->_fullResponse.length(), \
 		static_cast<size_t>(MAXLINE)); // JMA: can min fail?
 	// std::cout << "Chunksize is " << _fullResponse.length() << " or " << static_cast<size_t>(MAXLINE) << std::endl;
+	std::cerr << "[sendResponse] response is " << this->_fullResponse << ", message is " << this->_message << std::endl;
 	if (this->_state == SENDING)
 	{
 		// std::cerr << "[sendResponse] SENDING to fd " << this->_req.getConnFD();// DEBUG - TO BE DELETED
@@ -197,12 +197,12 @@ void	Response::sendResponse(void)
 			chunkSize, 0);
 		if (bytesSent < 0)
 		{
-			std::cout << "BytesSent error, send internal error" << std::endl;// DEBUG - TO BE DELETED
-			// this->_state = ERROR; // JMA: should it be like this?
-			// CLOSE CONNECTION
+			_state = DONE;
+			close(this->_req.getConnFD());
 			return ;
 		}
-		this->_fullResponse.erase(0, bytesSent);
+		else
+			this->_fullResponse.erase(0, bytesSent);
 		// std::cout << "State is " << this->_state << ", bytesSent = ";// DEBUG - TO BE DELETED
 		// std::cout << bytesSent << ", response leftover size is ";// DEBUG - TO BE DELETED
 		// std::cout << this->_fullResponse.size() << ", chunkSize = ";// DEBUG - TO BE DELETED
@@ -231,10 +231,14 @@ void	Response::checkIfRedirectNecessary()
 
 void	Response::identifyErrorPage(Server const & server)
 {
-	std::string	targetUri = getErrorPageUri();
-
 	std::cerr << "[identifyErrorPage] " << std::endl; // DEBUG - TO BE DELETED
+	if (isRequestedByCurl(this->_req.getHeaders()["User-Agent"]))
+	{
+		this->_filePath.clear();
+		return;
+	}
 	this->_isReady = false;
+	std::string	targetUri = getErrorPageUri();
 	while (!this->_isReady)
 	{
 		this->_location = findLocationMatch(targetUri, server.getLocations());

@@ -7,15 +7,15 @@
  * sends each line to the corresponding parsing function for further processing
  * 
  */
-void	Request::processReq(void) 
+void	Request::processReq(int dataSize) 
 {
 	if (this->_state == READHEADERS)
-		readFirstLineAndHeaders();
+		readFirstLineAndHeaders(dataSize);
 	if (this->_state == READBODY)
-		readBody();
+		readBody(dataSize);
 }
 
-void		Request::readFirstLineAndHeaders(void) 
+void		Request::readFirstLineAndHeaders(int dataSize) 
 {
 	char		socketBuffer[MAXLINE];
 	std::string	processingBuffer;
@@ -29,7 +29,11 @@ void		Request::readFirstLineAndHeaders(void)
 		std::memset(socketBuffer, 0, MAXLINE);
 		this->parseLines(processingBuffer);
 	}
-	// BYTESREAD < 0? INTERNAL_SERVER_ERROR
+	if (bytesRead < 0 && dataSize > 0)
+	{
+		std::cout << "reading firstline and headers, dataSize = " << dataSize << std::endl;
+		setStatusCode(INTERNAL_SERVER_ERROR);
+	}
 	if (bytesRead == 0)
 		this->setState(OVERWRITE); // DM Why?
 	if (this->_state == READBODY && this->_contentLength > 0)
@@ -58,7 +62,7 @@ void	Request::parseLines(std::string & processingBuffer)
 	}
 }
 
-void		Request::readBody() 
+void		Request::readBody(int dataSize) 
 {
 	char	socketBuffer[MAXLINE];
 	ssize_t	bytesRead = 0;
@@ -75,12 +79,10 @@ void		Request::readBody()
 		if (this->_bodyLength == this->_contentLength || this->_body.find((this->_boundary + "--")) < std::string::npos)
 			this->setState(WRITE);
 	}
-	if (bytesRead < 0)
-	{
-		// INTERNAL_SERVER_ERROR STATUSCODE
-		// STATE SEND_RESPONSE OID
-		// DM: I don't think it is an error
-	}
+	std::cout << "reading body, dataSize = " << dataSize << std::endl;
+
+	if (bytesRead < 0 && dataSize > 0)
+		setStatusCode(500);
 	else if (bytesRead == 0)
 		std::cerr << "[processReq] READ 0; total read body length is " << this->_bodyLength << ", contentlength is " << this->_contentLength << std::endl; // DEBUG - TO BE DELETED
 	// std::cout <<"***** WHOLE BODY IS ****" << this->_body << "****" << std::endl;
