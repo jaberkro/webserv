@@ -1,7 +1,7 @@
 #include "parse.hpp"
 #include <string>
 
-t_values	fillDefaultErrorPages(t_values values) // JMA: should this be removed? NO! KEEP IT! Add more even like 4xx that are in responseCodes.hpp
+t_values	fillDefaultErrorPages(t_values values)
 {
 	values.errorPages[400] = "/4xx.html";
 	values.errorPages[403] = "/4xx.html";
