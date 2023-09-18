@@ -69,3 +69,12 @@ void checkNotPreviousDirectory(std::string line, std::string directive)
 		}
 	}
 }
+
+void checkMissingHTTP(std::vector<Server> & servers)
+{
+	if (servers.size() == 0)
+	{
+		std::cerr << "Error: http block missing: \nhttp {\n\n}" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}

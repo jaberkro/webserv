@@ -22,6 +22,14 @@ void notRecognizedError(std::string line, std::string here)
 	exit(EXIT_FAILURE);
 }
 
+void noLocationError(void)
+{
+	std::cerr << "Error: can't parse server block without location block ";
+	std::cerr << "inside of it: \nserver {\n\tlocation <optional modifier> ";
+	std::cerr << "<match>{\n\n\t}\n}" << std::endl;
+	exit(EXIT_FAILURE);
+}
+
 void noServerError(void)
 {
 	std::cerr << "Error: can't parse http block without server block inside ";
@@ -38,8 +46,8 @@ void portError(std::string notPort)
 
 void hostError(std::string notHost)
 {
-	std::cerr << "Error: can't parse listen directive: invalid host: [" << \
-		notHost << "]: invalid IP address" << std::endl;
+	std::cerr << "Error: can't parse listen directive: invalid host: [";
+	std::cerr << notHost << "]: invalid IP address" << std::endl;
 	exit(EXIT_FAILURE);
 }
 

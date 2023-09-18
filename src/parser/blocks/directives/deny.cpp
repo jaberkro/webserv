@@ -7,7 +7,6 @@ static bool	isAllowedMethod(std::string toCheck)
 	std::string directives[] = {"GET", "POST", "DELETE", "all"};
 
 	int i = 0;
-
 	while (i < 4)
 	{
 		if (toCheck.find(directives[i]) == 0)
