@@ -2,7 +2,8 @@
 #include <iostream>
 
 /**
- * @brief substr that catches exception, prints it and sends back "" in case an excption occured
+ * @brief substr that catches exception, prints it and sends back "" in case an 
+ * excption occured
  * 
  * @param s the string to make a substring from
  * @param start the index to start the substring from
@@ -28,7 +29,8 @@ std::string protectedSubstr(std::string s, size_t start)
 }
 
 /**
- * @brief substr that catches exception, prints it and sends back "" in case an excption occured
+ * @brief substr that catches exception, prints it and sends back "" in case an 
+ * excption occured
  * 
  * @param s the string to make a substring from
  * @param start the index to start the substring from
@@ -66,7 +68,8 @@ std::string	ltrim(std::string s)
 
 	if (s == "")
 		return ("");
-	while (i < s.size() && (s.at(i) == '\t' || s.at(i) == ' ' || s.at(i) == '\v' || s.at(i) == '\b' || s.at(i) == '\r'))
+	while (i < s.size() && (s.at(i) == '\t' || s.at(i) == ' ' || \
+	s.at(i) == '\v' || s.at(i) == '\b' || s.at(i) == '\r'))
 	{
 		i++;
 	}
@@ -89,7 +92,8 @@ std::string	rtrim(std::string s)
 
 	if (s == "")
 		return ("");
-	while (i >= 0 && (s.at(i) == '\t' || s.at(i) == ' ' || s.at(i) == '\v' || s.at(i) == '\b' || s.at(i) == '\r'))
+	while (i >= 0 && (s.at(i) == '\t' || s.at(i) == ' ' || s.at(i) == '\v' || \
+	s.at(i) == '\b' || s.at(i) == '\r'))
 	{
 		i--;
 	}
