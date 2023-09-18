@@ -119,93 +119,76 @@ int		CGI::checkTimeoutChild()
 
 void	CGI::cgiWrite(Response & response)
 {
-	// if (response.getState() == WRITE_CGI && checkIfCgiPipe())
-	// {
-		ssize_t bytesSent;
-		ssize_t chunkSize = std::min(this->_req.getBody().length(), static_cast<size_t>(MAXLINE));
-		if (checkTimeoutChild() < 0)
-		{
-			std::cerr << "TIMEOUT FOR CHILD PROCESS" << std::endl;//Hier setten dat er 408 Timeout is en child killen!
-			kill(id, SIGKILL);
-			response.setStatusCode(REQUEST_TIMEOUT);
-			response.setFilePath("");
-			return ;
-		}
-		bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), chunkSize);
-		std::cerr << "[writing to cgi] chunk size is " << chunkSize << ", BytesSent is " << bytesSent << std::endl;
-		// if (bytesSent < 0)	// DM: THIS NEEDS TO BE REMOVED, BECAUSE SOMETIMES WE GET A -1 BETWEEN READING STUFF.
-		// {
-		// 	// response.setStatusCode(INTERNAL_SERVER_ERROR);
-		// 	std::cout << "BytesSent error, send 500 internal error" << std::endl;
-		// }
-		if (bytesSent > 0) //JMA: this if statement is important!
-			this->_req.setBody(this->_req.getBody().erase(0, bytesSent));
-		if (this->_req.getBody().size() == 0 || bytesSent == 0)// || bytesSent == -1) // JMA: partly outcommented to prevent early quitting
-		{
-			std::cerr << "[writing to cgi] body size is " << this->_req.getBody().size() << ", BytesSent is " << bytesSent << std::endl;
-			response.setState(READ_CGI);
-			close(this->_scriptToWebserv[W]);
-			close(this->_webservToScript[R]);
-			close(this->_webservToScript[W]);
-			std::cout << "Closing webservToScript[W]" << std::endl;
-			// waitpid(id, &(this->_childProcessExitStatus), 0);
-		}
-	// }
+	ssize_t bytesSent;
+	ssize_t chunkSize = std::min(this->_req.getBody().length(), static_cast<size_t>(MAXLINE));
+	if (checkTimeoutChild() < 0)
+	{
+		std::cerr << "TIMEOUT FOR CHILD PROCESS" << std::endl;//Hier setten dat er 408 Timeout is en child killen!
+		kill(id, SIGKILL);
+		response.setStatusCode(REQUEST_TIMEOUT);
+		response.setFilePath("");
+		return ;
+	}
+	bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), chunkSize);
+	std::cerr << "[writing to cgi] chunk size is " << chunkSize << ", BytesSent is " << bytesSent << std::endl;
+	if (bytesSent > 0) //JMA: this if statement is important!
+		this->_req.setBody(this->_req.getBody().erase(0, bytesSent));
+	if (this->_req.getBody().size() == 0 || bytesSent == 0)// || bytesSent == -1) // JMA: partly outcommented to prevent early quitting
+	{
+		std::cerr << "[writing to cgi] body size is " << this->_req.getBody().size() << ", BytesSent is " << bytesSent << std::endl;
+		response.setState(READ_CGI);
+		close(this->_scriptToWebserv[W]);
+		close(this->_webservToScript[R]);
+		close(this->_webservToScript[W]);
+		std::cout << "Closing webservToScript[W]" << std::endl;
+		// waitpid(id, &(this->_childProcessExitStatus), 0);
+	}
+	else if (bytesSent < 0)
+	{
+		close(this->_scriptToWebserv[R]);
+		close(this->_scriptToWebserv[W]);
+		close(this->_webservToScript[R]);
+		close(this->_webservToScript[W]);
+		kill(id, SIGKILL);
+		response.setStatusCode(INTERNAL_SERVER_ERROR);
+		response.setFilePath("");
+	}
 }
 
 void	CGI::cgiRead(Response & response, std::string & fullResponse)
 {
 	ssize_t bytesRead = 0;
 	char	buf[RESPONSELINE];
-
-	// if ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) > 0)
-	// {
-	// 	std::cout << "Read call for cgi, bytesRead = " << bytesRead << std::endl;
-	// 	std::string	chunk(buf, bytesRead);
-	// 	response.addToFullResponse(chunk);
-	// }
-	// if (bytesRead == 0 && (waitpid(id, &(this->_exitCode), WUNTRACED | WNOHANG) != 0))
-	// {
-	// 	close(this->_scriptToWebserv[R]);
-	// 	if (WIFEXITED(this->_exitCode))
-	// 		std::cout << "Script exited with exit code " << this->_exitCode << std::endl;
-	// 	if (this->_exitCode > 0)
-	// 	{
-	// 		response.setStatusCode(INTERNAL_SERVER_ERROR);
-	// 		response.setFilePath("");
-	// 		fullResponse.clear();
 	int		exitCode = 0;
-	// std::cout << "Starting Cgi read" << std::endl;
-	// if (response.getState() == READ_CGI && checkIfCgiPipe())
-	// {
-		if (checkTimeoutChild() < 0)
+
+	if (checkTimeoutChild() < 0)
+	{
+		std::cerr << "TIMEOUT FOR CHILD PROCESS" << std::endl;//Hier setten dat er 408 Timeout is en child killen!
+		kill(id, SIGKILL);
+		response.setStatusCode(REQUEST_TIMEOUT);
+		response.setState(RES_ERROR);
+		response.setFilePath("");
+		fullResponse.clear();
+	}
+	else if ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) > 0)
+	{
+		std::cout << "Read call for cgi, bytesRead = " << bytesRead << std::endl;
+		std::string	chunk(buf, bytesRead);
+		response.addToFullResponse(chunk);
+	}
+	if (bytesRead == 0 && (waitpid(id, &(this->_childProcessExitStatus), WUNTRACED | WNOHANG) != 0))
+	{
+		close(this->_scriptToWebserv[R]);
+		if (WIFEXITED(this->_childProcessExitStatus))
 		{
-			std::cerr << "TIMEOUT FOR CHILD PROCESS" << std::endl;//Hier setten dat er 408 Timeout is en child killen!
-			kill(id, SIGKILL);
-			response.setStatusCode(REQUEST_TIMEOUT);
-			response.setFilePath("");
-			fullResponse.clear();
-		}
-		else if ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) > 0)
-		{
-			std::cout << "Read call for cgi, bytesRead = " << bytesRead << std::endl;
-			std::string	chunk(buf, bytesRead);
-			response.addToFullResponse(chunk);
-		}
-		if (bytesRead == 0 && (waitpid(id, &(this->_childProcessExitStatus), WUNTRACED | WNOHANG) != 0))
-		{
-			close(this->_scriptToWebserv[R]);
-			if (WIFEXITED(this->_childProcessExitStatus)) {
-				exitCode = WEXITSTATUS(this->_childProcessExitStatus);
-				std::cout << "Script exited with exit code " << exitCode << " (so " << exitCode + 256 << ")" << std::endl;
-				if (exitCode > 0)
-				{
-					response.setStatusCode(exitCode == 1 ? INTERNAL_SERVER_ERROR : exitCode + 256);
-					response.setFilePath("");
-					fullResponse.clear();
-				}
-			// }
-		// std::cout << "End of cgiRead func, bytesRead = " << bytesRead << " , state is " << response.getState() << std::endl;
+			exitCode = WEXITSTATUS(this->_childProcessExitStatus);
+			std::cout << "Script exited with exit code " << exitCode << " (so " << exitCode + 256 << ")" << std::endl;
+			if (exitCode > 0)
+			{
+				response.setStatusCode(exitCode == 1 ? INTERNAL_SERVER_ERROR : exitCode + 256);
+				response.setFilePath("");
+				fullResponse.clear();
+			}
 		}
 		response.setState(PENDING);
 		size_t	i = 0;
@@ -215,6 +198,15 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse)
 		delete[] this->_env;
 		delete this->_arg[0];
 		delete[] this->_arg;
+	}
+	if (bytesRead < 0)
+	{
+		close(this->_scriptToWebserv[R]);
+		kill(id, SIGKILL);
+		response.setStatusCode(INTERNAL_SERVER_ERROR);
+		response.setState(RES_ERROR);
+		response.setFilePath("");
+		fullResponse.clear();
 	}
 }
 

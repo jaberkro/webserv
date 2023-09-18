@@ -214,7 +214,11 @@ void	Response::sendResponse(void)
 		bytesSent = send(this->_req.getConnFD(), this->_fullResponse.c_str(), \
 			chunkSize, 0);
 		if (bytesSent < 0)
-			std::cout << "BytesSent error, send internal error" << std::endl;// DEBUG - TO BE DELETED
+		{
+			_state = DONE;
+			close(this->_req.getConnFD());
+			return ;
+		}
 		else
 			this->_fullResponse.erase(0, bytesSent);
 		std::cout << "State is " << this->_state << ", bytesSent = ";// DEBUG - TO BE DELETED
