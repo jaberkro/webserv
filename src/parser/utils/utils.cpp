@@ -4,7 +4,8 @@
 #include <iostream>
 
 /**
- * @brief getline that checks the line for valid input, trims whitespaces at the beginning and end of the string and removes comments
+ * @brief getline that checks the line for valid input, trims whitespaces at 
+ * the beginning and end of the string and removes comments
  * 
  * @param file the file to read the next line from
  * @param line the std::string to store the next line in
@@ -57,9 +58,7 @@ bool	allDigits(std::string s)
 	for (size_t i = 0; i < s.size(); i++)
 	{
 		if (!isdigit(s.at(i)))
-		{
 			return (0);
-		}
 	}
 	return (1);
 }
@@ -90,7 +89,7 @@ int	parseErrorCode(std::string code, std::string directive)
 	return (newCode);
 }
 
-std::string convertToLower(std::string str) // misschien niet nodig?
+std::string convertToLower(std::string str)
 {
 	for (size_t i = 0; i < str.size(); i++)
 	{
