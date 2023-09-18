@@ -19,10 +19,9 @@ class Connection
 		std::string		_address;
 		unsigned short	_port;
 		bool			_timer;
-		//std::string	_serverNames; BS: Deze nodig?
 	public:
-		void			handleRequest(int connfd, std::vector<Server> servers, int dataSize);//, Server *& handlingServer, Request *& newReq);
-		void			handleResponse();//Request *& newReq, Response *& newResp, Server *& handlingServer);//int connfd, std::vector<Server> servers)
+		void			handleRequest(int connfd, std::vector<Server> servers, int dataSize);
+		void			handleResponse();
 		void			setRequest(Request *request);
 		Request *		getRequest(void);
 		Response *		getResponse(void);

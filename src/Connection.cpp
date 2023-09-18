@@ -108,10 +108,8 @@ void	Connection::handleResponse()
 		if (this->_newResp == nullptr) // DM: shouldn't we replace this by a state?
 		{
 			this->_newResp = new Response(*this->_newReq);
-			std::cout << " In Handleresponse, state of newReq is " << this->_newReq->getState() << std::endl;
 			if (this->_newReq->getState() == REQ_ERROR)
 			{
-				std::cout << "newReq statuscode = REQ_ERROR" << std::endl; //BS DEBUG
 				this->_newResp->setError(this->_newReq->getStatusCode());
 			}
 	// DM starting from here this should be only if state == PENDING (also, this needs to be split into separate functions)

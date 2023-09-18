@@ -167,9 +167,9 @@ void	Response::executeCgiScript(void)
 		_cgi.prepareArg(scriptName);
 		_cgi.run(*this);
 	}
-	if (getState() == READ_CGI)// && _cgi.checkIfCgiPipe())
+	if (getState() == READ_CGI)
 		_cgi.cgiRead(*this, this->_fullResponse);
-	else if (getState() == WRITE_CGI)// && _cgi.checkIfCgiPipe())
+	else if (getState() == WRITE_CGI)
 		_cgi.cgiWrite(*this);
 }
 

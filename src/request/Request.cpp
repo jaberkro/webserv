@@ -29,13 +29,11 @@ void		Request::readFirstLineAndHeaders(int dataSize)
 		std::memset(socketBuffer, 0, MAXLINE);  // CHECK IF FAILED
 		this->parseLines(processingBuffer);
 	}
-	bytesRead = -1;
 	if (bytesRead < 0 && dataSize > 0)
 	{
 		std::cout << "reading firstline and headers, dataSize = " << dataSize << std::endl;
-		setError(INTERNAL_SERVER_ERROR); //Nog iets anders hier?
+		setStatusCode(INTERNAL_SERVER_ERROR);
 	}
-	// BYTESREAD < 0? INTERNAL_SERVER_ERROR
 	if (bytesRead == 0)
 		this->_state = OVERWRITE; // DM Why?
 	if (this->_state == READBODY && this->_contentLength > 0)
@@ -81,12 +79,11 @@ void		Request::readBody(int dataSize)
 		if (this->_bodyLength == this->_contentLength || this->_body.find((this->_boundary + "--")) < std::string::npos)
 			this->_state = WRITE;
 	}
-	bytesRead = -1; //DEBUG BS
 	std::cout << "reading body, dataSize = " << dataSize << std::endl;
 
 	if (bytesRead < 0 && dataSize > 0)
 	{
-		setError(500); //Nog iets anders hier?
+		setStatusCode(500); //Nog iets anders hier?
 		// INTERNAL_SERVER_ERROR STATUSCODE
 		// STATE SEND_RESPONSE OID
 		// DM: I don't think it is an error
