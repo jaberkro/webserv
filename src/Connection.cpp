@@ -12,7 +12,7 @@ Connection::Connection()
 	this->_timer = false;
 }
 
-Connection::~Connection()
+Connection::~Connection(){}
 
 Connection::Connection(int listenfd, Socket sckt) : _listenfd(listenfd) // ADD STATUSCODE
 {
