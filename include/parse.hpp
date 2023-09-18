@@ -68,6 +68,7 @@ void		checkStartingSlash(std::string line, std::string directive);
 void		checkNoEndingSlash(std::string line, std::string directive);
 void		checkHasDot(std::string line, std::string directive);
 void		checkNotPreviousDirectory(std::string line, std::string directive);
+void		checkMissingHTTP(std::vector<Server> & servers);
 
 //error
 void		notImplementedError(std::string line, std::string here, std::string block);
