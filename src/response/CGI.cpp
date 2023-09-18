@@ -62,10 +62,10 @@ void	CGI::prepareArg(std::string const & scriptName)
 	this->_arg[0] = strdup(scriptName.c_str()); // DM: this was hardcoded "cgi-bin/uploadFile.py"
 	this->_arg[1] = NULL;
 
-	std::cout << "* ARGUMENTS *" << std::endl;
-	size_t	i = 0;
-	while (this->_arg[i])
-		std::cout << this->_arg[i++] << std::endl;
+	// std::cout << "* ARGUMENTS *" << std::endl;
+	// size_t	i = 0;
+	// while (this->_arg[i])
+	// 	std::cout << this->_arg[i++] << std::endl;
 }
 
 void	CGI::prepareEnv(std::string const & scriptName, Response & response)
@@ -100,10 +100,10 @@ void	CGI::prepareEnv(std::string const & scriptName, Response & response)
 	this->_env[i++] = strdup(("PATH_TRANSLATED=" + scriptName).c_str()); // TBD - what is this?
 	this->_env[i] = NULL;
 
-	std::cout << "* ENV *" << std::endl;
-	i = 0;
-	while (this->_env[i])
-		std::cout << this->_env[i++] << std::endl;
+	// std::cout << "* ENV *" << std::endl;
+	// i = 0;
+	// while (this->_env[i])
+	// 	std::cout << this->_env[i++] << std::endl;
 }
 
 int		CGI::checkTimeoutChild()
@@ -125,8 +125,9 @@ void	CGI::cgiWrite(Response & response)
 	{
 		std::cerr << "TIMEOUT FOR CHILD PROCESS" << std::endl;//Hier setten dat er 408 Timeout is en child killen!
 		kill(id, SIGKILL);
-		response.setStatusCode(REQUEST_TIMEOUT);
+		// response.setStatusCode(REQUEST_TIMEOUT);
 		response.setFilePath("");
+		response.setError(REQUEST_TIMEOUT);
 		return ;
 	}
 	bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), chunkSize);
@@ -183,6 +184,7 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse)
 		{
 			exitCode = WEXITSTATUS(this->_childProcessExitStatus);
 			// std::cout << "Script exited with exit code " << exitCode << " (so " << exitCode + 256 << ")" << std::endl;
+			std::cerr << "PARENT - status code is " << response.getStatusCode() << std::endl;
 			if (exitCode > 0)
 			{
 				response.setStatusCode(exitCode == 1 ? INTERNAL_SERVER_ERROR : exitCode + 256);
@@ -256,9 +258,9 @@ void	CGI::run(Response & response)
 			{
 				std::cerr << strerror(errno) << std::endl;
 				std::cerr << "FAIL: script: [" << this->_arg[0] << "]" << std::endl;
-				std::cerr << response.getRequest().getProtocolVersion() << " 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
-				std::cerr << response.getRequest().getProtocolVersion() << " 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
-				std::cerr << "just wrote in the pipe ? " << std::endl;
+				// std::cerr << response.getRequest().getProtocolVersion() << " 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
+				// std::cerr << response.getRequest().getProtocolVersion() << " 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
+				// std::cerr << "just wrote in the pipe ? " << std::endl;
 				exit(INTERNAL_SERVER_ERROR);
 			}
 		}
