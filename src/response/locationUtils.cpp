@@ -32,7 +32,7 @@ locIterator	findWildcardLocationMatch(std::string target, \
 	locIterator	it;
 	std::vector<std::string>				targetSplit;
 
-	std::cerr << "Finding wildcard loc match" << std::endl;
+	// std::cerr << "Finding wildcard loc match" << std::endl;
 	for (it = locations.begin(); it != locations.end(); it++)
 	{
 		if (it->getModifier() != "=" && it->getMatch().find('*') == 0)
@@ -72,7 +72,7 @@ locIterator	findClosestLocationMatch(std::string target, \
 	size_t						idx;
 	size_t						len = 0;
 
-	std::cerr << "Finding closest loc match" << std::endl;
+	// std::cerr << "Finding closest loc match" << std::endl;
 	splitUri(target, targetSplit);
 	for (auto it = locations.begin(); it != locations.end(); it++)
 	{
@@ -81,11 +81,11 @@ locIterator	findClosestLocationMatch(std::string target, \
 		std::vector<std::string>	matchSplit;
 		splitUri(it->getMatch(), matchSplit);
 		len = matchSplit.size();
-		std::cerr << "Location " << it->getMatch() << std::endl;
+		// std::cerr << "Location " << it->getMatch() << std::endl;
 		
 		for (idx = 0; idx < len; idx++)
 		{
-			std::cerr << "comparing " << targetSplit[idx] << " and " << matchSplit[idx] << std::endl;
+			// std::cerr << "comparing " << targetSplit[idx] << " and " << matchSplit[idx] << std::endl;
 			if (idx == targetSplit.size() || \
 				targetSplit[idx] != matchSplit[idx])
 			{
@@ -100,7 +100,7 @@ locIterator	findClosestLocationMatch(std::string target, \
 		}
 		matchSplit.clear();
 	}
-	std::cerr << "returning " << longest->getMatch() << std::endl;
+	std::cerr << "Location: " << longest->getMatch() << std::endl;
 
 	return (longest);
 }
@@ -113,8 +113,7 @@ locIterator	findClosestLocationMatch(std::string target, \
  * @param uri the uri string to be split
  * @param chunks reference to a vector, in which the chunks are to be placed
  */
-void	splitUri(std::string const & uri, \
-	std::vector<std::string> & chunks)
+void	splitUri(std::string const & uri, std::vector<std::string> & chunks)
 {
 	size_t	begin = 0;
 	size_t	end;
