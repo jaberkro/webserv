@@ -4,7 +4,8 @@
 # define OK 200
 # define DELETED 204
 # define MULTIPLE_CHOICES 300
-# define MOVED_PERMANENTLY 301 // JMA: temporarily added
+# define MOVED_PERMANENTLY 301
+# define NOT_MODIFIED 304
 # define TEMPORARY_REDIRECT 307
 # define PERMANENT_REDIRECT 308
 # define BAD_REQUEST 400

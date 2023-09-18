@@ -1,11 +1,14 @@
 #include "parse.hpp"
 #include <string>
 
-t_values	fillDefaultErrorPages(t_values values) // JMA: should this be removed?
+t_values	fillDefaultErrorPages(t_values values)
 {
+	values.errorPages[400] = "/4xx.html";
+	values.errorPages[403] = "/4xx.html";
 	values.errorPages[404] = "/404.html";
+	values.errorPages[405] = "/4xx.html";
 	values.errorPages[408] = "/408.html";
-
+	values.errorPages[413] = "/4xx.html";
 	return (values);
 }
 

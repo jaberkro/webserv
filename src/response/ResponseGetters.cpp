@@ -54,6 +54,8 @@ int	Response::getStatusCode(void)
 void	Response::setStatusCode(int code)
 {
 	this->_statusCode = code;
+	std::cout << "Statuscode: " << code;
+	std::cout << ": " <<this->_responseCodes[code] << std::endl;
 }
 
 std::string	Response::getFullResponse(void)
@@ -90,6 +92,7 @@ size_t	const & Response::getState() const
 void	Response::setState(size_t state)
 {
 	this->_state = state;
+	std::cout << "State: " << state << std::endl;
 }
 
 void	Response::setError(int statusCode)

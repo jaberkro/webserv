@@ -7,7 +7,7 @@
 
 typedef struct s_values
 {
-	std::string					root = ""; // is this allowed?
+	std::string					root = "";
 	std::vector<std::string>	indexes;
 	bool						autoindex = false;
 	unsigned long long			maxBodySize = 1000000;

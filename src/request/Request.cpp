@@ -21,12 +21,12 @@ void		Request::readFirstLineAndHeaders(int dataSize)
 	std::string	processingBuffer;
 	ssize_t		bytesRead = 0;
 
-	std::memset(socketBuffer, 0, MAXLINE); // CHECK IF FAILED
+	std::memset(socketBuffer, 0, MAXLINE);
 	if (this->_state == READHEADERS && (bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0)
 	{
 		std::string	chunk(socketBuffer, bytesRead);
 		processingBuffer += chunk;
-		std::memset(socketBuffer, 0, MAXLINE);  // CHECK IF FAILED
+		std::memset(socketBuffer, 0, MAXLINE);
 		this->parseLines(processingBuffer);
 	}
 	if (bytesRead < 0 && dataSize > 0)
@@ -35,7 +35,7 @@ void		Request::readFirstLineAndHeaders(int dataSize)
 		setStatusCode(INTERNAL_SERVER_ERROR);
 	}
 	if (bytesRead == 0)
-		this->_state = OVERWRITE; // DM Why?
+		this->setState(OVERWRITE); // DM Why?
 	if (this->_state == READBODY && this->_contentLength > 0)
 	{
 		this->_body = processingBuffer.substr(2);
@@ -57,7 +57,7 @@ void	Request::parseLines(std::string & processingBuffer)
 		{
 			this->parseFieldLine(line);
 			if (processingBuffer.find("\r\n") == 0)
-				this->_state = this->_method == "POST" ? READBODY : WRITE;
+				this->setState(this->_method == "POST" ? READBODY : WRITE);
 		}
 	}
 }
@@ -77,7 +77,7 @@ void		Request::readBody(int dataSize)
 		this->_bodyLength += bytesRead;
 		std::memset(socketBuffer, 0, MAXLINE);
 		if (this->_bodyLength == this->_contentLength || this->_body.find((this->_boundary + "--")) < std::string::npos)
-			this->_state = WRITE;
+			this->setState(WRITE);
 	}
 	std::cout << "reading body, dataSize = " << dataSize << std::endl;
 
@@ -108,12 +108,12 @@ bool	Request::parseStartLine(std::string &line)
 	questionMark = this->_target.find_first_of("?");
 	if (questionMark < this->_target.length() - 1)
 	{
-		setQueryString(this->_target.substr(questionMark + 1, std::string::npos));
+		this->setQueryString(this->_target.substr(questionMark + 1, std::string::npos));
 		this->_target.erase(questionMark, std::string::npos);
 	}
 	if (this->_target.find("/..") < std::string::npos)
-		setStatusCode(BAD_REQUEST);
-	setProtocolVersion(line.substr(0, std::string::npos)); // that's the whole line
+		this->setStatusCode(BAD_REQUEST);
+	this->setProtocolVersion(line.substr(0, std::string::npos)); // that's the whole line
 	line.erase(0, std::string::npos);
 	return (true);
 }
@@ -132,11 +132,11 @@ void	Request::parseFieldLine(std::string &line)
 	key = extractKey(line);
 	value = extractValue(line);
 	if (key == "Host")
-		setHost(value);
+		this->setHost(value);
 	else if (key == "Content-Length")
-		setContentLength(value);
+		this->setContentLength(value);
 	else if (key == "Content-Type" && value.find("boundary=") < std::string::npos)
-		setBoundary(value.substr(value.find("boundary=") + 9));
+		this->setBoundary(value.substr(value.find("boundary=") + 9));
 	try
 	{
 		this->_headers.at(key) += ", " + value;
@@ -199,8 +199,7 @@ std::vector<size_t> & matches, int *zero)
 			this->_port == servers[idx].getPort(i))
 				*zero = idx;
 		}
-	}
-	
+	}	
 }
 
 /**
@@ -302,8 +301,6 @@ const & servers, std::vector<size_t> & matches, std::vector<std::string> & hostS
 	}
 	return (longest);
 }
-
-
 
 /**
  * @brief verifies whether the host indication in the request and the host 

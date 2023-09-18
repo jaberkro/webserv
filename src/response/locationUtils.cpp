@@ -1,7 +1,6 @@
 #include "Response.hpp"
 #include <iostream>
 
-
 /**
  * @brief iterates over locations and identifies the location with the exact
  * match for the target URI, if available
@@ -75,8 +74,6 @@ locIterator	findClosestLocationMatch(std::string target, \
 
 	// std::cerr << "Finding closest loc match" << std::endl;
 	splitUri(target, targetSplit);
-	// for (std::vector<std::string>::iterator i = targetSplit.begin(); \
-	// 	i != targetSplit.end(); i++) // JMA: what does this do? Can it go?
 	for (auto it = locations.begin(); it != locations.end(); it++)
 	{
 		if (it->getModifier() == "=")
@@ -103,8 +100,7 @@ locIterator	findClosestLocationMatch(std::string target, \
 		}
 		matchSplit.clear();
 	}
-	// std::cerr << "returning " << longest->getMatch() << std::endl;
-
+	std::cerr << "Location: " << longest->getMatch() << std::endl;
 	return (longest);
 }
 
@@ -116,8 +112,7 @@ locIterator	findClosestLocationMatch(std::string target, \
  * @param uri the uri string to be split
  * @param chunks reference to a vector, in which the chunks are to be placed
  */
-void	splitUri(std::string const & uri, \
-	std::vector<std::string> & chunks)
+void	splitUri(std::string const & uri, std::vector<std::string> & chunks)
 {
 	size_t	begin = 0;
 	size_t	end;
