@@ -80,7 +80,7 @@ void parse(std::vector<Server> &servers, char *configFile)
 			exit(EXIT_FAILURE);
 		}
 		else if (line == "server {" || line.find("location") == 0 || \
-			hasDirective(line) != -1) // location msut have this error message? // and allow?
+		hasDirective(line) != -1) // location must have this error message? // and allow?
 		{
 			std::cerr << "Error: [" << line << "]: should be inside ";
 			std::cerr << "http block: \nhttp {\n\n}" << std::endl;
