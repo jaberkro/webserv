@@ -101,7 +101,6 @@ locIterator	findClosestLocationMatch(std::string target, \
 		matchSplit.clear();
 	}
 	std::cerr << "Location: " << longest->getMatch() << std::endl;
-
 	return (longest);
 }
 

@@ -18,8 +18,8 @@ class Connection
 		Connection& operator=(const Connection &src);
 		~Connection();
 
-		void			handleRequest(int connfd, std::vector<Server> servers);//, Server *& handlingServer, Request *& newReq);
-		void			handleResponse();//Request *& newReq, Response *& newResp, Server *& handlingServer);//int connfd, std::vector<Server> servers)
+    void			handleRequest(int connfd, std::vector<Server> servers, int dataSize);
+		void			handleResponse();
 		void			setRequest(Request *request);
 		Request *		getRequest(void);
 		Response *		getResponse(void);

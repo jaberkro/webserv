@@ -30,7 +30,7 @@ class Request
 		Request(Request &);
 		Request &	operator=(Request &);
 
-		void			processReq(void);
+		void			processReq(int dataSize);
 		Server const &	identifyServer(std::vector<Server> const & servers);
 	
 		std::string	const &						getMethod() const;
@@ -82,8 +82,8 @@ class Request
 		size_t								_contentLength;
 		size_t								_state;
 		
-		void	readFirstLineAndHeaders(void);
-		void	readBody(void);
+		void	readFirstLineAndHeaders(int dataSize);
+		void	readBody(int dataSize);
 		void	parseLines(std::string & processingBuffer);
 		bool	parseStartLine(std::string &line);
 		void	parseFieldLine(std::string &line);

@@ -21,7 +21,7 @@ class Webserver
 		bool						_running; //BS:houden of weg?
 		std::vector<Socket> 		_sckts;
 		std::map<int, Connection>	_connections;
-		std::map<int, int>			_cgiFds; //first one is cgi Fd, second one is corresponding connFd
+		std::map<int, int>			_cgiFds; //first one in pair is cgi Fd, second one is corresponding connFd
 		int							_kq;
 		struct kevent				_evList;
 		int							comparefd(int fd);

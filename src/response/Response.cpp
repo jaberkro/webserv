@@ -149,9 +149,9 @@ void	Response::executeCgiScript(void)
 		_cgi.prepareArg(scriptName);
 		_cgi.run(*this);
 	}
-	if (this->getState() == READ_CGI)// && _cgi.checkIfCgiPipe())
+	if (getState() == READ_CGI)
 		_cgi.cgiRead(*this, this->_fullResponse);
-	else if (this->getState() == WRITE_CGI)// && _cgi.checkIfCgiPipe())
+	else if (getState() == WRITE_CGI)
 		_cgi.cgiWrite(*this);
 }
 
@@ -197,12 +197,12 @@ void	Response::sendResponse(void)
 			chunkSize, 0);
 		if (bytesSent < 0)
 		{
-			std::cout << "BytesSent error, send internal error" << std::endl;// DEBUG - TO BE DELETED
-			// this->_state = ERROR; // JMA: should it be like this?
-			// CLOSE CONNECTION
+			_state = DONE;
+			close(this->_req.getConnFD());
 			return ;
 		}
-		this->_fullResponse.erase(0, bytesSent);
+		else
+			this->_fullResponse.erase(0, bytesSent);
 		// std::cout << "State is " << this->_state << ", bytesSent = ";// DEBUG - TO BE DELETED
 		// std::cout << bytesSent << ", response leftover size is ";// DEBUG - TO BE DELETED
 		// std::cout << this->_fullResponse.size() << ", chunkSize = ";// DEBUG - TO BE DELETED
