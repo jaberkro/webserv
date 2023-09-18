@@ -70,11 +70,11 @@ int	parseErrorCode(std::string code, std::string directive)
 	if (!allDigits(code))
 		nanError(code, directive);
 	if (code.size() > 3)
-		tooBigError(code, directive, "600"); // this needs to be fine tuned
+		tooBigError(code, directive, "600");
 	try
 	{
 		newCode = stoi(code);
-		if (newCode < 200 || newCode > 600) // this needs to be fine tuned
+		if (newCode < 100 || newCode > 600)
 		{
 			std::cerr << "Error: can't parse " << directive;
 			std::cerr << ": invalid code: [" << code << "]" << std::endl;
