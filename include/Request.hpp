@@ -104,6 +104,5 @@ size_t		countOverlapLeading(std::vector<std::string> & hostSplit, std::vector<st
 size_t		countOverlapTrailing(std::vector<std::string> & hostSplit, std::vector<std::string> & nameSplit);
 void		makeLowercase(std::string & str);
 std::vector<std::string>		splitServerName(std::string const & name);
-// void		splitServerName(std::string const & name, std::vector<std::string> & chunks);
 
 #endif
