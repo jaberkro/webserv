@@ -26,6 +26,17 @@ std::map<int, std::string> 	Response::_responseCodes =
 	{NOT_IMPLEMENTED, "Not Implemented"}
 };
 
+std::map<int, std::string> 	Response::_responseStates = 
+{
+	{PENDING, "Pending"},
+	{SENDING, "Sending"},
+	{DONE, "Done"},
+	{WRITE_CGI, "Write CGI"},
+	{READ_CGI, "Read CGI"},
+	{INIT_CGI, "Init CGI"},
+	{REQ_ERROR, "Request Error"},
+};
+
 /* TO BE DELETED */
 void	Response::printResponse(void) const
 {

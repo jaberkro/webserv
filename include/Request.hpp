@@ -81,7 +81,9 @@ class Request
 		std::string							_hostname;
 		size_t								_contentLength;
 		size_t								_state;
-		
+		static std::map<int, std::string>	_requestStates;
+		static std::map<int, std::string>	_requestCodes;
+	
 		void	readFirstLineAndHeaders(int dataSize);
 		void	readBody(int dataSize);
 		void	parseLines(std::string & processingBuffer);

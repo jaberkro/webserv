@@ -73,10 +73,11 @@ class Response {
 		locIterator							_location;
 		std::string							_fullResponse;
 		std::string							_message;
-		static std::map<int, std::string>	_responseCodes;
 		size_t								_state;
 		std::string							_pathInfo;
 		CGI									_cgi;
+		static std::map<int, std::string>	_responseCodes;
+		static std::map<int, std::string>	_responseStates;
 	
 		locIterator	findLocationMatch(std::string target, \
 		std::vector<Location> const & locations);

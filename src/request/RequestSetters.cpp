@@ -1,4 +1,5 @@
 #include "Request.hpp"
+#include <iostream>
 
 void	Request::setMethod(std::string method)
 {
@@ -28,6 +29,8 @@ void	Request::setProtocolVersion(std::string protocol)
 void	Request::setStatusCode(int code)
 {
 	this->_statusCode = code;
+	std::cout << "Changed request statuscode to: " << code;
+	std::cout << ": " << this->_requestCodes[code] << std::endl;
 }
 
 void	Request::setContentLength(std::string contentLength)
@@ -49,6 +52,8 @@ void	Request::setHost(std::string host)
 void	Request::setState(size_t state)
 {
 	this->_state = state;
+	std::cout << "Changed request state to: " << state << ": ";
+	std::cout << this->_requestStates[state] << std::endl;
 }
 
 void Request::setBody(std::string newBody)

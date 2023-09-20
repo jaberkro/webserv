@@ -2,6 +2,33 @@
 #include "responseCodes.hpp"
 #include "Webserver.hpp"
 
+std::map<int, std::string> 	Request::_requestCodes = 
+{
+	{OK, "OK"},
+	{DELETED, "Deleted"},
+	{MULTIPLE_CHOICES, "Multiple Choices"},
+	{MOVED_PERMANENTLY, "Moved Permanently"},
+	{TEMPORARY_REDIRECT, "Temporary Redirect"},
+	{PERMANENT_REDIRECT, "Permanent Redirect"},
+	{BAD_REQUEST, "Bad Request"},
+	{FORBIDDEN, "Forbidden"},
+	{NOT_FOUND, "Not Found"},
+	{METHOD_NOT_ALLOWED, "Method Not Allowed"},
+	{REQUEST_TIMEOUT, "Request Timeout"},
+	{CONTENT_TOO_LARGE, "Content Too Large"},
+	{INTERNAL_SERVER_ERROR, "Internal Server Error"},
+	{NOT_IMPLEMENTED, "Not Implemented"}
+};
+
+std::map<int, std::string> 	Request::_requestStates = 
+{
+	{READHEADERS, "Readheaders"},
+	{READBODY, "Readbody"},
+	{WRITE, "Write"},
+	{OVERWRITE, "Overwrite"},
+	{REQ_ERROR, "Request Error"},
+};
+
 /**
  * @brief reads a request from the socket, splits it into separate lines and 
  * sends each line to the corresponding parsing function for further processing
