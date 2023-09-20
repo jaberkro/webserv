@@ -76,8 +76,8 @@ void	Webserver::eofEvent(int ident)
 		std::cout << "Disconnect for fd " << ident;
 		_connections[ident].setTimer(false);
 		std::cout << std::endl;
-			if (close(ident) < 0)
-				throw Webserver::CloseError();  // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
+		if (close(ident) < 0)
+			throw Webserver::CloseError();  // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
 	}
 }
 
