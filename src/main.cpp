@@ -1,8 +1,6 @@
-// #include "webserv.hpp"
 #include "parse.hpp"
 #include <iostream>
 #include "Webserver.hpp"
-// #include <map>
 
 void	func_atexit(void)
 {
