@@ -38,6 +38,7 @@ Connection& Connection::operator=(const Connection &src)
 	this->_port = src._port;
 	return (*this);
 }
+
 void	Connection::cleanUp(void)
 {
 	this->_newReq->setState(OVERWRITE);
