@@ -6,6 +6,11 @@ Download:
 git clone https://github.com/jaberkro/webserv.git
 '''
 
+Move inside the webserv folder:
+'''
+cd webserv
+'''
+
 Compilation:
 '''
 make
