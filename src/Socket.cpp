@@ -1,5 +1,5 @@
-#include "../include/Socket.hpp"
-#include "../include/Webserver.hpp"
+#include "Socket.hpp"
+#include "Webserver.hpp"
 #include <fcntl.h>
 
 int Socket::getListenfd() const
@@ -16,14 +16,6 @@ std::string Socket::getAddress() const
 {
 	return (this->_address);
 }
-
-/**
- * @brief Sets up address, port, and host the socket needs to listen to.
- * - AF_INET is an address family used to designate the type of address the socket
- *   will listen to (which is in our case, IPv4)
- * 
- * @param address the address to listen to
- */
 
 void	Socket::setAddressHostPort(std::string address)
 {
@@ -52,18 +44,6 @@ void	Socket::setAddressHostPort(std::string address)
 		throw Socket::AddressConversionError();  // INTERNAL_SERVER_ERROR
 	////////end////////
 }
-
-/**
- * @brief Construct a new Socket:: Socket object, and bind it, make it listen and add it to the kqueue
- * Small notes: - AF_INET = internet socket, SOCK_STREAM = tcp stream
- * 				- the setsockopt function avoids in this case a bind error and allows to reuse the address
- * 				- SOMAXCONN is the max. possible connections on your system (usually 128)
- * 
- * @param address the address to listen on
- * @param newport the port to listen on
- * @param kq the fd of the kqueue
- * @param evSet the kevent struct used to add information to the kqueue
- */
 
 Socket::Socket(std::string address, unsigned short newport, int kq, struct kevent evSet) : _port(newport), _address(address)
 {
