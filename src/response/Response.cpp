@@ -41,7 +41,7 @@ void	Response::sendResponse(void)
 {
 	ssize_t bytesSent;
 	ssize_t chunkSize = std::min(this->_fullResponse.length(), \
-		static_cast<size_t>(MAXLINE)); // JMA: can min fail?
+		static_cast<size_t>(MAXLINE));
 	if (this->_state == SENDING)
 	{
 		bytesSent = send(this->_req.getConnFD(), this->_fullResponse.c_str(), \
