@@ -32,10 +32,12 @@ size_t	firstWhitespace(std::string line)
 	if (line == "")
 		return (0);
 	if (line.find(" ") == std::string::npos && \
-		line.find("\t") == std::string::npos && \
-		line.find("\v") == std::string::npos && \
-		line.find("\b") == std::string::npos)
+	line.find("\t") == std::string::npos && \
+	line.find("\v") == std::string::npos && \
+	line.find("\b") == std::string::npos)
+	{
 		return (line.size());
+	}
 	return (line.find_first_of(" \t\v\b"));
 }
 
