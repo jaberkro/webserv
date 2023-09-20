@@ -27,7 +27,7 @@ int	getValidLine(std::fstream &file, std::string &line)
 	return (1);
 }
 
-size_t	firstWhitespace(std::string line) // is this really needed?
+size_t	firstWhitespace(std::string line)
 {
 	if (line == "")
 		return (0);
