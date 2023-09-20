@@ -31,21 +31,21 @@ class Socket
 			{
 				return ("Creation of socket failed");
 			}
-		};
+	};
 	class SetsockoptError : public std::exception {
 		public:
 			const char*	what() const throw()
 			{
 				return ("Setsockopt failed");
 			}
-		};
+	};
 	class AddressConversionError : public std::exception {
 		public:
 			const char*	what() const throw()
 			{
 				return ("Converting address for socket failed");
 			}
-		};
+	};
 	class BindError : public std::exception {
 		public:
 			BindError() : message(std::strerror(errno)) {}
@@ -56,21 +56,21 @@ class Socket
 			}
 		private:
 			std::string message;
-		};
+	};
 	class ListenError : public std::exception {
 		public:
 			const char*	what() const throw()
 			{
 				return ("Listen for socket failed");
 			}
-		};
+	};
 	class KeventError : public std::exception {
 		public:
 			const char*	what() const throw()
 			{
 				return ("Kevent failed");
 			}
-		};
+	};
 };
 
 #endif

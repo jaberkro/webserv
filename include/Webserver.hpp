@@ -54,34 +54,31 @@ class Webserver
 			}
 		private:
 			std::string message;
-		};
+	};
 	class AcceptError : public std::exception {
 		public:
 			const char*	what() const throw()
 			{
 				return ("Accept failed");
 			}
-		};
+	};
 	class CloseError : public std::exception {
 		public:
 			const char*	what() const throw()
 			{
 				return ("Closing fd failed");
 			}
-		};
+	};
 };
 
 class serverBlock
 {
-	private:
-		/* data */
 	public:
 		serverBlock() {};
 		~serverBlock() {};
 
 		std::string										serverName;
 		std::vector<std::pair<std::string,std::string>>	serverDirectives;
-		// std::vector<Location>							locations;
 };
 
 // dummy functions
