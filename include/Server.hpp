@@ -17,7 +17,6 @@ class Server
 		void														addListen(std::pair<std::string, unsigned short> listen);
 		void														addServerName(std::string name);
 		void														addLocation(Location location);
-		void														addErrorPages(std::map<int, std::string> errorPages); //JMA: is this still used?
 
 		const std::vector<std::pair<std::string, unsigned short>> &	getListens() const;
 		const std::string											getHost(int i) const;
