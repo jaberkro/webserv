@@ -12,8 +12,8 @@ t_values		parseRoot(std::string line, t_values values)
 	checkOneArgumentOnly(line, "root");
 	checkNotPreviousDirectory(line, "root");
 	if ((line.find("/") != 0 && line.find("\"") != 0) || \
-		(line.find("\"") == 0 && line.size() > 1 && \
-		(line.at(1) != '\"' || line.size() != 2)))
+	(line.find("\"") == 0 && line.size() > 1 && \
+	(line.at(1) != '\"' || line.size() != 2)))
 	{
 		rootError("path should start with '/'", line);
 	}
