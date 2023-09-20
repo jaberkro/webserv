@@ -12,8 +12,10 @@ static bool validExtension(std::string configFile, std::string extension)
 	for(size_t i = 0; i < extension.size(); i++)
 	{
 		if (configFile.at(configFile.size() - 1 - i) != \
-			extension.at(extension.size() - 1 - i))
+		extension.at(extension.size() - 1 - i))
+		{
 			return (0);
+		}
 	}
 	if (configFile.at(configFile.size() - 1 - extension.size()) == '.')
 		return (0);
@@ -68,8 +70,10 @@ void parse(std::vector<Server> &servers, char *configFile)
 		}
 		else if (line == "server {" || line.find("location") == 0 || \
 		hasDirective(line) != -1)
+		{
 			notImplementedError(line, "outer layer of configuration file", \
 				"http block: \nhttp {\n\n}");
+		}
 		else
 			notRecognizedError(line, "configuration file");
 	}
