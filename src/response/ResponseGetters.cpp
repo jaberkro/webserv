@@ -100,3 +100,15 @@ void	Response::setError(int statusCode)
 	this->_state = RES_ERROR;
 	this->_statusCode = statusCode;
 }
+
+std::string	Response::getResponseCodeMessage(int responseCode)
+{
+	try 
+	{
+		return (this->_responseCodes.at(responseCode));
+	}
+	catch (std::exception &e)
+	{
+		return ("");
+	}
+}

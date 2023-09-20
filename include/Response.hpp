@@ -23,6 +23,7 @@ typedef std::vector<Location>::const_iterator locIterator;
 class Response {
 
 	public:
+
 		Response(Request & req);
 		~Response(void);
 		Response(Response &);
@@ -56,15 +57,15 @@ class Response {
 		std::string			getFullResponse(void);
 		std::string			getMessage(void);
 		void				setMessage(std::string);
+		std::string			getResponseCodeMessage(int responseCode);
 		size_t	const & 	getState() const;
 		void				setState(size_t state);
 		void				addToFullResponse(char *response, size_t length);
 		void				addToFullResponse(std::string chunk);
 		void				setError(int statusCode);
 
-		void				printResponse(void) const;	// for debugging purposes
-
 	private:
+
 		Request								_req;
 		int									_statusCode;
 		size_t								_fileLength;
@@ -82,6 +83,7 @@ class Response {
 		std::vector<Location> const & locations);
 		std::string	findIndexPage(locIterator itLoc);
 		void		prepareFilePath(std::string & targetUri);
+		void		prepareErrorPageFilePath(std::string & targetUri);
 		void		extractPathInfo(std::string & targetUri);
 		std::string	getErrorPageUri(void);
 		void		prepareFirstLine(void);
@@ -94,6 +96,8 @@ class Response {
 		void		checkIfMethodAllowed(void);
 		void		checkIfGetIsActuallyDelete(void);
 		void		checkIfReturn(void);
+		void		composeResponse(std::ifstream & file);
+
 };
 
 int			deleteFile(Request req, locIterator loc);
