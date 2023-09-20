@@ -3,12 +3,12 @@
 
 t_values	fillDefaultErrorPages(t_values values)
 {
-	values.errorPages[400] = "/4xx.html";
-	values.errorPages[403] = "/4xx.html";
+	values.errorPages[400] = "/400.html";
+	values.errorPages[403] = "/403.html";
 	values.errorPages[404] = "/404.html";
-	values.errorPages[405] = "/4xx.html";
+	values.errorPages[405] = "/405.html";
 	values.errorPages[408] = "/408.html";
-	values.errorPages[413] = "/4xx.html";
+	values.errorPages[413] = "/413.html";
 	values.errorPages[500] = "/500.html";
 	values.errorPages[501] = "/501.html";
 	return (values);

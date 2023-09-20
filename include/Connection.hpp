@@ -12,7 +12,6 @@
 class Connection
 {
 	public:
-	
 		Connection();
 		Connection(int listenfd, Socket sckt);
 		Connection(const Connection & src);
@@ -29,7 +28,6 @@ class Connection
 		void		setTimer(bool state);
 
 	private:
-
 		Request			*_newReq;
 		Response		*_newResp;
 		Server			*_handlingServer;
@@ -39,7 +37,6 @@ class Connection
 		bool			_timer;
 
 		void	cleanUp(void);
-
 };
 
 #endif

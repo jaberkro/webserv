@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <iostream>
 #include "Request.hpp"
-// #include "Response.hpp"
 
 #define R 0
 #define W 1

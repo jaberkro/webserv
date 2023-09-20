@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <sys/event.h>
-#include <sys/time.h> //for kqueue timer
+#include <sys/time.h>
 #include <fstream>
 #include <fcntl.h>
 #include <csignal>
@@ -15,13 +15,6 @@
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Connection.hpp"
-
-/**
- * @brief Checks if the fd that an event took place on matches any socket fd's
- * 
- * @param eventfd the fd the event took place on
- * @return int 
- */
 
 int		Webserver::comparefd(int eventfd)
 {
@@ -75,13 +68,6 @@ void	Webserver::addReadFilter(int fd)
 	if (kevent(_kq, &_evList, 1, NULL, 0, NULL) == -1)
 		throw Webserver::KeventError(); // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR, set Write event!
 }
-
-/**
- * @brief Handles and eof event, where the client disconnects from the server
- * 
- * @param connfd 
- * @param ident 
- */
 
 void	Webserver::eofEvent(int ident)
 {
@@ -150,12 +136,6 @@ void	Webserver::writeEvent()
 	addTimerFilter(evFd);
 }
 
-/**
- * @brief Starts and runs the loop of the webserver that checks for events
- * 
- * @param servers 
- */
-
 void	Webserver::runWebserver(std::vector<Server> servers)
 {
 	int nev;
@@ -194,23 +174,10 @@ void	sighandler(int sig)
 	}
 }
 
-/**
- * @brief Sets custom behaviour for signals SIGINT and SiGQUIT
- * 
- */
 void	Webserver::setSignal()
 {
 	std::signal(SIGINT, sighandler); //handle potential error!
 }
-
-/**
- * @brief Construct a new Webserver:: Webserver object.
- * I) the kqueue will be initialized
- * II) the sockets will be initialized
- * II) the loop to check the connections and events is started with runWebserver()
- * 
- * @param servers a vector of Server instances with information about every server
- */
 
 Webserver::Webserver(std::vector<Server> servers)
 {

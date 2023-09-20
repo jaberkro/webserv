@@ -1,15 +1,11 @@
 #include "Server.hpp"
 #include <iostream>
 
-Server::Server()
-{
-	// std::cout << "Default constructor called on Server" << std::endl;
-}
+Server::Server(){}
 
 Server::Server(const Server &src)
 {
 	*this = src;
-	// std::cout << "Copy constructor called on Server" << std::endl;
 }
 
 Server& Server::operator=(const Server &src)
@@ -18,14 +14,10 @@ Server& Server::operator=(const Server &src)
 	this->_serverNames = src._serverNames;
 	this->_errorPages = src._errorPages;
 	this->_locations = src._locations;
-	// std::cout << "Copy assignment operator called on Server" << std::endl;
 	return (*this);
 }
 
-Server::~Server(void)
-{
-	// std::cout << "Destructor called on Server" << std::endl;
-}
+Server::~Server(void){}
 
 void Server::addListen(std::pair<std::string, unsigned short> listen)
 {
@@ -42,7 +34,8 @@ void Server::addLocation(Location location)
 	this->_locations.push_back(location);
 }
 
-const std::vector<std::pair<std::string, unsigned short>> &	Server::getListens(void) const
+const std::vector<std::pair<std::string, unsigned short>> &	\
+Server::getListens(void) const
 {
 	return (this->_listens);
 }

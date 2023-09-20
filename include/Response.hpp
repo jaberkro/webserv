@@ -23,7 +23,6 @@ typedef std::vector<Location>::const_iterator locIterator;
 class Response {
 
 	public:
-
 		Response(Request & req);
 		~Response(void);
 		Response(Response &);
@@ -66,7 +65,6 @@ class Response {
 		void				printResponse(void) const;	// for debugging purposes
 
 	private:
-
 		Request								_req;
 		int									_statusCode;
 		size_t								_fileLength;
@@ -96,7 +94,6 @@ class Response {
 		void		checkIfMethodAllowed(void);
 		void		checkIfGetIsActuallyDelete(void);
 		void		checkIfReturn(void);
-
 };
 
 int			deleteFile(Request req, locIterator loc);

@@ -47,7 +47,7 @@ void checkStartingSlash(std::string line, std::string directive)
 void checkHasDot(std::string line, std::string directive)
 {
 	if (line.find(".") == std::string::npos || \
-		line.find(".") == line.size() - 1)
+	line.find(".") == line.size() - 1)
 	{
 		std::cerr << "Error: " << directive << " [" << line << "] argument ";
 		std::cerr << "needs to have: a name and extension seperated by '.': ";
