@@ -102,7 +102,7 @@ void Connection::checkIfGetIsActuallyDelete(Request &request)
 	}
 }
 
-void	Connection::handleResponse()//int evFd)
+void	Connection::handleResponse(int dataSize)//int evFd)
 {
 	if (this->_newReq->getMethod() == "")
 		return;
@@ -124,7 +124,7 @@ void	Connection::handleResponse()//int evFd)
 			checkIfMethodAllowed(this->_newResp->getRequest().getMethod(), this->_newResp->getLocation());
 			
 			if (this->_newResp->getStatusCode() == OK)
-				this->_newResp->performRequest();
+				this->_newResp->performRequest(dataSize);
 			if (this->_newResp->getStatusCode() < INTERNAL_SERVER_ERROR && \
 			this->_newResp->getLocation()->getReturnCode())
 			{
@@ -134,7 +134,7 @@ void	Connection::handleResponse()//int evFd)
 			}
 		}
 		if (this->_newResp->getState() == WRITE_CGI || this->_newResp->getState() == READ_CGI)
-			this->_newResp->executeCgiScript();
+			this->_newResp->executeCgiScript(dataSize);
 		if (this->_newResp->getState() == PENDING || this->_newResp->getState() == RES_ERROR)
 			this->_newResp->prepareResponse(*this->_handlingServer);
 		if (this->_newResp->getState() == SENDING)
@@ -142,7 +142,6 @@ void	Connection::handleResponse()//int evFd)
 		if (this->_newResp->getState() == DONE)
 		{
 			this->_newReq->setState(OVERWRITE);
-			// close(evFd);//BS to test if Siege is faster now
 			delete this->_newResp;
 			this->_newResp = nullptr;
 			delete this->_handlingServer;

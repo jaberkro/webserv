@@ -89,27 +89,27 @@ void	Response::prepareFilePath(std::string & targetUri)
 	}
 }
 
-void	Response::performRequest(void)
+void	Response::performRequest(int dataSize)
 {
 	std::cerr << "Method: " << this->_req.getMethod() << std::endl;
 	if (this->_req.getMethod() == "POST")
-		this->performPOST();
+		this->performPOST(dataSize);
 	else if (this->_req.getMethod() == "DELETE")
 		this->performDELETE();
 	else if (this->_req.getMethod() == "GET")
-		this->performGET();
+		this->performGET(dataSize);
 	else
 		this->setStatusCode(NOT_IMPLEMENTED);
 }
 
-void	Response::performGET(void) 
+void	Response::performGET(int dataSize) 
 {
 	std::string scriptName = this->_location->getCgiScriptName();
 	std::string queryString = this->_req.getQueryString();
 
 	if ((!scriptName.empty() && !queryString.empty()) || \
 		scriptName.find('*') < std::string::npos)
-		this->executeCgiScript();
+		this->executeCgiScript(dataSize);
 }
 
 void	Response::performDELETE(void)	
@@ -119,7 +119,7 @@ void	Response::performDELETE(void)
 	// 	this->_filePath.clear();
 }
 
-void	Response::performPOST(void)
+void	Response::performPOST(int dataSize)
 {
 	size_t				bodyLength = this->_req.getBodyLength();
 	unsigned long long	maxBodySize = this->_location->getMaxBodySize();
@@ -132,10 +132,10 @@ void	Response::performPOST(void)
 			return ;
 		}
 	}
-	this->executeCgiScript();
+	this->executeCgiScript(dataSize);
 }
 
-void	Response::executeCgiScript(void)
+void	Response::executeCgiScript(int dataSize)
 {
 	if (this->getState() == PENDING)
 	{
@@ -150,7 +150,7 @@ void	Response::executeCgiScript(void)
 		_cgi.run(*this);
 	}
 	if (getState() == READ_CGI)
-		_cgi.cgiRead(*this, this->_fullResponse);
+		_cgi.cgiRead(*this, this->_fullResponse, dataSize);
 	else if (getState() == WRITE_CGI)
 		_cgi.cgiWrite(*this);
 }

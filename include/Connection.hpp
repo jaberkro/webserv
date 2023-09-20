@@ -19,7 +19,7 @@ class Connection
 		~Connection();
 
     void			handleRequest(int connfd, std::vector<Server> servers, int dataSize);
-		void			handleResponse();//int evFd);
+		void			handleResponse(int dataSize);//int evFd);
 		void			setRequest(Request *request);
 		Request *		getRequest(void);
 		Response *		getResponse(void);

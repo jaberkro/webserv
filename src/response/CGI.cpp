@@ -135,7 +135,7 @@ void	CGI::cgiWrite(Response & response)
 		// std::cout << "Closing webservToScript[W]" << std::endl;
 		// waitpid(id, &(this->_childProcessExitStatus), 0);
 	}
-	else if (bytesSent < 0)
+	else if (bytesSent < 0) // BS same error as other, will solve this
 	{
 		close(this->_scriptToWebserv[R]);
 		close(this->_scriptToWebserv[W]);
@@ -147,7 +147,7 @@ void	CGI::cgiWrite(Response & response)
 	}
 }
 
-void	CGI::cgiRead(Response & response, std::string & fullResponse)
+void	CGI::cgiRead(Response & response, std::string & fullResponse, int dataSize)
 {
 	ssize_t bytesRead = 0;
 	char	buf[RESPONSELINE];
@@ -191,16 +191,16 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse)
 		delete this->_arg[0];
 		delete[] this->_arg;
 	}
-	// if (bytesRead < 0) // this breaks the code. BS solves this
-	// {
-	// 	std::cerr << "oepsie" << std::endl;
-	// 	close(this->_scriptToWebserv[R]);
-	// 	kill(id, SIGKILL);
-	// 	response.setStatusCode(INTERNAL_SERVER_ERROR);
-	// 	response.setState(RES_ERROR);
-	// 	response.setFilePath("");
-	// 	fullResponse.clear();
-	// }
+	if (bytesRead < 0 && dataSize > 0)
+	{
+		std::cerr << "oepsie" << std::endl;
+		close(this->_scriptToWebserv[R]);
+		kill(id, SIGKILL);
+		response.setStatusCode(INTERNAL_SERVER_ERROR);
+		response.setState(RES_ERROR);
+		response.setFilePath("");
+		fullResponse.clear();
+	}
 }
 
 void	CGI::run(Response & response)
