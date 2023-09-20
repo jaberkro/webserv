@@ -74,4 +74,3 @@ size_t	const & Request::getState() const
 {
 	return (this->_state);
 }
-
