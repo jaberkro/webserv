@@ -2,12 +2,6 @@
 #include <string>
 #include <iostream>
 
-/**
- * @brief parse a listen command
- * 
- * @param line the std::string to parse the port from
- * @return unsigned short the parsed port number
- */
 static unsigned short	parsePort(std::string line)
 {
 	int	port;
@@ -58,14 +52,6 @@ static void checkValidHost(std::string host)
 		hostError(host);
 }
 
-/**
- * @brief parse a listen command
- *  use first half of std::string to parse the host, 
- *  save last part for parsePort() function
- * 
- * @param line the line that contains the host and port
- * @return std::string the hostname
- */
 static std::string parseHost(std::string &line)
 {
 	std::string	newHost;
@@ -90,13 +76,6 @@ static std::string parseHost(std::string &line)
 	return (newHost);
 }
 
-/**
- * @brief parse a listen line
- * 
- * @param line the string to find a host and port in
- * @return std::pair<std::string, unsigned short> a pair containing
- *  the host and port of this listen line.
- */
 std::pair<std::string, unsigned short> parseListen(std::string line)
 {
 	std::string reason = "needs argument(s): listen [host]:[port]";

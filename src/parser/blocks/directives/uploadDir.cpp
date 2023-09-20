@@ -2,13 +2,6 @@
 #include <iostream>
 #include <string>
 
-/**
- * @brief parse a upload_dir directive
- * 
- * @param line the line to parse
- * @param values the struct to update
- * @return t_values the updated struct containing the parsed upload_dir
- */
 t_values	parseUploadDir(std::string line, t_values values)
 {
 	std::string reason = "needs one argument: upload_dir <path>;";

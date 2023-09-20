@@ -12,24 +12,24 @@
 class Connection
 {
 	public:
+	
 		Connection();
 		Connection(int listenfd, Socket sckt);
 		Connection(const Connection & src);
 		Connection& operator=(const Connection &src);
 		~Connection();
 
-    void			handleRequest(int connfd, std::vector<Server> servers, int dataSize);
-		void			handleResponse(int dataSize);//int evFd);
-		void			setRequest(Request *request);
-		Request *		getRequest(void);
-		Response *		getResponse(void);
-		int				getListenFd();
-		bool			getTimer();
-		void			setTimer(bool state);
-		void			checkIfMethodAllowed(std::string method, locIterator location);
-		void			checkIfGetIsActuallyDelete(Request &request);
+    	void		handleRequest(int connfd, std::vector<Server> servers, int dataSize);
+		void		handleResponse(int dataSize);
+		void		setRequest(Request *request);
+		Request *	getRequest(void);
+		Response *	getResponse(void);
+		int			getListenFd();
+		bool		getTimer();
+		void		setTimer(bool state);
 
 	private:
+
 		Request			*_newReq;
 		Response		*_newResp;
 		Server			*_handlingServer;
@@ -37,7 +37,9 @@ class Connection
 		std::string		_address;
 		unsigned short	_port;
 		bool			_timer;
-		//std::string	_serverNames; BS: Deze nodig?
+
+		void	cleanUp(void);
+
 };
 
 #endif

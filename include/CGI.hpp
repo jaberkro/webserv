@@ -36,8 +36,8 @@ class CGI
 		int*	getWebservToScript();
 		int*	getScriptToWebserv();
 		bool	checkIfCgiPipe();
-		void	cgiRead(Response & response, std::string & fullResponse);
-		void	cgiWrite(Response & response);
+		void	cgiRead(Response & response, std::string & fullResponse, int dataSize);
+		void	cgiWrite(Response & response, int dataSize);
 
 		std::string	getResponse();
 };

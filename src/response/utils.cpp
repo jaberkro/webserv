@@ -1,12 +1,6 @@
 #include "responseCodes.hpp"
 #include <fstream>
 
-/**
- * @brief finds out the size of a file
- * 
- * @param filePath path to the file, the size of which is to be determined
- * @return size_t indicating the size of the file (in bytes)
- */
 size_t	getFileSize(std::string filePath)
 {
 	std::ifstream	file;

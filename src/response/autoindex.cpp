@@ -5,7 +5,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-static std::string createAutoindexMiddle(std::string oldPath, Response &response);
+static std::string createAutoindexMid(std::string oldPath, Response &response);
 
 static std::string createAutoindexEnd(Response &response)
 {
@@ -44,7 +44,7 @@ static void	createNewPath(std::string oldPath, struct dirent entry, \
 		return ;
 	}
 	else if (S_ISDIR(pathInfo.st_mode))
-		fileRefs.append(createAutoindexMiddle(newPath, response));
+		fileRefs.append(createAutoindexMid(newPath, response));
 	else
 	{
 		newPath = newPath.substr(5);
@@ -57,7 +57,7 @@ static void	createNewPath(std::string oldPath, struct dirent entry, \
 	}
 }
 
-static std::string createAutoindexMiddle(std::string oldPath, Response &response)
+static std::string createAutoindexMid(std::string oldPath, Response &response)
 {
 	std::string		fileRefs = "";
 	DIR				*directory;
@@ -113,7 +113,7 @@ std::string createAutoindex(Response &response)
 	std::fstream	endFile;
 
 	message.append(createAutoindexStart(response));
-	message.append(createAutoindexMiddle("data", response));
+	message.append(createAutoindexMid("data", response));
 	message.append(createAutoindexEnd(response));
 	return (message);
 }

@@ -56,10 +56,11 @@ void	CGI::prepareArg(std::string const & scriptName)
 	this->_arg = new char*[2];
 	this->_arg[0] = strdup(scriptName.c_str());
 	this->_arg[1] = NULL;
-	std::cout << "* ARGUMENTS *" << std::endl;
-	size_t	i = 0;
-	while (this->_arg[i])
-		std::cout << this->_arg[i++] << std::endl;
+
+	// std::cout << "* ARGUMENTS *" << std::endl;
+	// size_t	i = 0;
+	// while (this->_arg[i])
+	// 	std::cout << this->_arg[i++] << std::endl;
 }
 
 void	CGI::prepareEnv(std::string const & scriptName, Response & response)
@@ -94,10 +95,10 @@ void	CGI::prepareEnv(std::string const & scriptName, Response & response)
 	this->_env[i++] = strdup(("PATH_TRANSLATED=" + scriptName).c_str()); // TBD - what is this?
 	this->_env[i] = NULL;
 
-	std::cout << "* ENV *" << std::endl;
-	i = 0;
-	while (this->_env[i])
-		std::cout << this->_env[i++] << std::endl;
+	// std::cout << "* ENV *" << std::endl;
+	// i = 0;
+	// while (this->_env[i])
+	// 	std::cout << this->_env[i++] << std::endl;
 }
 
 int		CGI::checkTimeoutChild()
@@ -109,7 +110,7 @@ int		CGI::checkTimeoutChild()
 	return (0);
 }
 
-void	CGI::cgiWrite(Response & response)
+void	CGI::cgiWrite(Response & response, int dataSize)
 {
 	ssize_t bytesSent;
 	ssize_t chunkSize = std::min(this->_req.getBody().length(), static_cast<size_t>(MAXLINE));
@@ -117,10 +118,12 @@ void	CGI::cgiWrite(Response & response)
 	{
 		std::cerr << "Timeout for CGI script" << std::endl;
 		kill(id, SIGKILL);
-		response.setStatusCode(REQUEST_TIMEOUT);
+		// response.setStatusCode(REQUEST_TIMEOUT);
 		response.setFilePath("");
+		response.setError(REQUEST_TIMEOUT);
 		return ;
 	}
+	// close(_webservToScript[W]);
 	bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), chunkSize);
 	std::cerr << "[writing to cgi] chunk size is " << chunkSize << ", BytesSent is " << bytesSent << std::endl;
 	if (bytesSent > 0) //JMA: this if statement is important!
@@ -135,19 +138,23 @@ void	CGI::cgiWrite(Response & response)
 		// std::cout << "Closing webservToScript[W]" << std::endl;
 		// waitpid(id, &(this->_childProcessExitStatus), 0);
 	}
-	else if (bytesSent < 0) // BS same error as other, will solve this
-	{
-		close(this->_scriptToWebserv[R]);
-		close(this->_scriptToWebserv[W]);
-		close(this->_webservToScript[R]);
-		close(this->_webservToScript[W]);
-		kill(id, SIGKILL);
-		response.setStatusCode(INTERNAL_SERVER_ERROR);
-		response.setFilePath("");
-	}
+ 	std::cerr << "-- errno is " << errno << ", datasize is " << dataSize << std::endl;
+
+	// else if (bytesSent < 0 && dataSize > 0) // BS same error as other, need to solve this
+	// {
+	// 	std::cerr << "oepsieWrite -- errno is " << errno << std::endl;
+
+	// 	close(this->_scriptToWebserv[R]);
+	// 	close(this->_scriptToWebserv[W]);
+	// 	close(this->_webservToScript[R]);
+	// 	close(this->_webservToScript[W]);
+	// 	kill(id, SIGKILL);
+	// 	response.setStatusCode(INTERNAL_SERVER_ERROR);
+	// 	response.setFilePath("");
+	// }
 }
 
-void	CGI::cgiRead(Response & response, std::string & fullResponse, int dataSize)
+void	CGI::cgiRead(Response & response, std::string & fullResponse, int)// dataSize)
 {
 	ssize_t bytesRead = 0;
 	char	buf[RESPONSELINE];
@@ -175,6 +182,7 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse, int dataSize)
 		{
 			exitCode = WEXITSTATUS(this->_childProcessExitStatus);
 			// std::cout << "Script exited with exit code " << exitCode << " (so " << exitCode + 256 << ")" << std::endl;
+			std::cerr << "PARENT - status code is " << response.getStatusCode() << std::endl;
 			if (exitCode > 0)
 			{
 				response.setStatusCode(exitCode == 1 ? INTERNAL_SERVER_ERROR : exitCode + 256);
@@ -191,16 +199,16 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse, int dataSize)
 		delete this->_arg[0];
 		delete[] this->_arg;
 	}
-	if (bytesRead < 0 && dataSize > 0)
-	{
-		std::cerr << "oepsie" << std::endl;
-		close(this->_scriptToWebserv[R]);
-		kill(id, SIGKILL);
-		response.setStatusCode(INTERNAL_SERVER_ERROR);
-		response.setState(RES_ERROR);
-		response.setFilePath("");
-		fullResponse.clear();
-	}
+	// if (bytesRead < 0 && dataSize > 0) //THIS IS THE LAST PAIN
+	// {
+	// 	std::cerr << "oepsieREad -- errno is " << errno << ", dataSize is " << dataSize << std::endl;
+	// 	close(this->_scriptToWebserv[R]);
+	// 	kill(id, SIGKILL);
+	// 	response.setStatusCode(INTERNAL_SERVER_ERROR);
+	// 	response.setState(RES_ERROR);
+	// 	response.setFilePath("");
+	// 	fullResponse.clear();
+	// }
 }
 
 void	CGI::run(Response & response)
@@ -248,9 +256,9 @@ void	CGI::run(Response & response)
 			{
 				std::cerr << strerror(errno) << std::endl;
 				std::cerr << "FAIL: script: [" << this->_arg[0] << "]" << std::endl;
-				std::cerr << response.getRequest().getProtocolVersion() << " 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
-				std::cerr << response.getRequest().getProtocolVersion() << " 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
-				std::cerr << "just wrote in the pipe ? " << std::endl;
+				// std::cerr << response.getRequest().getProtocolVersion() << " 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
+				// std::cerr << response.getRequest().getProtocolVersion() << " 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n";
+				// std::cerr << "just wrote in the pipe ? " << std::endl;
 				exit(INTERNAL_SERVER_ERROR);
 			}
 		}

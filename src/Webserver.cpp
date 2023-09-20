@@ -118,7 +118,7 @@ void	Webserver::readEvent(std::vector<Server> servers)
 	if (_connections[evFd].getResponse())
 	{
 		if (_connections[evFd].getResponse()->getState() == READ_CGI)
-			_connections[evFd].handleResponse();//evFd);
+			_connections[evFd].handleResponse(_evList.data);//evFd);
 	}
 	else
 	{
@@ -134,7 +134,7 @@ void	Webserver::writeEvent()
 	int evFd = checkIfCgiFd((int)_evList.ident);
 	// std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~WRITE EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
 	// std::cout << "Connection id is [" << (int)_evList.ident << "]" << std::endl;
-	_connections[evFd].handleResponse();//evFd);
+	_connections[evFd].handleResponse(_evList.data);//evFd);
 	if (_connections[evFd].getResponse() == nullptr)//In case the Response is sent and finished, the write filter can be deleted
 		deleteWriteFilter(evFd);
 	else if (_connections[evFd].getResponse()->getState() == INIT_CGI && _connections[evFd].getResponse()->cgiOnKqueue == false)
@@ -163,6 +163,7 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 
 	while (1)
 	{
+		// std::cout << "In while loop: " << (_evList.flags & EV_EOF) << std::endl;
 		struct timespec *timeout = NULL;
 		_running = true;
 		if ((nev = kevent(_kq, NULL, 0, &_evList, 1, timeout)) < 0)
@@ -178,7 +179,10 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 			readEvent(servers);
 		}
 		else if (_evList.filter == EVFILT_WRITE)
+		{
+			// std::cout << "Data size to be written: " << _evList.data << std::endl;
 			writeEvent();
+		}
 		//CATCH
 		// KEVENT -> INTERNAL_SERVER_ERROR, NOT AN EXCEPTION
 	}

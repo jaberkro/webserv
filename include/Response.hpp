@@ -20,8 +20,6 @@ enum resp {
 
 typedef std::vector<Location>::const_iterator locIterator;
 
-class CGI; // why?
-
 class Response {
 
 	public:
@@ -65,7 +63,7 @@ class Response {
 		void				addToFullResponse(std::string chunk);
 		void				setError(int statusCode);
 
-		void	printResponse(void) const;	// for debugging purposes
+		void				printResponse(void) const;	// for debugging purposes
 
 	private:
 
@@ -82,8 +80,8 @@ class Response {
 		std::string							_pathInfo;
 		CGI									_cgi;
 	
-		locIterator	findLocationMatch(std::string target, std::vector<Location> const & locations);
-		
+		locIterator	findLocationMatch(std::string target, \
+		std::vector<Location> const & locations);
 		std::string	findIndexPage(locIterator itLoc);
 		void		prepareFilePath(std::string & targetUri);
 		void		extractPathInfo(std::string & targetUri);
@@ -95,17 +93,23 @@ class Response {
 		void		prepareHeaderLocation(void);
 		void		prepareContent(std::ifstream &file);
 		void		checkIfRedirectNecessary(void);
+		void		checkIfMethodAllowed(void);
+		void		checkIfGetIsActuallyDelete(void);
+		void		checkIfReturn(void);
+
 };
 
-// bool allowedToDelete(std::string toRemove, locIterator const & location);
 int			deleteFile(Request req, locIterator loc);
 std::string createRemovePath(Request req, locIterator loc);
 bool		forbiddenToDeleteFileOrFolder(std::string toRemove);
 std::string	createAutoindex(Response &response);
 bool		hasReadPermission(std::string filePath);
-locIterator	findExactLocationMatch(std::string target, std::vector<Location> const & locations);
-locIterator	findWildcardLocationMatch(std::string target, std::vector<Location> const & locations);
-locIterator	findClosestLocationMatch(std::string target, std::vector<Location> const & locations);
+locIterator	findExactLocationMatch(std::string target, \
+std::vector<Location> const & locations);
+locIterator	findWildcardLocationMatch(std::string target, \
+std::vector<Location> const & locations);
+locIterator	findClosestLocationMatch(std::string target, \
+std::vector<Location> const & locations);
 void		splitUri(std::string const & uri, std::vector<std::string> & chunks);
 size_t		getFileSize(std::string filePath);
 bool		isContentAllowed(int statusCode);

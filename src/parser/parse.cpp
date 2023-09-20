@@ -20,12 +20,6 @@ static bool validExtension(std::string configFile, std::string extension)
 	return (1);
 }
 
-/**
- * @brief open configuration file and test if open failed or not
- * 
- * @param configFile the name of the file to open
- * @return std::fstream the file that is opened
- */
 static std::fstream openFile(char *configFile)
 {
 	std::fstream	file;
@@ -55,13 +49,6 @@ static std::fstream openFile(char *configFile)
 	return (file);
 }
 
-/**
- * @brief 
- * 
- * 
- * @param servers variable to store the parsed information in
- * @param configFile title of the file to parse
- */
 void parse(std::vector<Server> &servers, char *configFile)
 {
 	std::fstream	file;

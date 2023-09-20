@@ -3,14 +3,6 @@
 #include <string>
 #include <iostream>
 
-/**
- * @brief getline that checks the line for valid input, trims whitespaces at 
- * the beginning and end of the string and removes comments
- * 
- * @param file the file to read the next line from
- * @param line the std::string to store the next line in
- * @return int 1 when getline worked, 0 when the line is empty
- */
 int	getValidLine(std::fstream &file, std::string &line)
 {
 	if (!std::getline(file, line))
@@ -35,12 +27,6 @@ int	getValidLine(std::fstream &file, std::string &line)
 	return (1);
 }
 
-/**
- * @brief find the first space or horizontal tab
- * 
- * @return size_t the index of the first space or horizontal tab found, 
- * size of string if no tab or space was found, 0 if line is empty
- */
 size_t	firstWhitespace(std::string line) // is this really needed?
 {
 	if (line == "")

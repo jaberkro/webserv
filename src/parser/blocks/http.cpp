@@ -34,12 +34,6 @@ static int parsedImplementedHTTPOnly(std::vector<Server> &servers, \
 	return (1);
 }
 
-/**
- * @brief parse HTTP block
- * 
- * @param servers the variable to store the parsed information in
- * @param file the file to parse the information from
- */
 void parseHTTP(std::vector<Server> &servers, std::fstream &file)
 {
 	std::string line;

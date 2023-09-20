@@ -2,13 +2,6 @@
 #include <string>
 #include <iostream>
 
-/**
- * @brief parse an autoindex directive
- * 
- * @param line the line to parse
- * @param values this struct contains the autoindex value to be overwritten
- * @return t_values the updated struct containing the parsed autoindex
- */
 t_values	parseAutoindex(std::string line, t_values values)
 {
 	std::string reason = "needs one argument: autoindex <on/off>;";

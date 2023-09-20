@@ -1,14 +1,6 @@
 #include <string>
 #include <iostream>
 
-/**
- * @brief substr that catches exception, prints it and sends back "" in case an 
- * excption occured
- * 
- * @param s the string to make a substring from
- * @param start the index to start the substring from
- * @return std::string 
- */
 std::string protectedSubstr(std::string s, size_t start)
 {
 	std::string	newString;
@@ -28,15 +20,6 @@ std::string protectedSubstr(std::string s, size_t start)
 	return (newString);
 }
 
-/**
- * @brief substr that catches exception, prints it and sends back "" in case an 
- * excption occured
- * 
- * @param s the string to make a substring from
- * @param start the index to start the substring from
- * @param size the amount of characters to include in the new substring
- * @return std::string 
- */
 std::string protectedSubstr(std::string s, size_t start, size_t size)
 {
 	std::string	newString;
@@ -56,12 +39,6 @@ std::string protectedSubstr(std::string s, size_t start, size_t size)
 	return (newString);
 }
 
-/**
- * @brief remove whitespace at beginning of an std::string
- * 
- * @param s the std::string to be trimmed
- * @return the trimmed std::string
- */
 std::string	ltrim(std::string s)
 {
 	size_t i = 0;
@@ -80,12 +57,6 @@ std::string	ltrim(std::string s)
 	return (protectedSubstr(s, i));
 }
 
-/**
- * @brief remove whitespace at the end of an std::string
- * 
- * @param s the std::string to be trimmed
- * @return the trimmed std::string
- */
 std::string	rtrim(std::string s)
 {
 	size_t i = s.size() - 1;

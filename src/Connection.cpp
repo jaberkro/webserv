@@ -1,6 +1,5 @@
 #include "Webserver.hpp"
 #include "Connection.hpp"
-#include "Socket.hpp"
 
 Connection::Connection()
 {
@@ -10,13 +9,9 @@ Connection::Connection()
 	this->_address = "";
 	this->_port = 0;
 	this->_timer = false;
-	// std::cout << "Default constructor called on Connection" << std::endl;
 }
 
-Connection::~Connection()
-{
-	// std::cout << "Destructor called on Connection" << std::endl;
-}
+Connection::~Connection() {}
 
 Connection::Connection(int listenfd, Socket sckt) : _listenfd(listenfd) // ADD STATUSCODE
 {
@@ -26,13 +21,11 @@ Connection::Connection(int listenfd, Socket sckt) : _listenfd(listenfd) // ADD S
 	this->_address = sckt.getAddress();
 	this->_port = sckt.getPort();
 	this->_timer = false;
-	// std::cout << "Parametric constructor called on Connection" << std::endl;
 }
 
 Connection::Connection(const Connection &src)
 {
 	*this = src;
-	// std::cout << "Copy constructor called on Connection" << std::endl;
 }
 
 Connection& Connection::operator=(const Connection &src)
@@ -43,63 +36,14 @@ Connection& Connection::operator=(const Connection &src)
 	this->_listenfd = src._listenfd;
 	this->_address = src._address;
 	this->_port = src._port;
-	// std::cout << "Copy assignment operator called on Connection" << std::endl;
 	return (*this);
 }
-
-void	Connection::handleRequest(int connfd, std::vector<Server> servers, int dataSize)
+void	Connection::cleanUp(void)
 {
-	if (this->_newReq->getState() == REQ_ERROR)
-		return ;
-	try
-	{
-		if (this->_newReq->getState() == OVERWRITE)
-		{
-			delete this->_newReq;
-			this->_newReq = new Request(connfd, this->_address);
-		}
-		this->_newReq->processReq(dataSize);
-		// this->_newReq->printRequest(); // DEBUG - TO BE DELETED
-		this->_handlingServer = new Server(this->_newReq->identifyServer(servers));
-		std::cout << "Server: "; // DEBUG - TO BE DELETED
-		std::cout << this->_handlingServer->getServerName(0) << std::endl; // DEBUG - TO BE DELETED
-	}
-	catch(const std::exception& e)
-	{
-		std::cerr << "!!! [handleRequest] this exception should not be happening: "; // DEBUG - TO BE DELETED
-		std::cerr << e.what() << '\n'; // DEBUG - TO BE DELETED
-		this->_newReq->setState(REQ_ERROR);
-		this->_newReq->setStatusCode(INTERNAL_SERVER_ERROR);
-	}
-}
-
-void	Connection::checkIfMethodAllowed(std::string method, locIterator location)
-{
-	for (size_t i = 0; i < location->getAllowed().size(); i++)
-	{
-		if (location->getAllowed().at(i) == method)
-			return ;
-	}
-	for (size_t i = 0; i < location->getDenied().size(); i++)
-	{
-		if (location->getDenied().at(i) == method || location->getDenied().at(i) == "all")
-		{
-			this->_newResp->setStatusCode(METHOD_NOT_ALLOWED);
-			std::cout << "Location: " << location->getMatch() << std::endl;		
-			return ;
-		}
-	}
-	return ;
-}
-
-void Connection::checkIfGetIsActuallyDelete(Request &request)
-{
-	if (request.getMethod() == "GET" && \
-	request.getTarget() == "/deleted.html" && \
-	request.getQueryString() != "")
-	{
-		request.setMethod("DELETE");
-	}
+	this->_newReq->setState(OVERWRITE);
+	delete this->_newResp;
+	this->_newResp = nullptr;
+	delete this->_handlingServer;
 }
 
 void	Connection::handleResponse(int dataSize)//int evFd)
@@ -112,45 +56,53 @@ void	Connection::handleResponse(int dataSize)//int evFd)
 		{
 			this->_newResp = new Response(*this->_newReq);
 			if (this->_newReq->getState() == REQ_ERROR)
-			{
 				this->_newResp->setError(this->_newReq->getStatusCode());
-
-			}
-	// DM starting from here this should be only if state == PENDING (also, this needs to be split into separate functions)
-	// DM starting from here this should be split into separate functions)
-
 			this->_newResp->processTarget(*this->_handlingServer);
-			checkIfGetIsActuallyDelete(this->_newResp->getRequest());
-			checkIfMethodAllowed(this->_newResp->getRequest().getMethod(), this->_newResp->getLocation());
-			
-			if (this->_newResp->getStatusCode() == OK)
-				this->_newResp->performRequest(dataSize);
-			if (this->_newResp->getStatusCode() < INTERNAL_SERVER_ERROR && \
-			this->_newResp->getLocation()->getReturnCode())
-			{
-				this->_newResp->setStatusCode(this->_newResp->getLocation()->getReturnCode());
-				this->_newResp->setMessage(this->_newResp->getLocation()->getReturnMessage());
-				this->_newResp->setFilePath("");
-			}
+			this->_newResp->performRequest(dataSize);
 		}
-		if (this->_newResp->getState() == WRITE_CGI || this->_newResp->getState() == READ_CGI)
+		if (this->_newResp->getState() == WRITE_CGI || \
+		this->_newResp->getState() == READ_CGI)
 			this->_newResp->executeCgiScript(dataSize);
-		if (this->_newResp->getState() == PENDING || this->_newResp->getState() == RES_ERROR)
+		if (this->_newResp->getState() == PENDING || \
+		this->_newResp->getState() == RES_ERROR)
 			this->_newResp->prepareResponse(*this->_handlingServer);
 		if (this->_newResp->getState() == SENDING)
 			this->_newResp->sendResponse();
 		if (this->_newResp->getState() == DONE)
+			this->cleanUp();
+	}
+	/* DM: The aim is to remove the try-catch block from here 
+	(all exceptions should be handled within all these sub-functions). 
+	I'll do this later. */
+	catch(const std::exception& e) 
+	{
+		std::cerr << "!!! " << e.what() << '\n';
+	}
+}
+
+void	Connection::handleRequest(int connfd, std::vector<Server> servers, \
+int dataSize)
+{
+	if (this->_newReq->getState() == REQ_ERROR)
+		return ;
+	try
+	{
+		if (this->_newReq->getState() == OVERWRITE)
 		{
-			this->_newReq->setState(OVERWRITE);
-			delete this->_newResp;
-			this->_newResp = nullptr;
-			delete this->_handlingServer;
-	// DM up until here
+			delete this->_newReq;
+			this->_newReq = new Request(connfd, this->_address);
 		}
+		this->_newReq->processReq(dataSize);
+		this->_newReq->printRequest(); // DEBUG - TO BE DELETED
+		this->_handlingServer = new Server(this->_newReq->identifyServer(servers));
+		std::cout << "Server: ";
+		std::cout << this->_handlingServer->getServerName(0) << std::endl;
 	}
 	catch(const std::exception& e)
 	{
-		std::cerr << "!!! " << e.what() << '\n';
+		std::cerr << "Exception: " << e.what() << std::endl; // DEBUG - TO BE DELETED
+		this->_newReq->setState(REQ_ERROR);
+		this->_newReq->setStatusCode(INTERNAL_SERVER_ERROR);
 	}
 }
 
@@ -169,12 +121,12 @@ Response *	Connection::getResponse(void)
 	return (this->_newResp);
 }
 
-int		Connection::getListenFd()
+int		Connection::getListenFd(void)
 {
 	return (this->_listenfd);
 }
 
-bool	Connection::getTimer()
+bool	Connection::getTimer(void)
 {
 	return (this->_timer);
 }

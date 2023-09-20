@@ -77,16 +77,19 @@ Socket::Socket(std::string address, unsigned short newport, int kq, struct keven
 	{
 		int error_code = errno;
 		if (error_code == EADDRINUSE) //deze error niet tonen, iet catchen bij EADDRINUSE
-			std::cout <<
+		{	std::cout <<
 			"(Above mentioned address is already in use, socket will not be initialized)"
 			<< std::endl;
+			close(_listenfd);
+			throw SocketError();
+		}
 		else
 			throw BindError();
 	}
 	if ((listen(_listenfd, SOMAXCONN)) < 0)
 		throw Socket::ListenError();
-    // if (fcntl(listenfd, F_SETFL, O_NONBLOCK) < 0)
-   	// 	return (write_exit("fcntl error"));
+    if (fcntl(_listenfd, F_SETFL, O_NONBLOCK) < 0)
+		throw SocketError();
 	EV_SET(&evSet, _listenfd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 		throw Socket::KeventError();
