@@ -29,10 +29,10 @@ CGI &	CGI::operator=(CGI &r)
 	this->_arg = r._arg;
 	this->_env = r._env;
 	this->id = r.id;
-	this->_webservToScript[0] = r._webservToScript[0];
-	this->_webservToScript[1] = r._webservToScript[1];
-	this->_scriptToWebserv[0] = r._scriptToWebserv[0];
-	this->_scriptToWebserv[1] = r._scriptToWebserv[1];
+	this->_webservToScript[R] = r._webservToScript[R];
+	this->_webservToScript[W] = r._webservToScript[W];
+	this->_scriptToWebserv[R] = r._scriptToWebserv[R];
+	this->_scriptToWebserv[W] = r._scriptToWebserv[W];
 	this->_childProcessExitStatus = r._childProcessExitStatus;
 	this->_response = r._response;
 	return (*this);
@@ -50,24 +50,22 @@ int*	CGI::getScriptToWebserv()
 
 bool	CGI::checkIfCgiPipe()
 {
-	if (this->_req.getConnFD() != this->_scriptToWebserv[0] || this->_req.getConnFD() != this->_webservToScript[1])
+	if (this->_req.getConnFD() != this->_scriptToWebserv[R] || \
+	this->_req.getConnFD() != this->_webservToScript[W])
 		return (false);
 	else
 		return (true);
 }
 
+/* DM: I am going to see if I can rewrite this to get rid of strdup() */
 void	CGI::prepareArg(std::string const & scriptName)
 {
 	this->_arg = new char*[2];
-	this->_arg[0] = strdup(scriptName.c_str()); // DM: this was hardcoded "cgi-bin/uploadFile.py"
+	this->_arg[0] = strdup(scriptName.c_str());
 	this->_arg[1] = NULL;
-
-	// std::cout << "* ARGUMENTS *" << std::endl;
-	// size_t	i = 0;
-	// while (this->_arg[i])
-	// 	std::cout << this->_arg[i++] << std::endl;
 }
 
+/* DM: I am going to see if I can rewrite this to get rid of strdup() */
 void	CGI::prepareEnv(std::string const & scriptName, Response & response)
 {
 	size_t									sizeEnv = 0;
@@ -85,11 +83,10 @@ void	CGI::prepareEnv(std::string const & scriptName, Response & response)
 	this->_env[i++] = strdup(("CONTENT_TYPE=" + reqHeaders["Content-Type"]).c_str());
 	this->_env[i++] = strdup("GATEWAY_INTERFACE=CGI/1.1");
 	this->_env[i++] = strdup(("REMOTE_HOST=" + reqHeaders["Host"]).c_str());
-	this->_env[i++] = strdup(("SCRIPT_FILENAME=" + scriptName).c_str());	// DM: this was "SCRIPT_FILENAME=cgi-bin/uploadFile.py"
-	this->_env[i++] = strdup(("SCRIPT_NAME=" + scriptName).c_str());	// DM: this was "SCRIPT_NAME=uploadFile.py"
-	this->_env[i++] = strdup(("REQUEST_METHOD=" + this->_req.getMethod()).c_str());	// DM: this was "REQUEST_METHOD=POST"
+	this->_env[i++] = strdup(("SCRIPT_FILENAME=" + scriptName).c_str());
+	this->_env[i++] = strdup(("SCRIPT_NAME=" + scriptName).c_str());
+	this->_env[i++] = strdup(("REQUEST_METHOD=" + this->_req.getMethod()).c_str());
 	this->_env[i++] = strdup(("UPLOAD_DIR=" + response.getLocation()->getUploadDir()).c_str());
-	//Should check and adjust the env following
 	this->_env[i++] = strdup("HTTP_COOKIE=");
 	this->_env[i++] = strdup("HTTP_USER_AGENT=");
 	this->_env[i++] = strdup(("QUERY_STRING=" + this->_req.getQueryString()).c_str());
@@ -97,21 +94,14 @@ void	CGI::prepareEnv(std::string const & scriptName, Response & response)
 	this->_env[i++] = strdup("SERVER_NAME=webserv");
 	this->_env[i++] = strdup("SERVER_SOFTWARE=");
 	this->_env[i++] = strdup("SERVER_PROTOCOL=HTTP/1.1");
-	this->_env[i++] = strdup(("PATH_TRANSLATED=" + scriptName).c_str()); // TBD - what is this?
+	this->_env[i++] = strdup(("PATH_TRANSLATED=" + scriptName).c_str());
 	this->_env[i] = NULL;
-
-	// std::cout << "* ENV *" << std::endl;
-	// i = 0;
-	// while (this->_env[i])
-	// 	std::cout << this->_env[i++] << std::endl;
 }
 
 int		CGI::checkTimeoutChild()
 {
 	auto	currentTime = std::chrono::system_clock::now();
-	// std::cerr << "CHECKING TIMEOUT FOR CHILD" << std::endl;
 	std::chrono::duration<double> elapsedSeconds = currentTime - _startTimeChild;
-	// std::cerr << "elapsed Sec: " << elapsedSeconds.count() << std::endl;
 	if (elapsedSeconds.count() > 5.0)
 		return (-1);
 	return (0);
@@ -120,21 +110,22 @@ int		CGI::checkTimeoutChild()
 void	CGI::cgiWrite(Response & response)
 {
 	ssize_t bytesSent;
-	ssize_t chunkSize = std::min(this->_req.getBody().length(), static_cast<size_t>(MAXLINE));
+	ssize_t chunkSize = std::min(this->_req.getBody().length(), \
+		static_cast<size_t>(MAXLINE));
 	if (checkTimeoutChild() < 0)
 	{
-		std::cerr << "TIMEOUT FOR CHILD PROCESS" << std::endl;//Hier setten dat er 408 Timeout is en child killen!
+		// std::cerr << "TIMEOUT FOR CHILD PROCESS" << std::endl;
 		kill(id, SIGKILL);
-		// response.setStatusCode(REQUEST_TIMEOUT);
 		response.setFilePath("");
 		response.setError(REQUEST_TIMEOUT);
 		return ;
 	}
-	bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), chunkSize);
+	bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), \
+		chunkSize);
 	std::cerr << "[writing to cgi] chunk size is " << chunkSize << ", BytesSent is " << bytesSent << std::endl;
 	if (bytesSent > 0) //JMA: this if statement is important!
 		this->_req.setBody(this->_req.getBody().erase(0, bytesSent));
-	if (this->_req.getBody().size() == 0 || bytesSent == 0)// || bytesSent == -1) // JMA: partly outcommented to prevent early quitting
+	if (this->_req.getBody().size() == 0 || bytesSent == 0)
 	{
 		// std::cerr << "[writing to cgi] body size is " << this->_req.getBody().size() << ", BytesSent is " << bytesSent << std::endl;
 		response.setState(READ_CGI);
@@ -142,7 +133,6 @@ void	CGI::cgiWrite(Response & response)
 		close(this->_webservToScript[R]);
 		close(this->_webservToScript[W]);
 		// std::cout << "Closing webservToScript[W]" << std::endl;
-		// waitpid(id, &(this->_childProcessExitStatus), 0);
 	}
 	else if (bytesSent < 0)
 	{
@@ -164,10 +154,9 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse)
 
 	if (checkTimeoutChild() < 0)
 	{
-		std::cerr << "TIMEOUT FOR CHILD PROCESS" << std::endl;//Hier setten dat er 408 Timeout is en child killen!
+		// std::cerr << "TIMEOUT FOR CHILD PROCESS" << std::endl;
 		kill(id, SIGKILL);
-		response.setStatusCode(REQUEST_TIMEOUT);
-		response.setState(RES_ERROR);
+		response.setError(REQUEST_TIMEOUT);
 		response.setFilePath("");
 		fullResponse.clear();
 	}
@@ -177,24 +166,23 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse)
 		std::string	chunk(buf, bytesRead);
 		response.addToFullResponse(chunk);
 	}
-	if (bytesRead == 0 && (waitpid(id, &(this->_childProcessExitStatus), WUNTRACED | WNOHANG) != 0))
+	if (bytesRead == 0 && (waitpid(id, &(this->_childProcessExitStatus), \
+	WUNTRACED | WNOHANG) != 0))
 	{
 		close(this->_scriptToWebserv[R]);
 		if (WIFEXITED(this->_childProcessExitStatus))
 		{
 			exitCode = WEXITSTATUS(this->_childProcessExitStatus);
-			// std::cout << "Script exited with exit code " << exitCode << " (so " << exitCode + 256 << ")" << std::endl;
-			std::cerr << "PARENT - status code is " << response.getStatusCode() << std::endl;
 			if (exitCode > 0)
 			{
-				response.setStatusCode(exitCode == 1 ? INTERNAL_SERVER_ERROR : exitCode + 256);
+				response.setStatusCode(exitCode == 1 ? \
+					INTERNAL_SERVER_ERROR : exitCode + 256);
 				response.setFilePath("");
 				fullResponse.clear();
 			}
 		}
 		response.setState(PENDING);
 		size_t	i = 0;
-		std::cout << "Cleaning up cgi vars" << std::endl;
 		while (this->_env[i])
 			delete this->_env[i++];
 		delete[] this->_env;
