@@ -33,7 +33,8 @@ int	main(int argc, char **argv)
 	free (defaultFile);
 	// std::cout << "Hello World!" << std::endl; // this should be turned on for the parsing tester
 	//turn the try block of webserv off to test the parsing with make test
-	try {
+	try
+	{
 		Webserver	webserv(servers);
 	}
 	catch (const std::exception& e)
