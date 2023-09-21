@@ -43,15 +43,6 @@ int*	CGI::getScriptToWebserv()
 	return(this->_scriptToWebserv);
 }
 
-bool	CGI::checkIfCgiPipe()
-{
-	if (this->_req.getConnFD() != this->_scriptToWebserv[R] || \
-	this->_req.getConnFD() != this->_webservToScript[W])
-		return (false);
-	else
-		return (true);
-}
-
 /* DM: I am going to see if I can rewrite this to get rid of strdup() */
 void	CGI::prepareArg(std::string const & scriptName)
 {
@@ -97,6 +88,7 @@ int		CGI::checkTimeoutChild()
 {
 	auto	currentTime = std::chrono::system_clock::now();
 	std::chrono::duration<double> elapsedSeconds = currentTime - _startTimeChild;
+	
 	if (elapsedSeconds.count() > 5.0)
 		return (-1);
 	return (0);
@@ -105,8 +97,8 @@ int		CGI::checkTimeoutChild()
 void	CGI::cgiWrite(Response & response, int dataSize)
 {
 	static bool	pipeFull = false;
-	ssize_t bytesSent;
-	ssize_t chunkSize = std::min(this->_req.getBody().length(), \
+	ssize_t 	bytesSent;
+	ssize_t 	chunkSize = std::min(this->_req.getBody().length(), \
 		static_cast<size_t>(MAXLINE));
 	if (checkTimeoutChild() < 0)
 	{
@@ -116,33 +108,45 @@ void	CGI::cgiWrite(Response & response, int dataSize)
 		response.setError(REQUEST_TIMEOUT);
 		return ;
 	}
-	bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), \
-		chunkSize);
-	if (bytesSent == chunkSize)
+	if (bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), \
+	chunkSize) == 0 || this->_req.getBody().size() == 0)
 	{
-		// std::cerr << "Pipe is not full!" << std::endl;
-		pipeFull = false;
-	}
-	else if (bytesSent > 0 && bytesSent < chunkSize)
-	{
-		std::cerr << "Pipe is full now!" << std::endl;
-		pipeFull = true;
-	}
-	std::cerr << "[writing to cgi] chunk size is " << chunkSize << ", BytesSent is " << bytesSent << " pipeFull is " << pipeFull << std::endl;
-	if (bytesSent > 0) //JMA: this if statement is important!
-		this->_req.setBody(this->_req.getBody().erase(0, bytesSent));
-	if (this->_req.getBody().size() == 0 || bytesSent == 0)
-	{
-		// std::cerr << "[writing to cgi] body size is " << this->_req.getBody().size() << ", BytesSent is " << bytesSent << std::endl;
 		response.setState(READ_CGI);
 		close(this->_scriptToWebserv[W]);
 		close(this->_webservToScript[R]);
 		close(this->_webservToScript[W]);
-		// std::cout << "Closing webservToScript[W]" << std::endl;
 	}
- 	std::cerr << "-- errno is " << errno << ", datasize is " << dataSize << std::endl;
+	// bytesSent = write(_webservToScript[W], this->_req.getBody().c_str(), \
+	// 	chunkSize);
+	else if (bytesSent > 0)
+	{
+		this->_req.setBody(this->_req.getBody().erase(0, bytesSent));
+		pipeFull = bytesSent == chunkSize ? false : true;
+		std::cerr << "[writing to cgi] chunk size is " << chunkSize << ", BytesSent is " << bytesSent << " pipeFull is now " << pipeFull << std::endl;
+	}
+	// if (bytesSent == chunkSize)
+	// {
+	// 	// std::cerr << "Pipe is not full!" << std::endl;
+	// 	pipeFull = false;
+	// }
+	// else if (bytesSent > 0 && bytesSent < chunkSize)
+	// {
+	// 	std::cerr << "Pipe is full now!" << std::endl;
+	// 	pipeFull = true;
+	// }
+	// if (bytesSent > 0) //JMA: this if statement is important!
+		// this->_req.setBody(this->_req.getBody().erase(0, bytesSent));
+	// if (this->_req.getBody().size() == 0 || bytesSent == 0)
+	// {
+	// 	// std::cerr << "[writing to cgi] body size is " << this->_req.getBody().size() << ", BytesSent is " << bytesSent << std::endl;
+	// 	// response.setState(READ_CGI);
+	// 	// close(this->_scriptToWebserv[W]);
+	// 	// close(this->_webservToScript[R]);
+	// 	// close(this->_webservToScript[W]);
+	// 	// std::cout << "Closing webservToScript[W]" << std::endl;
+	// }
 
-	if (bytesSent < 0 && pipeFull == false) // BS same error as other, need to solve this
+	if (bytesSent < 0 && pipeFull == false)
 	{
 		std::cerr << "oepsieWrite -- errno is " << errno << std::endl;
 
@@ -151,18 +155,17 @@ void	CGI::cgiWrite(Response & response, int dataSize)
 		close(this->_webservToScript[R]);
 		close(this->_webservToScript[W]);
 		kill(id, SIGKILL);
-		response.setStatusCode(INTERNAL_SERVER_ERROR);
+		response.setError(INTERNAL_SERVER_ERROR);
 		response.setFilePath("");
-		response.setState(RES_ERROR);
 	}
 }
 
 void	CGI::cgiRead(Response & response, std::string & fullResponse, int dataSize)
 {
 	static bool pipeEmpty = true;
-	ssize_t bytesRead = 0;
-	char	buf[RESPONSELINE];
-	int		exitCode = 0;
+	ssize_t 	bytesRead = 0;
+	char		buf[RESPONSELINE];
+	int			exitCode = 0;
 	
 	// close (this->_scriptToWebserv[R]); // this throws an error that is not catched anywhere
 
@@ -174,22 +177,23 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse, int dataSize)
 		response.setFilePath("");
 		fullResponse.clear();
 	}
-	else if ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) > 0)
+	else if ((bytesRead = read(this->_scriptToWebserv[R], &buf, RESPONSELINE)) > 0) // why else if?
 	{
 		std::string	chunk(buf, bytesRead);
 		response.addToFullResponse(chunk);
 		std::cerr << "Read call for cgi, bytesRead = " << bytesRead << std::endl;
+		pipeEmpty = bytesRead == RESPONSELINE ? false : true;
 	}
-	if (bytesRead > 0 && bytesRead == RESPONSELINE)
-	{
-		// std::cerr << "read last bit of pipe for now" << std::endl;
-		pipeEmpty = false;
-	}
-	if (bytesRead >= 0 && bytesRead < RESPONSELINE)
-	{
-		std::cerr << "read last bit of pipe for now, bytesRead is " << bytesRead << std::endl;
-		pipeEmpty = true;
-	}
+	// if (bytesRead > 0 && bytesRead == RESPONSELINE)
+	// {
+	// 	// std::cerr << "read last bit of pipe for now" << std::endl;
+	// 	pipeEmpty = false;
+	// }
+	// if (bytesRead >= 0 && bytesRead < RESPONSELINE)
+	// {
+	// 	std::cerr << "read last bit of pipe for now, bytesRead is " << bytesRead << std::endl;
+	// 	pipeEmpty = true;
+	// }
 	if (bytesRead == 0 && (waitpid(id, &(this->_childProcessExitStatus), \
 	WUNTRACED | WNOHANG) != 0))
 	{
