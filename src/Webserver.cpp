@@ -104,12 +104,12 @@ void	Webserver::readEvent(std::vector<Server> servers)
 	if (_connections[evFd].getResponse())
 	{
 		if (_connections[evFd].getResponse()->getState() == READ_CGI)
-			_connections[evFd].handleResponse(_evList.data);//evFd);
+			_connections[evFd].handleResponse((int)_evList.data);//evFd);
 	}
 	else
 	{
 		// std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
-		_connections[(int)evFd].handleRequest(evFd, servers, _evList.data);
+		_connections[(int)evFd].handleRequest(evFd, servers, (int)_evList.data);
 		if (_connections[(int)evFd].getRequest()->getState() == WRITE || _connections[(int)evFd].getRequest()->getState() == REQ_ERROR)
 			addWriteFilter(evFd);
 	}

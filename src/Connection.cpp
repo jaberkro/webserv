@@ -57,11 +57,11 @@ void	Connection::handleResponse(int dataSize)//int evFd)
 		if (this->_newReq->getState() == REQ_ERROR)
 			this->_newResp->setError(this->_newReq->getStatusCode());
 		this->_newResp->processTarget(*this->_handlingServer);
-		this->_newResp->performRequest();
+		this->_newResp->performRequest(dataSize);
 	}
 	if (this->_newResp->getState() == WRITE_CGI || \
 	this->_newResp->getState() == READ_CGI)
-		this->_newResp->executeCgiScript();
+		this->_newResp->executeCgiScript(dataSize);
 	if (this->_newResp->getState() == PENDING || \
 	this->_newResp->getState() == RES_ERROR)
 		this->_newResp->prepareResponse(*this->_handlingServer);

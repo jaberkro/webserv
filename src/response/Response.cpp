@@ -260,7 +260,7 @@ void	Response::performGET(int dataSize)
 
 	if ((!scriptName.empty() && !queryString.empty()) || \
 	scriptName.find('*') < std::string::npos)
-		this->executeCgiScript();
+		this->executeCgiScript(dataSize);
 }
 
 void	Response::performDELETE(void)	
@@ -407,7 +407,7 @@ void	Response::prepareFilePath(std::string & targetUri)
 }
 
 locIterator Response::findLocationMatch(std::string target, \
-	std::vector<Location> const & locations)
+std::vector<Location> const & locations)
 {
 	locIterator	itLoc;
 
