@@ -15,14 +15,15 @@ void	Request::processReq(int dataSize)
 		readBody(dataSize);
 }
 
-void		Request::readFirstLineAndHeaders(int dataSize) 
+void		Request::readFirstLineAndHeaders(int & dataSize) 
 {
 	char		socketBuffer[MAXLINE];
 	std::string	processingBuffer;
 	ssize_t		bytesRead = 0;
 
 	std::memset(socketBuffer, 0, MAXLINE);
-	if (this->_state == READHEADERS && (bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0)
+	if (this->_state == READHEADERS && (bytesRead = recv(this->_connFD, \
+	&socketBuffer, MAXLINE, 0)) > 0)
 	{
 		std::string	chunk(socketBuffer, bytesRead);
 		processingBuffer += chunk;
@@ -30,16 +31,14 @@ void		Request::readFirstLineAndHeaders(int dataSize)
 		this->parseLines(processingBuffer);
 	}
 	if (bytesRead < 0 && dataSize > 0)
-	{
-		std::cout << "reading firstline and headers, dataSize = " << dataSize << std::endl;
 		setStatusCode(INTERNAL_SERVER_ERROR);
-	}
 	if (bytesRead == 0)
-		this->setState(OVERWRITE); // DM Why?
+		this->setState(OVERWRITE);
 	if (this->_state == READBODY && this->_contentLength > 0)
 	{
 		this->_body = processingBuffer.substr(2);
 		this->_bodyLength = _body.length();
+		dataSize = 0;	// DM: this is to prevent getting -1 during the first reading of the body
 	}
 	processingBuffer.clear();
 }
@@ -48,7 +47,8 @@ void	Request::parseLines(std::string & processingBuffer)
 {
 	std::string	line;
 
-	while (this->_state == READHEADERS && processingBuffer.find('\n') < std::string::npos)
+	while (this->_state == READHEADERS && \
+	processingBuffer.find('\n') < std::string::npos)
 	{
 		extractStr(processingBuffer, line, processingBuffer.find_first_of('\n'));
 		if (this->_method.empty())
@@ -68,33 +68,21 @@ void		Request::readBody(int dataSize)
 	ssize_t	bytesRead = 0;
 	
 	std::memset(socketBuffer, 0, MAXLINE);
-	if ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && this->_state != WRITE)
+	if ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && \
+	this->_state != WRITE)
 	{
-		std::cout << "Read " << bytesRead << " bytes, total is now " << this->_bodyLength << std::endl; // DEBUG - TO BE DELETED
 		std::string	chunk(socketBuffer, bytesRead);
-		// std::cout << "[***chunk IS] >" << chunk << "<" << std::endl;
 		this->_body.append(chunk);
 		this->_bodyLength += bytesRead;
 		std::memset(socketBuffer, 0, MAXLINE);
-		if (this->_bodyLength == this->_contentLength || this->_body.find((this->_boundary + "--")) < std::string::npos)
+		if (this->_bodyLength == this->_contentLength || \
+		this->_body.find((this->_boundary + "--")) < std::string::npos)
 			this->setState(WRITE);
 	}
-	std::cout << "reading body, dataSize = " << dataSize << std::endl;
-
 	if (bytesRead < 0 && dataSize > 0)
-		setStatusCode(500);
-	else if (bytesRead == 0)
-		std::cerr << "[processReq] READ 0; total read body length is " << this->_bodyLength << ", contentlength is " << this->_contentLength << std::endl; // DEBUG - TO BE DELETED
-	// std::cout <<"***** WHOLE BODY IS ****" << this->_body << "****" << std::endl;
+		setStatusCode(INTERNAL_SERVER_ERROR);
 }
 
-/**
- * @brief parses the start line of a request and saves the data in the 
-	corresponding member variables
- * 
- * @param line 
- * @return true, which means that the start line has been parsed
- */
 bool	Request::parseStartLine(std::string &line)
 {
 	size_t	end, questionMark;
@@ -103,30 +91,25 @@ bool	Request::parseStartLine(std::string &line)
 	setMethod(line.substr(0, end));
 	line.erase(0, end + 1);
 	end = line.find_first_of(" ");
-	setTarget(line.substr(0, end));	// WATCH OUT: TARGET CAN BE AN ABSOLUTE PATH
+	setTarget(line.substr(0, end));
 	line.erase(0, end + 1);
 	questionMark = this->_target.find_first_of("?");
 	if (questionMark < this->_target.length() - 1)
 	{
-		this->setQueryString(this->_target.substr(questionMark + 1, std::string::npos));
+		this->setQueryString(this->_target.substr(questionMark + 1, \
+			std::string::npos));
 		this->_target.erase(questionMark, std::string::npos);
 	}
 	if (this->_target.find("/..") < std::string::npos)
 		this->setStatusCode(BAD_REQUEST);
-	this->setProtocolVersion(line.substr(0, std::string::npos)); // that's the whole line
-	line.erase(0, std::string::npos);
+	this->setProtocolVersion(line);
+	line.clear();
 	return (true);
 }
 
-/**
- * @brief parses each line of a request's header and saves the data in the 
-	corresponding member variables
- * 
- * @param line 
- */
 void	Request::parseFieldLine(std::string &line) 
 {
-	std::string	key, value;
+	std::string									key, value;
 	std::map<std::string,std::string>::iterator	it;
 	
 	key = extractKey(line);
@@ -148,13 +131,6 @@ void	Request::parseFieldLine(std::string &line)
 	line.erase(0, std::string::npos);
 }
 
-/**
- * @brief identifies the server that should handle the request and returns a 
- * reference to it
- * 
- * @param servers the vector of existing Server instances
- * @return Server const& reference to the server that shall handle the request
- */
 Server const &	Request::identifyServer(std::vector<Server> const & servers)
 {
 	std::vector<size_t>	matches;
@@ -177,13 +153,6 @@ Server const &	Request::identifyServer(std::vector<Server> const & servers)
 	}
 }
 
-/**
- * @brief identifies servers that match the request based on host:port combination
- * 
- * @param servers vector of existing Server instances
- * @param matches vector of integers with indexes of matching servers
- * @param zero index of the server that listens on 0.0.0.0 (if any)
- */
 void	Request::findHostMatch(std::vector<Server> const & servers, \
 std::vector<size_t> & matches, int *zero)
 {
@@ -202,19 +171,10 @@ std::vector<size_t> & matches, int *zero)
 	}	
 }
 
-/**
- * @brief identifies servers that match the request based on the hostname (in 
- * case more than one matches have been found based on host:port combination)
- * 
- * @param servers vector of existing Server instances
- * @param matches vector of integers with indexes of matching servers
- * @return int index of best matching server
- */
 size_t	Request::findServerNameMatch(std::vector<Server> const & servers, \
 std::vector<size_t>	& matches)
 {
 	std::vector<size_t>::iterator	it;
-	// std::cout << "[FINDSERVERMATCH] about to split " << this->_hostname << std::endl;
 
 	it = findExactServerNameMatch(servers, matches);
 	if (it == matches.end())
@@ -228,7 +188,6 @@ std::vector<size_t>	& matches)
 	}
 	return (*it);
 }
-
 
 std::vector<size_t>::iterator	Request::findExactServerNameMatch(std::vector<Server> \
 const & servers, std::vector<size_t>	& matches) 
@@ -302,15 +261,6 @@ const & servers, std::vector<size_t> & matches, std::vector<std::string> & hostS
 	return (longest);
 }
 
-/**
- * @brief verifies whether the host indication in the request and the host 
- * (IP address) at which a server is listening are both localhost. 
- * Returns true if yes and false if either one is not a localhost
- * 
- * @param address IP address on which a server is listening
- * @return true - if both are localhost
- * @return false - if at least one is not localhost
- */
 bool	Request::isLocalhost(std::string const &address)
 {
 	std::vector<std::string>	localhost = {"localhost", "127.0.0.1"};
@@ -341,10 +291,6 @@ void	Request::printServer(Server const & server)
 	std::cout << std::endl << std::endl;
 }
 
-/**
- * @brief prints the content of the request instance; useful for debugging, 
- * can be deleted before submitting the project
- */
 void	Request::printRequest()
 {
 	std::map<std::string, std::string>::iterator it;

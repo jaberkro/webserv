@@ -2,6 +2,8 @@
 #include <istream>
 #include <fstream>
 #include <unistd.h>
+#include <signal.h> //for killing child
+
 
 std::map<int, std::string> 	Response::_responseCodes = 
 {
@@ -268,25 +270,35 @@ void	Response::performDELETE(void)
 	this->setStatusCode(deleteFile(this->_req, this->_location));
 }
 
-void	Response::executeCgiScript(void)
+void	Response::executeCgiScript()
 {
 	if (this->getState() == PENDING)
 	{
-		CGI	cgi(this->_req);
-		this->_cgi = cgi;
-		
 		std::string scriptName = this->_location->getCgiScriptName();
 		if (scriptName.find('*') < std::string::npos)
 			scriptName = this->_filePath;
-		_cgi.prepareEnv(scriptName, *this);
-		_cgi.prepareArg(scriptName);
-		_cgi.run(*this);
+		this->_cgi.prepareEnv(scriptName, *this);
+		this->_cgi.prepareArg(scriptName);
+		this->_cgi.run(*this);
 	}
-	if (getState() == READ_CGI)
-		_cgi.cgiRead(*this, this->_fullResponse);
-	else if (getState() == WRITE_CGI)
-		_cgi.cgiWrite(*this);
+	try
+	{
+		if (this->getState() == READ_CGI)
+			this->_cgi.cgiRead(*this, this->_fullResponse);
+		else if (this->getState() == WRITE_CGI)
+			this->_cgi.cgiWrite(*this);
+	}
+	catch(const std::exception & e)
+	{
+		std::string	reason = e.what();
+		kill(this->_cgi.getId(), SIGKILL);
+		this->_cgi.closePipes();
+		this->_fullResponse.clear();
+		this->_filePath.clear();
+		this->setError(reason == "Fail" ? INTERNAL_SERVER_ERROR : REQUEST_TIMEOUT);
+	}
 }
+	
 
 void	Response::performPOST(void)
 {
@@ -317,7 +329,7 @@ void	Response::checkIfMethodAllowed()
 		this->_location->getDenied().at(i) == "all")
 		{
 			this->setStatusCode(METHOD_NOT_ALLOWED);
-			std::cout << "Location: " << this->_location->getMatch() << std::endl;		
+			std::cout << "Location: " << this->_location->getMatch() << std::endl;
 			return ;
 		}
 	}
@@ -407,7 +419,7 @@ void	Response::prepareFilePath(std::string & targetUri)
 }
 
 locIterator Response::findLocationMatch(std::string target, \
-	std::vector<Location> const & locations)
+std::vector<Location> const & locations)
 {
 	locIterator	itLoc;
 

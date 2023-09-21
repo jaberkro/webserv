@@ -30,6 +30,7 @@ class Response {
 		Response &	operator=(Response &);
 
 		bool	cgiOnKqueue;
+		static std::map<int, std::string>	_responseCodes;
 		
 		/* functions */
 		void	processTarget(Server const & server);
@@ -74,7 +75,6 @@ class Response {
 		locIterator							_location;
 		std::string							_fullResponse;
 		std::string							_message;
-		static std::map<int, std::string>	_responseCodes;
 		size_t								_state;
 		std::string							_pathInfo;
 		CGI									_cgi;
