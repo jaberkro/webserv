@@ -24,7 +24,6 @@ enum req {
 class Request 
 {
 	public:
-
 		Request(int connfd, std::string address);
 		~Request(void);
 		Request(Request &);
@@ -65,7 +64,6 @@ class Request
 		void	printServer(Server const & server); // for debugging purposes, to be deleted
 
 	private:
-
 		std::string							_method;
 		std::string							_target;
 		std::string							_queryString;
@@ -95,7 +93,6 @@ class Request
 		std::vector<size_t>::iterator	findExactServerNameMatch(std::vector<Server> const & servers, std::vector<size_t>	& matches);
 		std::vector<size_t>::iterator	findLeadingServerNameMatch(std::vector<Server> const & servers, std::vector<size_t> & matches, std::vector<std::string> & hostSplit);
 		std::vector<size_t>::iterator	findTrailingServerNameMatch(std::vector<Server> const & servers, std::vector<size_t> & matches, std::vector<std::string> & hostSplit);
-
 };
 
 void		removeTrailingSpaces(std::string &line);
