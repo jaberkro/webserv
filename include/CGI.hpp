@@ -17,14 +17,15 @@ class CGI
 		~CGI();
 		CGI &	operator=(CGI & r);
 
-		void		run(Response & response);
-		int*		getWebservToScript();
-		int*		getScriptToWebserv();
-		void		cgiRead(Response & response, std::string & fullResponse);
-		void		cgiWrite(Response & response);
-		void		prepareArg(std::string const & scriptName);
-		void		prepareEnv(std::string const & scriptName, \
-			Response & response);
+		void	run(Response & response);
+		void	prepareArg(std::string const & scriptName);
+		void	prepareEnv(std::string const & scriptName, Response & response);
+		int*	getWebservToScript();
+		int*	getScriptToWebserv();
+		bool	checkIfCgiPipe();
+		void	cgiRead(Response & response, std::string & fullResponse, int dataSize);
+		void	cgiWrite(Response & response, int dataSize);
+
 		std::string	getResponse();
 
 	private:

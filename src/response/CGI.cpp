@@ -8,19 +8,14 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fcntl.h>
-#include <ctime> //for std::time
+#include <ctime> 	//for std::time
 #include <signal.h> //for killing child
 
 CGI::CGI(Request & req) : _req(req), id(-1) {}
 
 CGI::~CGI()
 {
-		// size_t	i = 0;
-		// while (this->_env[i])
-		// 	delete this->_env[i++];
-		// delete[] this->_env;
-		// delete this->_arg[0];
-		// delete[] this->_arg;
+
 }
 
 CGI &	CGI::operator=(CGI &r)
@@ -107,7 +102,7 @@ int		CGI::checkTimeoutChild()
 	return (0);
 }
 
-void	CGI::cgiWrite(Response & response)
+void	CGI::cgiWrite(Response & response, int dataSize)
 {
 	ssize_t bytesSent;
 	ssize_t chunkSize = std::min(this->_req.getBody().length(), \
@@ -134,19 +129,23 @@ void	CGI::cgiWrite(Response & response)
 		close(this->_webservToScript[W]);
 		// std::cout << "Closing webservToScript[W]" << std::endl;
 	}
-	else if (bytesSent < 0)
-	{
-		close(this->_scriptToWebserv[R]);
-		close(this->_scriptToWebserv[W]);
-		close(this->_webservToScript[R]);
-		close(this->_webservToScript[W]);
-		kill(id, SIGKILL);
-		response.setStatusCode(INTERNAL_SERVER_ERROR);
-		response.setFilePath("");
-	}
+ 	std::cerr << "-- errno is " << errno << ", datasize is " << dataSize << std::endl;
+
+	// else if (bytesSent < 0 && dataSize > 0) // BS same error as other, need to solve this
+	// {
+	// 	std::cerr << "oepsieWrite -- errno is " << errno << std::endl;
+
+	// 	close(this->_scriptToWebserv[R]);
+	// 	close(this->_scriptToWebserv[W]);
+	// 	close(this->_webservToScript[R]);
+	// 	close(this->_webservToScript[W]);
+	// 	kill(id, SIGKILL);
+	// 	response.setStatusCode(INTERNAL_SERVER_ERROR);
+	// 	response.setFilePath("");
+	// }
 }
 
-void	CGI::cgiRead(Response & response, std::string & fullResponse)
+void	CGI::cgiRead(Response & response, std::string & fullResponse, int)// dataSize)
 {
 	ssize_t bytesRead = 0;
 	char	buf[RESPONSELINE];
@@ -189,9 +188,9 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse)
 		delete this->_arg[0];
 		delete[] this->_arg;
 	}
-	// if (bytesRead < 0) // this breaks the code. BS solves this
+	// if (bytesRead < 0 && dataSize > 0) //THIS IS THE LAST PAIN
 	// {
-	// 	std::cerr << "oepsie" << std::endl;
+	// 	std::cerr << "oepsieREad -- errno is " << errno << ", dataSize is " << dataSize << std::endl;
 	// 	close(this->_scriptToWebserv[R]);
 	// 	kill(id, SIGKILL);
 	// 	response.setStatusCode(INTERNAL_SERVER_ERROR);

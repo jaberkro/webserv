@@ -33,14 +33,14 @@ class Response {
 		
 		/* functions */
 		void	processTarget(Server const & server);
-		void	performRequest(void);
-		void	performPOST(void);
-		void	performGET(void);
+		void	performRequest(int dataSize);
+		void	performPOST(int dataSize);
+		void	performGET(int dataSize);
 		void	performDELETE(void);
 		void	prepareResponse(Server const & server);
 		void	sendResponse(void);
 		void	identifyErrorPage(Server const & server);
-		void	executeCgiScript(void);
+		void	executeCgiScript(int dataSize);
 		
 		/* getters */
 		size_t				getFileLength(void) const;

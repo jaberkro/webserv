@@ -10,7 +10,7 @@
 # define SPACES " \t\v\r\f"
 # define UPPERCASE "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-# define MAXLINE 6000
+# define MAXLINE 600
 # define RESPONSELINE 5000 //test, was 5000
 
 enum req {

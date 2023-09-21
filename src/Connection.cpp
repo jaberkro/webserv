@@ -47,7 +47,7 @@ void	Connection::cleanUp(void)
 	delete this->_handlingServer;
 }
 
-void	Connection::handleResponse()
+void	Connection::handleResponse(int dataSize)//int evFd)
 {
 	if (this->_newReq->getMethod() == "")
 		return;

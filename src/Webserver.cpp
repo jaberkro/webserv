@@ -87,7 +87,7 @@ void	Webserver::newConnection(int eventSocket, int ident)
 	struct sockaddr_storage addr;
 	socklen_t socklen = sizeof(addr);
 
-	std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~Connection accepted~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
+	// std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~Connection accepted~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
 	if ((connfd = accept(ident, (struct sockaddr *)&addr, &socklen)) < 0)
 		throw Webserver::AcceptError(); // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
 	this->_connections[connfd] = Connection(ident, _sckts.at(eventSocket)); // ADD STATUSCODE AS PARAMETER
@@ -104,11 +104,11 @@ void	Webserver::readEvent(std::vector<Server> servers)
 	if (_connections[evFd].getResponse())
 	{
 		if (_connections[evFd].getResponse()->getState() == READ_CGI)
-			_connections[evFd].handleResponse();
+			_connections[evFd].handleResponse(_evList.data);//evFd);
 	}
 	else
 	{
-		std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
+		// std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
 		_connections[(int)evFd].handleRequest(evFd, servers, _evList.data);
 		if (_connections[(int)evFd].getRequest()->getState() == WRITE || _connections[(int)evFd].getRequest()->getState() == REQ_ERROR)
 			addWriteFilter(evFd);
@@ -120,7 +120,7 @@ void	Webserver::writeEvent()
 	int evFd = checkIfCgiFd((int)_evList.ident);
 	// std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~WRITE EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
 	// std::cout << "Connection id is [" << (int)_evList.ident << "]" << std::endl;
-	_connections[evFd].handleResponse();
+	_connections[evFd].handleResponse(_evList.data);//evFd);
 	if (_connections[evFd].getResponse() == nullptr)//In case the Response is sent and finished, the write filter can be deleted
 		deleteWriteFilter(evFd);
 	else if (_connections[evFd].getResponse()->getState() == INIT_CGI && _connections[evFd].getResponse()->cgiOnKqueue == false)
@@ -133,7 +133,7 @@ void	Webserver::writeEvent()
 		_cgiFds.insert({evFd, _connections[evFd].getResponse()->getCgi().getScriptToWebserv()[0]});
 		_cgiFds.insert({evFd, _connections[evFd].getResponse()->getCgi().getWebservToScript()[1]});
 	}
-	addTimerFilter(evFd);
+	// addTimerFilter(evFd);
 }
 
 void	Webserver::runWebserver(std::vector<Server> servers)
@@ -143,6 +143,7 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 
 	while (1)
 	{
+		// std::cout << "In while loop: " << (_evList.flags & EV_EOF) << std::endl;
 		struct timespec *timeout = NULL;
 		_running = true;
 		if ((nev = kevent(_kq, NULL, 0, &_evList, 1, timeout)) < 0)
@@ -154,11 +155,14 @@ void	Webserver::runWebserver(std::vector<Server> servers)
 			newConnection(eventSocket, _evList.ident);
 		else if (_evList.filter == EVFILT_READ)
 		{
-			std::cout << "Data size to be read: " << _evList.data << std::endl;
+			// std::cout << "Data size to be read: " << _evList.data << std::endl;
 			readEvent(servers);
 		}
 		else if (_evList.filter == EVFILT_WRITE)
+		{
+			// std::cout << "Data size to be written: " << _evList.data << std::endl;
 			writeEvent();
+		}
 		//CATCH
 		// KEVENT -> INTERNAL_SERVER_ERROR, NOT AN EXCEPTION
 	}
@@ -189,8 +193,15 @@ Webserver::Webserver(std::vector<Server> servers)
 	{
 		for (size_t j = 0; j < servers.at(i).getListens().size(); j++)
 		{
-			Socket sock(servers.at(i).getHost(j), servers.at(i).getPort(j), _kq, evSet);
-			_sckts.push_back(sock);
+			try 
+			{
+				Socket sock(servers.at(i).getListens().at(j).first, servers.at(i).getListens().at(j).second, _kq, evSet); // JMA: Can be written slightly shorter: Socket sock(servers.at(i).getHost(j), servers.at(i).getPort(j), kq, evSet);
+				_sckts.push_back(sock);
+			}
+			catch(const std::exception& e)
+			{
+				std::cerr << "Exception when initializing socket: " << e.what() << '\n';
+			}
 		}
 	}
 	runWebserver(servers);
