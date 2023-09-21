@@ -1,12 +1,7 @@
 #include "Response.hpp"
-#include "Webserver.hpp"
-#include <iostream>
 #include <istream>
 #include <fstream>
 #include <unistd.h>
-#include <cstdio>
-#include <stdio.h>
-#include <sys/stat.h>
 
 std::map<int, std::string> 	Response::_responseCodes = 
 {
@@ -37,17 +32,6 @@ std::map<int, std::string> 	Response::_responseStates =
 	{REQ_ERROR, "Request Error"},
 };
 
-/* TO BE DELETED */
-void	Response::printResponse(void) const
-{
-	std::cout << "***RESPONSE***";
-	std::cout << "\n\tStatus code: " << this->_statusCode;
-	std::cout << "\n\tReason: " << this->_responseCodes[this->_statusCode];
-	std::cout << "\n\tProtocol Version: " << this->_req.getProtocolVersion();
-	std::cout << "\n\tConnection FD: " << this->_req.getConnFD();
-	std::cout << "\n******" << std::endl;
-}
-
 void	Response::sendResponse(void)
 {
 	ssize_t bytesSent;
@@ -59,7 +43,7 @@ void	Response::sendResponse(void)
 			chunkSize, 0);
 		if (bytesSent < 0)
 		{
-			_state = DONE;
+			this->setState(DONE);
 			close(this->_req.getConnFD());
 			return ;
 		}
@@ -107,7 +91,7 @@ void	Response::prepareHeaderLocation(void)
 std::string	Response::prepareHeaderContentType(std::string const & root)
 {
 	std::string	extension = \
-	this->_filePath.substr(this->_filePath.find_last_of('.') + 1);
+		this->_filePath.substr(this->_filePath.find_last_of('.') + 1);
 	
 	if (root == "data")
 		return ("image/" + extension);
@@ -155,25 +139,57 @@ void	Response::prepareFirstLine(void)
 	if (this->_location->getReturnMessage().size() > 0)
 		responseMessage = this->_location->getReturnMessage();
 	else
-	{
-		try 
-		{
-			responseMessage = this->_responseCodes.at(this->_statusCode);
-		}
-		catch (std::exception &e)
-		{
-			responseMessage = "";
-		}
-	}
+		responseMessage = this->getResponseCodeMessage(this->_statusCode);
 	snprintf(responseBuffer, RESPONSELINE, "%s %d %s\r\n", version.c_str(), \
 		this->_statusCode, responseMessage.c_str());
 	this->addToFullResponse(&responseBuffer[0], std::strlen(responseBuffer));
 }
 
+void	Response::composeResponse(std::ifstream & file)
+{
+	if (!this->_filePath.empty())
+	{
+		this->_fileLength = getFileSize(this->_filePath);
+		file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
+		if (!file.is_open())
+			this->setStatusCode(INTERNAL_SERVER_ERROR);
+	}
+	try
+	{
+		this->prepareFirstLine();
+		this->prepareHeaders(this->_location->getRoot());
+		if (isContentAllowed(this->_statusCode))
+			this->prepareContent(file);
+	}
+	catch(const std::exception& e)
+	{
+		this->setStatusCode(INTERNAL_SERVER_ERROR);
+	}
+	if (!this->_filePath.empty())
+		file.close();
+}
+
+void	Response::prepareErrorPageFilePath(std::string & targetUri)
+{
+	this->_filePath = this->_location->getRoot() + targetUri;
+		if (!hasReadPermission(this->_filePath) && \
+		targetUri == DEFAULT_ERROR_PAGE)
+		{
+			this->_filePath.clear();
+			this->_message = \
+				this->getResponseCodeMessage(this->_statusCode).c_str();
+			this->_isReady = true;
+		}
+		else if (!hasReadPermission(this->_filePath))
+			targetUri = DEFAULT_ERROR_PAGE;
+		else
+			this->_isReady = true;
+}
+
 std::string	Response::getErrorPageUri(void)
 {
 	std::map<int, std::string> const & errorPages = \
-	this->_location->getErrorPages();
+		this->_location->getErrorPages();
 	try
 	{
 		return (errorPages.at(this->_statusCode));
@@ -195,20 +211,18 @@ void	Response::identifyErrorPage(Server const & server)
 	std::string	targetUri = this->getErrorPageUri();
 	while (!this->_isReady)
 	{
-		this->_location = this->findLocationMatch(targetUri, server.getLocations());
-		this->_filePath = this->_location->getRoot() + targetUri;
-		if (!hasReadPermission(this->_filePath) && \
-			targetUri == DEFAULT_ERROR_PAGE)
+		try 
 		{
-			this->_filePath.clear();
-			this->_message = \
-				this->_responseCodes.at(this->_statusCode).c_str();
-			this->_isReady = true;
+			this->_location = this->findLocationMatch(targetUri, \
+				server.getLocations());
 		}
-		else if (!hasReadPermission(this->_filePath))
-			targetUri = DEFAULT_ERROR_PAGE;
-		else
-			this->_isReady = true;
+		catch(const std::out_of_range & oor)
+		{
+			this->setStatusCode(INTERNAL_SERVER_ERROR);
+			targetUri = this->getErrorPageUri();
+			continue;
+		}
+		this->prepareErrorPageFilePath(targetUri);
 	}
 }
 
@@ -240,26 +254,13 @@ void	Response::prepareResponse(Server const & server)
 	std::ifstream	file;
 
 	this->checkIfReturn();
-	if (this->_statusCode > BAD_REQUEST && this->_statusCode <= METHOD_NOT_ALLOWED)
+	if (this->_statusCode > BAD_REQUEST && \
+	this->_statusCode <= METHOD_NOT_ALLOWED)
 		this->checkIfRedirectNecessary();
 	if (this->_statusCode >= BAD_REQUEST)
 			this->identifyErrorPage(server);
 	if (this->_fullResponse.empty())
-	{
-		if (!this->_filePath.empty())
-		{
-			this->_fileLength = getFileSize(this->_filePath);
-			file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
-			if (!file.is_open())
-				this->setStatusCode(INTERNAL_SERVER_ERROR);
-		}
-		this->prepareFirstLine();
-		this->prepareHeaders(this->_location->getRoot());
-		if (isContentAllowed(this->_statusCode))
-			this->prepareContent(file);
-		if (!this->_filePath.empty())
-			file.close();
-	}
+		this->composeResponse(file);
 	this->setState(SENDING);
 }
 
@@ -269,7 +270,7 @@ void	Response::performGET(void)
 	std::string queryString = this->_req.getQueryString();
 
 	if ((!scriptName.empty() && !queryString.empty()) || \
-		scriptName.find('*') < std::string::npos)
+	scriptName.find('*') < std::string::npos)
 		this->executeCgiScript();
 }
 
@@ -348,7 +349,6 @@ void	Response::performRequest(void)
 {
 	this->checkIfGetIsActuallyDelete();
 	this->checkIfMethodAllowed();
-	// std::cerr << "Method is: " << this->_req.getMethod() << std::endl;
 	if (this->_statusCode == OK)
 	{
 		if (this->_req.getMethod() == "POST")
@@ -384,7 +384,7 @@ std::string	Response::findIndexPage(locIterator itLoc)
 	for (auto itIdx = indexes.begin(); itIdx != indexes.end(); itIdx++)
 	{
 		filePath = itLoc->getRoot() + *itIdx;
-		if (access(filePath.c_str(), F_OK) == 0)
+		if (hasReadPermission(filePath) == true)
 			return (*itIdx);
 	}
 	this->setStatusCode(NOT_FOUND);
@@ -393,7 +393,6 @@ std::string	Response::findIndexPage(locIterator itLoc)
 
 void	Response::prepareFilePath(std::string & targetUri)
 {
-	std::cerr << "TargetUri: " << targetUri << std::endl;
 	if (targetUri[targetUri.length() - 1] == '/')
 	{
 		if (this->_req.getMethod() == "GET" && \
@@ -431,7 +430,7 @@ locIterator Response::findLocationMatch(std::string target, \
 	if (itLoc == locations.end())
 	{
 		this->setStatusCode(INTERNAL_SERVER_ERROR);
-		throw(std::range_error("No location match"));
+		throw(std::out_of_range("No location match"));
 	}
 	return (itLoc);
 }
@@ -451,7 +450,7 @@ void	Response::processTarget(Server const & server)
 		{
 			this->setStatusCode(NOT_FOUND);
 		}
-		catch(const std::range_error &re)
+		catch(const std::out_of_range & oor)
 		{
 			this->setStatusCode(INTERNAL_SERVER_ERROR);
 		}
