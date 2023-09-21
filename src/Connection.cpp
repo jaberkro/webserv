@@ -42,13 +42,16 @@ Connection& Connection::operator=(const Connection &src)
 void	Connection::cleanUp(void)
 {
 	this->_newReq->setState(OVERWRITE);
+	delete this->_newReq;
+	this->_newReq = nullptr;
 	delete this->_newResp;
 	this->_newResp = nullptr;
 	delete this->_handlingServer;
 }
 
-void	Connection::handleResponse(int dataSize)//int evFd)
+void	Connection::handleResponse()
 {
+	// std::cerr << "[handle response] req status code is " << Response::_responseCodes.at(this->_newReq->getStatusCode()) << std::endl;
 	if (this->_newReq->getMethod() == "")
 		return;
 	if (this->_newResp == nullptr)
@@ -57,11 +60,11 @@ void	Connection::handleResponse(int dataSize)//int evFd)
 		if (this->_newReq->getState() == REQ_ERROR)
 			this->_newResp->setError(this->_newReq->getStatusCode());
 		this->_newResp->processTarget(*this->_handlingServer);
-		this->_newResp->performRequest(dataSize);
+		this->_newResp->performRequest();
 	}
 	if (this->_newResp->getState() == WRITE_CGI || \
 	this->_newResp->getState() == READ_CGI)
-		this->_newResp->executeCgiScript(dataSize);
+		this->_newResp->executeCgiScript();
 	if (this->_newResp->getState() == PENDING || \
 	this->_newResp->getState() == RES_ERROR)
 		this->_newResp->prepareResponse(*this->_handlingServer);
@@ -74,20 +77,26 @@ void	Connection::handleResponse(int dataSize)//int evFd)
 void	Connection::handleRequest(int connfd, std::vector<Server> servers, \
 int dataSize)
 {
-	if (this->_newReq->getState() == REQ_ERROR)
+	if (this->_newReq && this->_newReq->getState() == REQ_ERROR)
 		return ;
 	try
 	{
-		if (this->_newReq->getState() == OVERWRITE)
+		if (this->_newReq == nullptr)
 		{
 			delete this->_newReq;
 			this->_newReq = new Request(connfd, this->_address);
 		}
 		this->_newReq->processReq(dataSize);
-		// this->_newReq->printRequest();	// debug
-		this->_handlingServer = new Server(this->_newReq->identifyServer(servers));
-		std::cout << "Server: ";
-		std::cout << this->_handlingServer->getServerName(0) << std::endl;
+		// std::cerr << "[handle request] statusCode is " << Response::_responseCodes.at(this->_newReq->getStatusCode()) << std::endl;
+		if (this->_newReq->getState() == WRITE)
+		{
+			this->_newReq->printRequest();	// debug
+			// std::cerr << "[handle request] before handling server statusCode is " << Response::_responseCodes.at(this->_newReq->getStatusCode()) << std::endl;
+			this->_handlingServer = new Server(this->_newReq->identifyServer(servers));
+			// std::cerr << "[handle request] after handling server statusCode is " << Response::_responseCodes.at(this->_newReq->getStatusCode()) << std::endl;
+			std::cout << "Server: ";
+			std::cout << this->_handlingServer->getServerName(0) << std::endl;
+		}
 	}
 	catch(const std::exception& e)
 	{

@@ -104,13 +104,13 @@ void	Webserver::readEvent(std::vector<Server> servers)
 	if (_connections[evFd].getResponse())
 	{
 		if (_connections[evFd].getResponse()->getState() == READ_CGI)
-			_connections[evFd].handleResponse((int)_evList.data);//evFd);
+			_connections[evFd].handleResponse();//evFd);
 	}
 	else
 	{
 		// std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
 		_connections[(int)evFd].handleRequest(evFd, servers, (int)_evList.data);
-		if (_connections[(int)evFd].getRequest()->getState() == WRITE || _connections[(int)evFd].getRequest()->getState() == REQ_ERROR)
+		if (_connections[(int)evFd].getRequest() && (_connections[(int)evFd].getRequest()->getState() == WRITE || _connections[(int)evFd].getRequest()->getState() == REQ_ERROR))
 			addWriteFilter(evFd);
 	}
 }
@@ -120,7 +120,7 @@ void	Webserver::writeEvent()
 	int evFd = checkIfCgiFd((int)_evList.ident);
 	// std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~WRITE EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
 	// std::cout << "Connection id is [" << (int)_evList.ident << "]" << std::endl;
-	_connections[evFd].handleResponse(_evList.data);//evFd);
+	_connections[evFd].handleResponse();
 	if (_connections[evFd].getResponse() == nullptr)//In case the Response is sent and finished, the write filter can be deleted
 		deleteWriteFilter(evFd);
 	else if (_connections[evFd].getResponse()->getState() == INIT_CGI && _connections[evFd].getResponse()->cgiOnKqueue == false)

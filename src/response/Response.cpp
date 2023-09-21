@@ -2,6 +2,8 @@
 #include <istream>
 #include <fstream>
 #include <unistd.h>
+#include <signal.h> //for killing child
+
 
 std::map<int, std::string> 	Response::_responseCodes = 
 {
@@ -253,14 +255,14 @@ void	Response::prepareResponse(Server const & server)
 	this->setState(SENDING);
 }
 
-void	Response::performGET(int dataSize) 
+void	Response::performGET(void) 
 {
 	std::string scriptName = this->_location->getCgiScriptName();
 	std::string queryString = this->_req.getQueryString();
 
 	if ((!scriptName.empty() && !queryString.empty()) || \
 	scriptName.find('*') < std::string::npos)
-		this->executeCgiScript(dataSize);
+		this->executeCgiScript();
 }
 
 void	Response::performDELETE(void)	
@@ -268,27 +270,37 @@ void	Response::performDELETE(void)
 	this->setStatusCode(deleteFile(this->_req, this->_location));
 }
 
-void	Response::executeCgiScript(int dataSize)
+void	Response::executeCgiScript()
 {
 	if (this->getState() == PENDING)
 	{
-		CGI	cgi(this->_req);
-		this->_cgi = cgi;
-		
 		std::string scriptName = this->_location->getCgiScriptName();
 		if (scriptName.find('*') < std::string::npos)
 			scriptName = this->_filePath;
-		_cgi.prepareEnv(scriptName, *this);
-		_cgi.prepareArg(scriptName);
-		_cgi.run(*this);
+		this->_cgi.prepareEnv(scriptName, *this);
+		this->_cgi.prepareArg(scriptName);
+		this->_cgi.run(*this);
 	}
-	if (getState() == READ_CGI)
-		_cgi.cgiRead(*this, this->_fullResponse, dataSize);
-	else if (getState() == WRITE_CGI)
-		_cgi.cgiWrite(*this, dataSize);
+	try
+	{
+		if (this->getState() == READ_CGI)
+			this->_cgi.cgiRead(*this, this->_fullResponse);
+		else if (this->getState() == WRITE_CGI)
+			this->_cgi.cgiWrite(*this);
+	}
+	catch(const std::exception & e)
+	{
+		std::string	reason = e.what();
+		kill(this->_cgi.getId(), SIGKILL);
+		this->_cgi.closePipes();
+		this->_fullResponse.clear();
+		this->_filePath.clear();
+		this->setError(reason == "Fail" ? INTERNAL_SERVER_ERROR : REQUEST_TIMEOUT);
+	}
 }
+	
 
-void	Response::performPOST(int dataSize)
+void	Response::performPOST(void)
 {
 	size_t				bodyLength = this->_req.getBodyLength();
 	unsigned long long	maxBodySize = this->_location->getMaxBodySize();
@@ -301,7 +313,7 @@ void	Response::performPOST(int dataSize)
 			return ;
 		}
 	}
-	this->executeCgiScript(dataSize);
+	this->executeCgiScript();
 }
 
 void	Response::checkIfMethodAllowed()
@@ -317,7 +329,7 @@ void	Response::checkIfMethodAllowed()
 		this->_location->getDenied().at(i) == "all")
 		{
 			this->setStatusCode(METHOD_NOT_ALLOWED);
-			std::cout << "Location: " << this->_location->getMatch() << std::endl;		
+			std::cout << "Location: " << this->_location->getMatch() << std::endl;
 			return ;
 		}
 	}
@@ -334,18 +346,18 @@ void Response::checkIfGetIsActuallyDelete(void)
 	}
 }
 
-void	Response::performRequest(int dataSize)
+void	Response::performRequest(void)
 {
 	this->checkIfGetIsActuallyDelete();
 	this->checkIfMethodAllowed();
 	if (this->_statusCode == OK)
 	{
 		if (this->_req.getMethod() == "POST")
-			this->performPOST(dataSize);
+			this->performPOST();
 		else if (this->_req.getMethod() == "DELETE")
 			this->performDELETE();
 		else if (this->_req.getMethod() == "GET")
-			this->performGET(dataSize);
+			this->performGET();
 		else
 			this->setStatusCode(NOT_IMPLEMENTED);
 	}	

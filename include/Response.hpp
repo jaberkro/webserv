@@ -30,17 +30,18 @@ class Response {
 		Response &	operator=(Response &);
 
 		bool	cgiOnKqueue;
+		static std::map<int, std::string>	_responseCodes;
 		
 		/* functions */
 		void	processTarget(Server const & server);
-		void	performRequest(int dataSize);
-		void	performPOST(int dataSize);
-		void	performGET(int dataSize);
+		void	performRequest(void);
+		void	performPOST(void);
+		void	performGET(void);
 		void	performDELETE(void);
 		void	prepareResponse(Server const & server);
 		void	sendResponse(void);
 		void	identifyErrorPage(Server const & server);
-		void	executeCgiScript(int dataSize);
+		void	executeCgiScript(void);
 		
 		/* getters */
 		size_t				getFileLength(void) const;
@@ -74,7 +75,6 @@ class Response {
 		locIterator							_location;
 		std::string							_fullResponse;
 		std::string							_message;
-		static std::map<int, std::string>	_responseCodes;
 		size_t								_state;
 		std::string							_pathInfo;
 		CGI									_cgi;
