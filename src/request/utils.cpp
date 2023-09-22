@@ -28,7 +28,6 @@ std::string	extractKey(std::string line)
 	return (line.substr(0, colon));
 }
 
-
 /**
  * @brief extracts and returns the string immediately following the first ':' 
  * character in the string given as an argument. The function removes trailing
@@ -48,7 +47,6 @@ std::string	extractValue(std::string line)
 	return (value);
 	// RETURNS 80 IF EMPTY -> COULD BE MOVED TO A SEPARATE FUNCTION
 }
-
 
 /**
  * @brief extracts a substring from beginning of a buffer until the following
@@ -89,7 +87,6 @@ std::vector<std::string> & nameSplit)
 	}
 	return (0);
 }
-
 
 /**
  * @brief counts the overlapping elements in hostnames starting with a trailing

@@ -23,14 +23,13 @@ typedef std::vector<Location>::const_iterator locIterator;
 class Response {
 
 	public:
-
 		Response(Request & req);
 		~Response(void);
 		Response(Response &);
 		Response &	operator=(Response &);
 
-		bool	cgiOnKqueue;
-		static std::map<int, std::string>	_responseCodes;
+		bool								cgiOnKqueue;
+		static std::map<int, std::string>	responseCodes;
 		
 		/* functions */
 		void	processTarget(Server const & server);
@@ -66,7 +65,6 @@ class Response {
 		void				setError(int statusCode);
 
 	private:
-
 		Request								_req;
 		int									_statusCode;
 		size_t								_fileLength;
@@ -78,6 +76,7 @@ class Response {
 		size_t								_state;
 		std::string							_pathInfo;
 		CGI									_cgi;
+		static std::map<int, std::string>	_responseStates;
 	
 		locIterator	findLocationMatch(std::string target, \
 		std::vector<Location> const & locations);
@@ -97,7 +96,6 @@ class Response {
 		void		checkIfGetIsActuallyDelete(void);
 		void		checkIfReturn(void);
 		void		composeResponse(std::ifstream & file);
-
 };
 
 int			deleteFile(Request req, locIterator loc);

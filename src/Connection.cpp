@@ -87,6 +87,7 @@ int dataSize)
 			this->_newReq = new Request(connfd, this->_address);
 		}
 		this->_newReq->processReq(dataSize);
+
 		// std::cerr << "[handle request] statusCode is " << Response::_responseCodes.at(this->_newReq->getStatusCode()) << std::endl;
 		if (this->_newReq->getState() == WRITE)
 		{

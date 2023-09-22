@@ -24,11 +24,10 @@ enum req {
 class Request 
 {
 	public:
-
 		Request(int connfd, std::string address);
 		~Request(void);
 		Request(Request &);
-		Request &	operator=(Request &);
+		Request & operator=(Request &);
 
 		void			processReq(int dataSize);
 		Server const &	identifyServer(std::vector<Server> const & servers);
@@ -65,7 +64,6 @@ class Request
 		void	printServer(Server const & server); // for debugging purposes, to be deleted
 
 	private:
-
 		std::string							_method;
 		std::string							_target;
 		std::string							_queryString;
@@ -81,8 +79,9 @@ class Request
 		std::string							_hostname;
 		size_t								_contentLength;
 		size_t								_state;
-		
-		void	readFirstLineAndHeaders(int & dataSize);
+		static std::map<int, std::string>	_requestStates;
+	
+		void	readFirstLineAndHeaders(int &dataSize);
 		void	readBody(int dataSize);
 		void	parseLines(std::string & processingBuffer);
 		bool	parseStartLine(std::string &line);
@@ -100,7 +99,6 @@ class Request
 		std::vector<size_t>::iterator	findTrailingServerNameMatch(std::vector<Server> \
 			const & servers, std::vector<size_t> & matches, \
 			std::vector<std::string> & hostSplit);
-
 };
 
 void		removeTrailingSpaces(std::string &line);

@@ -4,8 +4,7 @@
 #include <unistd.h>
 #include <signal.h> //for killing child
 
-
-std::map<int, std::string> 	Response::_responseCodes = 
+std::map<int, std::string> 	Response::responseCodes = 
 {
 	{OK, "OK"},
 	{DELETED, "Deleted"},
@@ -21,6 +20,17 @@ std::map<int, std::string> 	Response::_responseCodes =
 	{CONTENT_TOO_LARGE, "Content Too Large"},
 	{INTERNAL_SERVER_ERROR, "Internal Server Error"},
 	{NOT_IMPLEMENTED, "Not Implemented"}
+};
+
+std::map<int, std::string> 	Response::_responseStates = 
+{
+	{PENDING, "Pending"},
+	{SENDING, "Sending"},
+	{DONE, "Done"},
+	{WRITE_CGI, "Write CGI"},
+	{READ_CGI, "Read CGI"},
+	{INIT_CGI, "Init CGI"},
+	{REQ_ERROR, "Request Error"},
 };
 
 void	Response::sendResponse(void)
@@ -278,8 +288,9 @@ void	Response::executeCgiScript()
 		if (scriptName.find('*') < std::string::npos)
 			scriptName = this->_filePath;
 		this->_cgi.prepareEnv(scriptName, *this);
-		this->_cgi.prepareArg(scriptName);
-		this->_cgi.run(*this);
+		this->_cgi.prepareArg(scriptName, *this);
+		if (this->getState() != RES_ERROR)
+			this->_cgi.run(*this);
 	}
 	try
 	{
@@ -298,7 +309,6 @@ void	Response::executeCgiScript()
 		this->setError(reason == "Fail" ? INTERNAL_SERVER_ERROR : REQUEST_TIMEOUT);
 	}
 }
-	
 
 void	Response::performPOST(void)
 {

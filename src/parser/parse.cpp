@@ -22,7 +22,7 @@ static bool validExtension(std::string configFile, std::string extension)
 	return (1);
 }
 
-static std::fstream openFile(char *configFile)
+static std::fstream openFile(const char *configFile)
 {
 	std::fstream	file;
 	struct stat		fileInfo;
@@ -51,7 +51,7 @@ static std::fstream openFile(char *configFile)
 	return (file);
 }
 
-void parse(std::vector<Server> &servers, char *configFile)
+void parse(std::vector<Server> &servers, const char *configFile)
 {
 	std::fstream	file;
 	std::string		line;

@@ -1,4 +1,6 @@
+#include "Response.hpp"
 #include "Request.hpp"
+#include <iostream>
 
 void	Request::setMethod(std::string method)
 {
@@ -28,6 +30,15 @@ void	Request::setProtocolVersion(std::string protocol)
 void	Request::setStatusCode(int code)
 {
 	this->_statusCode = code;
+	std::cout << "Changed request statuscode to: " << code;
+	try
+	{
+		std::cout << ": " << Response::responseCodes[code] << std::endl;
+	}
+	catch(std::exception& e)
+	{
+		std::cout << std::endl;
+	}
 }
 
 void	Request::setContentLength(std::string contentLength)
@@ -43,12 +54,21 @@ void	Request::setHost(std::string host)
 	else
 		this->_address = tmpHost;
 	makeLowercase(this->_address);
-	this->_port = stoi(extractValue(host)); // what if exception?
+	try
+	{
+		this->_port = stoi(extractValue(host));
+	}
+	catch (std::exception &e)
+	{
+		this->setError(INTERNAL_SERVER_ERROR); // JMA: what should we do here?
+	}
 }
 
 void	Request::setState(size_t state)
 {
 	this->_state = state;
+	std::cout << "Changed request state to: " << state << ": ";
+	std::cout << this->_requestStates[state] << std::endl;
 }
 
 void Request::setBody(std::string newBody)

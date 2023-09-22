@@ -30,8 +30,10 @@ int		Webserver::checkIfCgiFd(int evFd)
 {
 	std::map<int, int>::iterator it;
 	for (it = _cgiFds.begin(); it != _cgiFds.end(); it++)
+	{
 		if (it->first == evFd)
 			return (it->second);
+	}
 	return (evFd);
 }
 
@@ -76,8 +78,8 @@ void	Webserver::eofEvent(int ident)
 		std::cout << "Disconnect for fd " << ident;
 		_connections[ident].setTimer(false);
 		std::cout << std::endl;
-			if (close(ident) < 0)
-				throw Webserver::CloseError();  // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
+		if (close(ident) < 0)
+			throw Webserver::CloseError();  // NO EXCEPTION, STATUSCODE = INTERNAL_SERVER_ERROR + STATE = ERROR
 	}
 }
 
@@ -94,23 +96,23 @@ void	Webserver::newConnection(int eventSocket, int ident)
 	this->_connections[connfd].setRequest(new Request(connfd, _sckts.at(eventSocket).getAddress()));
 	////////Starting from here, request state can be error!!//////////
 	if (fcntl(connfd, F_SETFL, O_NONBLOCK) < 0)
-		_connections[connfd].getRequest()->setError(500);
+		this->_connections[connfd].getRequest()->setError(INTERNAL_SERVER_ERROR);
 	addReadFilter(connfd);
 }
 
 void	Webserver::readEvent(std::vector<Server> servers)
 {
 	int evFd = checkIfCgiFd((int)_evList.ident);
-	if (_connections[evFd].getResponse())
+	if (this->_connections[evFd].getResponse())
 	{
-		if (_connections[evFd].getResponse()->getState() == READ_CGI)
-			_connections[evFd].handleResponse();//evFd);
+		if (this->_connections[evFd].getResponse()->getState() == READ_CGI)
+			this->_connections[evFd].handleResponse();//evFd);
 	}
 	else
 	{
 		// std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~READ EVENT~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n" << std::endl;
-		_connections[(int)evFd].handleRequest(evFd, servers, (int)_evList.data);
-		if (_connections[(int)evFd].getRequest() && (_connections[(int)evFd].getRequest()->getState() == WRITE || _connections[(int)evFd].getRequest()->getState() == REQ_ERROR))
+		this->_connections[(int)evFd].handleRequest(evFd, servers, (int)_evList.data);
+		if (this->_connections[(int)evFd].getRequest() && (this->_connections[(int)evFd].getRequest()->getState() == WRITE || this->_connections[(int)evFd].getRequest()->getState() == REQ_ERROR))
 			addWriteFilter(evFd);
 	}
 }
@@ -195,7 +197,7 @@ Webserver::Webserver(std::vector<Server> servers)
 		{
 			try 
 			{
-				Socket sock(servers.at(i).getListens().at(j).first, servers.at(i).getListens().at(j).second, _kq, evSet); // JMA: Can be written slightly shorter: Socket sock(servers.at(i).getHost(j), servers.at(i).getPort(j), kq, evSet);
+				Socket sock(servers.at(i).getHost(j), servers.at(i).getPort(j), _kq, evSet);
 				_sckts.push_back(sock);
 			}
 			catch(const std::exception& e)
