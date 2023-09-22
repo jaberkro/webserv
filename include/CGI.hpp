@@ -14,13 +14,12 @@ typedef std::chrono::system_clock::time_point time_point;
 class CGI
 {
 	public:
-
 		CGI(Request & req);
 		~CGI();
 		CGI &	operator=(CGI & r);
 
 		void	run(Response & response);
-		void	prepareArg(std::string const & scriptName);
+		void	prepareArg(std::string const & scriptName, Response & response);
 		void	prepareEnv(std::string const & scriptName, Response & response);
 		int*	getWebservToScript();
 		int*	getScriptToWebserv();
@@ -48,7 +47,6 @@ class CGI
 		};
 
 	private:
-
 		Request		& _req;
 		char		**_arg;
 		char		**_env;
@@ -64,7 +62,8 @@ class CGI
 		void	checkChildProcessExitCode(Response & response, \
 		std::string & fullResponse);
 		void	cleanUp(void);
-
+		void	addToEnv(size_t &i, std::string what, Response & response);
+		char	*protectedStrdup(std::string str, Response & response);
 };
 
 #endif
