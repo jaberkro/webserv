@@ -31,7 +31,14 @@ void	Request::setStatusCode(int code)
 {
 	this->_statusCode = code;
 	std::cout << "Changed request statuscode to: " << code;
-	std::cout << ": " << Response::responseCodes[code] << std::endl;
+	try
+	{
+		std::cout << ": " << Response::responseCodes[code] << std::endl;
+	}
+	catch(std::exception& e)
+	{
+		std::cout << std::endl;
+	}
 }
 
 void	Request::setContentLength(std::string contentLength)
