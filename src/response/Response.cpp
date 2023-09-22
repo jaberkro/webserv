@@ -288,8 +288,9 @@ void	Response::executeCgiScript()
 		if (scriptName.find('*') < std::string::npos)
 			scriptName = this->_filePath;
 		this->_cgi.prepareEnv(scriptName, *this);
-		this->_cgi.prepareArg(scriptName);
-		this->_cgi.run(*this);
+		this->_cgi.prepareArg(scriptName, *this);
+		if (this->getState() != RES_ERROR)
+			this->_cgi.run(*this);
 	}
 	try
 	{

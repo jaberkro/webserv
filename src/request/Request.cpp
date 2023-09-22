@@ -24,7 +24,7 @@ void	Request::processReq(int dataSize)
 		readBody(dataSize);
 }
 
-void	Request::readFirstLineAndHeaders(int dataSize) 
+void	Request::readFirstLineAndHeaders(int &dataSize) 
 {
 	char		socketBuffer[MAXLINE];
 	std::string	processingBuffer;
@@ -78,7 +78,7 @@ void		Request::readBody(int dataSize)
 	
 	std::memset(socketBuffer, 0, MAXLINE);
 	if ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && \
-	this->_state != WRITE)
+	this->_state != WRITE) // JMA: should we change the order of this if-statement?
 	{
 		std::string	chunk(socketBuffer, bytesRead);
 		this->_body.append(chunk);
@@ -151,7 +151,7 @@ Server const &	Request::identifyServer(std::vector<Server> const & servers)
 	{
 		case 0:
 			if (zero < 0){
-				this->_statusCode = INTERNAL_SERVER_ERROR;
+				this->setStatusCode(INTERNAL_SERVER_ERROR); // JMA: should we also set the state?
 			}
 			return (servers[zero]);
 		case 1:

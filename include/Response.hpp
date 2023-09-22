@@ -64,8 +64,6 @@ class Response {
 		void				addToFullResponse(std::string chunk);
 		void				setError(int statusCode);
 
-		static std::map<int, std::string>	_responseCodes;
-
 	private:
 		Request								_req;
 		int									_statusCode;

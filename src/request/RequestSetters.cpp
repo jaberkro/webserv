@@ -54,7 +54,14 @@ void	Request::setHost(std::string host)
 	else
 		this->_address = tmpHost;
 	makeLowercase(this->_address);
-	this->_port = stoi(extractValue(host)); // what if exception?
+	try
+	{
+		this->_port = stoi(extractValue(host));
+	}
+	catch (std::exception &e)
+	{
+		this->setError(INTERNAL_SERVER_ERROR); // JMA: what should we do here?
+	}
 }
 
 void	Request::setState(size_t state)

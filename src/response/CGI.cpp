@@ -44,7 +44,6 @@ pid_t	CGI::getId()
 	return (this->_id);
 }
 
-
 void	CGI::closePipes()
 {
 	close(this->_webservToScript[W]);
@@ -53,46 +52,55 @@ void	CGI::closePipes()
 	close(this->_scriptToWebserv[R]);
 }
 
-/* DM: I tried to see if I can rewrite this to get rid of strdup() 
-but so far no luck (only segfaults and garbage value) */
-void	CGI::prepareArg(std::string const & scriptName)
+char	*CGI::protectedStrdup(std::string str, Response & response)
+{
+	char *newStr = strdup(str.c_str());
+	if (newStr == NULL)
+		response.setState(RES_ERROR);
+	return (newStr);
+}
+
+void	CGI::prepareArg(std::string const & scriptName, Response & response)
 {
 	this->_arg = new char*[2];
-	this->_arg[0] = strdup(scriptName.c_str());
+	this->_arg[0] = protectedStrdup(scriptName.c_str(), response);
 	this->_arg[1] = NULL;
 }
 
-/* DM: I tried to see if I can rewrite this to get rid of strdup() 
-but so far no luck (only segfaults and garbage value) */
+void	CGI::addToEnv(size_t &i, std::string what, Response & response)
+{
+	this->_env[i++] = protectedStrdup(what.c_str(), response);
+}
+
 void	CGI::prepareEnv(std::string const & scriptName, Response & response)
 {
 	size_t									sizeEnv = 0;
 	size_t									i;
 	extern char								**environ;
 	std::map<std::string, std::string> &	reqHeaders = this->_req.getHeaders();
-	
-while (environ[sizeEnv])
-	sizeEnv++;
+
+	while (environ[sizeEnv])
+		sizeEnv++;
 	this->_env = new char*[sizeEnv + 18];
 	for (i = 0; i < sizeEnv; i++)
-		this->_env[i] = strdup(environ[i]);
-	this->_env[i++] = strdup(("PATH_INFO=" + response.getPathInfo()).c_str());
-	this->_env[i++] = strdup(("CONTENT_LENGTH=" + reqHeaders["Content-Length"]).c_str());
-	this->_env[i++] = strdup(("CONTENT_TYPE=" + reqHeaders["Content-Type"]).c_str());
-	this->_env[i++] = strdup("GATEWAY_INTERFACE=CGI/1.1");
-	this->_env[i++] = strdup(("REMOTE_HOST=" + reqHeaders["Host"]).c_str());
-	this->_env[i++] = strdup(("SCRIPT_FILENAME=" + scriptName).c_str());
-	this->_env[i++] = strdup(("SCRIPT_NAME=" + scriptName).c_str());
-	this->_env[i++] = strdup(("REQUEST_METHOD=" + this->_req.getMethod()).c_str());
-	this->_env[i++] = strdup(("UPLOAD_DIR=" + response.getLocation()->getUploadDir()).c_str());
-	this->_env[i++] = strdup("HTTP_COOKIE=");
-	this->_env[i++] = strdup("HTTP_USER_AGENT=");
-	this->_env[i++] = strdup(("QUERY_STRING=" + this->_req.getQueryString()).c_str());
-	this->_env[i++] = strdup("REMOTE_ADDR=");
-	this->_env[i++] = strdup("SERVER_NAME=webserv");
-	this->_env[i++] = strdup("SERVER_SOFTWARE=");
-	this->_env[i++] = strdup("SERVER_PROTOCOL=HTTP/1.1");
-	this->_env[i++] = strdup(("PATH_TRANSLATED=" + scriptName).c_str());
+		this->_env[i] = protectedStrdup(environ[i], response);
+	addToEnv(i, "PATH_INFO=" + response.getPathInfo(), response);
+	addToEnv(i, "CONTENT_LENGTH=" + reqHeaders["Content-Length"], response);
+	addToEnv(i, "CONTENT_TYPE=" + reqHeaders["Content-Type"], response);
+	addToEnv(i, "GATEWAY_INTERFACE=CGI/1.1", response);
+	addToEnv(i, "REMOTE_HOST=" + reqHeaders["Host"], response);
+	addToEnv(i, "SCRIPT_FILENAME=" + scriptName, response);
+	addToEnv(i, "SCRIPT_NAME=" + scriptName, response);
+	addToEnv(i, "REQUEST_METHOD=" + this->_req.getMethod(), response);
+	addToEnv(i, "UPLOAD_DIR=" + response.getLocation()->getUploadDir(), response);
+	addToEnv(i, "HTTP_COOKIE=", response);
+	addToEnv(i, "HTTP_USER_AGENT=", response);
+	addToEnv(i, "QUERY_STRING=" + this->_req.getQueryString(), response);
+	addToEnv(i, "REMOTE_ADDR=", response);
+	addToEnv(i, "SERVER_NAME=webserv", response);
+	addToEnv(i, "SERVER_SOFTWARE=", response);
+	addToEnv(i, "SERVER_PROTOCOL=HTTP/1.1", response);
+	addToEnv(i, "PATH_TRANSLATED=" + scriptName, response);
 	this->_env[i] = NULL;
 }
 
@@ -131,7 +139,7 @@ void	CGI::cgiWrite(Response & response)
 }
 
 void	CGI::checkChildProcessExitCode(Response & response, \
-	std::string & fullResponse)
+std::string & fullResponse)
 {
 	int	exitCode = 0;
 	
