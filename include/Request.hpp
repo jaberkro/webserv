@@ -48,17 +48,17 @@ class Request
 		std::map<std::string, std::string>	 & 	getHeaders();
 		size_t	const & 						getState() const;
 		
-		void									setMethod(std::string method);
-		void									setTarget(std::string target);
-		void									setQueryString(std::string queryString);
-		void									setBoundary(std::string boundary);
-		void									setProtocolVersion(std::string protocol);
-		void									setStatusCode(int code);
-		void									setContentLength(std::string contentLength);
-		void									setHost(std::string host);
-		void									setState(size_t state);
-		void 									setBody(std::string newBody);
-		void									setError(int statusCode);							
+		void	setMethod(std::string method);
+		void	setTarget(std::string target);
+		void	setQueryString(std::string queryString);
+		void	setBoundary(std::string boundary);
+		void	setProtocolVersion(std::string protocol);
+		void	setStatusCode(int code);
+		void	setContentLength(std::string contentLength);
+		void	setHost(std::string host);
+		void	setState(size_t state);
+		void 	setBody(std::string newBody);
+		void	setError(int statusCode);							
 
 		void	printRequest();	// for debugging purposes, to be deleted
 		void	printServer(Server const & server); // for debugging purposes, to be deleted
@@ -80,28 +80,37 @@ class Request
 		size_t								_contentLength;
 		size_t								_state;
 		static std::map<int, std::string>	_requestStates;
-		static std::map<int, std::string>	_requestCodes;
 	
 		void	readFirstLineAndHeaders(int dataSize);
 		void	readBody(int dataSize);
 		void	parseLines(std::string & processingBuffer);
 		bool	parseStartLine(std::string &line);
 		void	parseFieldLine(std::string &line);
-		void	findHostMatch(std::vector<Server> const & servers, std::vector<size_t> & matches, int *zero);
-		size_t	findServerNameMatch(std::vector<Server> const & servers, std::vector<size_t>	& matches);
+		void	findHostMatch(std::vector<Server> const & servers, \
+			std::vector<size_t> & matches, int *zero);
+		size_t	findServerNameMatch(std::vector<Server> const & servers, \
+			std::vector<size_t>	& matches);
 		bool	isLocalhost(std::string const & address);
-		std::vector<size_t>::iterator	findExactServerNameMatch(std::vector<Server> const & servers, std::vector<size_t>	& matches);
-		std::vector<size_t>::iterator	findLeadingServerNameMatch(std::vector<Server> const & servers, std::vector<size_t> & matches, std::vector<std::string> & hostSplit);
-		std::vector<size_t>::iterator	findTrailingServerNameMatch(std::vector<Server> const & servers, std::vector<size_t> & matches, std::vector<std::string> & hostSplit);
+		std::vector<size_t>::iterator	findExactServerNameMatch(std::vector<Server> \
+			const & servers, std::vector<size_t>	& matches);
+		std::vector<size_t>::iterator	findLeadingServerNameMatch(std::vector<Server> \
+			const & servers, std::vector<size_t> & matches, \
+			std::vector<std::string> & hostSplit);
+		std::vector<size_t>::iterator	findTrailingServerNameMatch(std::vector<Server> \
+			const & servers, std::vector<size_t> & matches, \
+			std::vector<std::string> & hostSplit);
+
 };
 
 void		removeTrailingSpaces(std::string &line);
 std::string	extractKey(std::string line);
 std::string	extractValue(std::string line);
 void		extractStr(std::string &buffer, std::string &line, size_t pos);
-size_t		countOverlapLeading(std::vector<std::string> & hostSplit, std::vector<std::string> & nameSplit);
-size_t		countOverlapTrailing(std::vector<std::string> & hostSplit, std::vector<std::string> & nameSplit);
+size_t		countOverlapLeading(std::vector<std::string> & hostSplit, \
+	std::vector<std::string> & nameSplit);
+size_t		countOverlapTrailing(std::vector<std::string> & hostSplit, \
+	std::vector<std::string> & nameSplit);
 void		makeLowercase(std::string & str);
-std::vector<std::string>		splitServerName(std::string const & name);
+std::vector<std::string>	splitServerName(std::string const & name);
 
 #endif

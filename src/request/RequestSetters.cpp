@@ -1,3 +1,4 @@
+#include "Response.hpp"
 #include "Request.hpp"
 #include <iostream>
 
@@ -30,7 +31,7 @@ void	Request::setStatusCode(int code)
 {
 	this->_statusCode = code;
 	std::cout << "Changed request statuscode to: " << code;
-	std::cout << ": " << this->_requestCodes[code] << std::endl;
+	std::cout << ": " << Response::responseCodes[code] << std::endl;
 }
 
 void	Request::setContentLength(std::string contentLength)

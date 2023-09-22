@@ -55,7 +55,7 @@ void	Response::setStatusCode(int code)
 {
 	this->_statusCode = code;
 	std::cout << "Changed response statuscode to: " << code;
-	std::cout << ": " << this->_responseCodes[code] << std::endl;
+	std::cout << ": " << getResponseCodeMessage(code) << std::endl;
 }
 
 std::string	Response::getFullResponse(void)
@@ -106,7 +106,7 @@ std::string	Response::getResponseCodeMessage(int responseCode)
 {
 	try 
 	{
-		return (this->_responseCodes.at(responseCode));
+		return (this->responseCodes.at(responseCode));
 	}
 	catch (std::exception &e)
 	{

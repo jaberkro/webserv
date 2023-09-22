@@ -28,7 +28,8 @@ class Response {
 		Response(Response &);
 		Response &	operator=(Response &);
 
-		bool	cgiOnKqueue;
+		bool								cgiOnKqueue;
+		static std::map<int, std::string>	responseCodes;
 		
 		/* functions */
 		void	processTarget(Server const & server);
@@ -63,6 +64,8 @@ class Response {
 		void				addToFullResponse(std::string chunk);
 		void				setError(int statusCode);
 
+		static std::map<int, std::string>	_responseCodes;
+
 	private:
 		Request								_req;
 		int									_statusCode;
@@ -75,7 +78,6 @@ class Response {
 		size_t								_state;
 		std::string							_pathInfo;
 		CGI									_cgi;
-		static std::map<int, std::string>	_responseCodes;
 		static std::map<int, std::string>	_responseStates;
 	
 		locIterator	findLocationMatch(std::string target, \
