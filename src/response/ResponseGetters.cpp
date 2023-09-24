@@ -68,6 +68,15 @@ std::string	Response::getMessage(void)
 	return (this->_message);
 }
 
+std::string	Response::getScriptName(void)
+{
+	std::string scriptName = this->_location->getCgiScriptName();
+	
+	if (scriptName.find('*') < std::string::npos)
+		scriptName = this->_filePath;
+	return (scriptName);
+}
+
 void	Response::addToFullResponse(char *response, size_t length)
 {
 	std::string	chunk(response, length);
@@ -98,8 +107,8 @@ void	Response::setState(size_t state)
 
 void	Response::setError(int statusCode)
 {
-	this->_state = RES_ERROR;
-	this->_statusCode = statusCode;
+	this->setState(RES_ERROR);
+	this->setStatusCode(statusCode);
 }
 
 std::string	Response::getResponseCodeMessage(int responseCode)

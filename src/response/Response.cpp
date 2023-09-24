@@ -30,7 +30,7 @@ std::map<int, std::string> 	Response::_responseStates =
 	{WRITE_CGI, "Write CGI"},
 	{READ_CGI, "Read CGI"},
 	{INIT_CGI, "Init CGI"},
-	{REQ_ERROR, "Request Error"},
+	{RES_ERROR, "Response Error"},
 };
 
 void	Response::sendResponse(void)
@@ -118,6 +118,7 @@ void	Response::prepareHeaders(std::string const & root)
 
 	if (!this->_filePath.empty())
 		contentType = this->prepareHeaderContentType(root);
+
 	snprintf(responseBuffer, RESPONSELINE, \
 		"Content-Type: %s\r\nContent-Length: %zu\r\n", \
 		contentType.c_str(), contentLength);
@@ -148,7 +149,7 @@ void	Response::prepareFirstLine(void)
 
 void	Response::composeResponse(std::ifstream & file)
 {
-	if (!this->_filePath.empty())
+	if (!this->_filePath.empty() && isContentAllowed(this->_statusCode))
 	{
 		this->_fileLength = getFileSize(this->_filePath);
 		file.open(this->_filePath, std::ifstream::in | std::ifstream::binary);
@@ -227,6 +228,12 @@ void	Response::identifyErrorPage(Server const & server)
 	}
 }
 
+void	Response::checkIfFilePathIsDirectory()
+{
+	if (this->_filePath.find('.') == std::string::npos)
+		this->setStatusCode(NOT_FOUND);
+}
+
 void	Response::checkIfRedirectNecessary()
 {
 	if ((this->_req.getTarget().find("styles.css") < std::string::npos && \
@@ -258,8 +265,10 @@ void	Response::prepareResponse(Server const & server)
 	if (this->_statusCode > BAD_REQUEST && \
 	this->_statusCode <= METHOD_NOT_ALLOWED)
 		this->checkIfRedirectNecessary();
+	if (this->_statusCode == OK)
+		this->checkIfFilePathIsDirectory();
 	if (this->_statusCode >= BAD_REQUEST)
-			this->identifyErrorPage(server);
+		this->identifyErrorPage(server);
 	if (this->_fullResponse.empty())
 		this->composeResponse(file);
 	this->setState(SENDING);
@@ -282,18 +291,15 @@ void	Response::performDELETE(void)
 
 void	Response::executeCgiScript()
 {
-	if (this->getState() == PENDING)
-	{
-		std::string scriptName = this->_location->getCgiScriptName();
-		if (scriptName.find('*') < std::string::npos)
-			scriptName = this->_filePath;
-		this->_cgi.prepareEnv(scriptName, *this);
-		this->_cgi.prepareArg(scriptName, *this);
-		if (this->getState() != RES_ERROR)
-			this->_cgi.run(*this);
-	}
 	try
 	{
+		if (this->getState() == PENDING)
+		{
+			std::string scriptName = this->getScriptName();
+			this->_cgi.prepareEnv(scriptName, *this);
+			this->_cgi.prepareArg(scriptName);
+			this->_cgi.run(*this);
+		}
 		if (this->getState() == READ_CGI)
 			this->_cgi.cgiRead(*this, this->_fullResponse);
 		else if (this->getState() == WRITE_CGI)
@@ -302,8 +308,11 @@ void	Response::executeCgiScript()
 	catch(const std::exception & e)
 	{
 		std::string	reason = e.what();
-		kill(this->_cgi.getId(), SIGKILL);
-		this->_cgi.closePipes();
+		if (this->getState() != PENDING)
+		{
+			kill(this->_cgi.getId(), SIGKILL);
+			this->_cgi.closePipes(R);
+		}
 		this->_fullResponse.clear();
 		this->_filePath.clear();
 		this->setError(reason == "Fail" ? INTERNAL_SERVER_ERROR : REQUEST_TIMEOUT);
@@ -348,8 +357,7 @@ void	Response::checkIfMethodAllowed()
 
 void Response::checkIfGetIsActuallyDelete(void)
 {
-	if (this->_req.getMethod() == "GET" && \
-	this->_req.getTarget() == "/deleted.html" && \
+	if (this->_req.getTarget() == "/deleted.html" && \
 	this->_req.getQueryString() != "")
 	{
 		this->_req.setMethod("DELETE");
@@ -358,7 +366,8 @@ void Response::checkIfGetIsActuallyDelete(void)
 
 void	Response::performRequest(void)
 {
-	this->checkIfGetIsActuallyDelete();
+	if (this->_req.getMethod() == "GET")
+		this->checkIfGetIsActuallyDelete();
 	this->checkIfMethodAllowed();
 	if (this->_statusCode == OK)
 	{

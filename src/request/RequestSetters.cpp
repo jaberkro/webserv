@@ -60,7 +60,7 @@ void	Request::setHost(std::string host)
 	}
 	catch (std::exception &e)
 	{
-		this->setError(INTERNAL_SERVER_ERROR); // JMA: what should we do here?
+		this->setError(INTERNAL_SERVER_ERROR); // JMA: what should we do here? DM: this :)
 	}
 }
 
@@ -78,6 +78,6 @@ void Request::setBody(std::string newBody)
 
 void	Request::setError(int statusCode)
 {
-	this->_state = REQ_ERROR;
-	this->_statusCode = statusCode;
+	this->setState(REQ_ERROR);
+	this->setStatusCode(statusCode);
 }

@@ -11,11 +11,6 @@ std::map<int, std::string> 	Request::_requestStates =
 	{REQ_ERROR, "Request Error"},
 };
 
-/**
- * @brief reads a request from the socket, splits it into separate lines and 
- * sends each line to the corresponding parsing function for further processing
- * 
- */
 void	Request::processReq(int dataSize) 
 {
 	if (this->_state == READHEADERS)
@@ -71,14 +66,14 @@ void	Request::parseLines(std::string & processingBuffer)
 	}
 }
 
-void		Request::readBody(int dataSize) 
+void	Request::readBody(int dataSize) 
 {
 	char	socketBuffer[MAXLINE];
 	ssize_t	bytesRead = 0;
 	
 	std::memset(socketBuffer, 0, MAXLINE);
-	if ((bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0 && \
-	this->_state != WRITE) // JMA: should we change the order of this if-statement?
+	if (this->_state != WRITE && \
+	(bytesRead = recv(this->_connFD, &socketBuffer, MAXLINE, 0)) > 0)
 	{
 		std::string	chunk(socketBuffer, bytesRead);
 		this->_body.append(chunk);
@@ -124,7 +119,7 @@ void	Request::parseFieldLine(std::string &line)
 	key = extractKey(line);
 	value = extractValue(line);
 	if (key == "Host")
-		this->setHost(value);
+		this->setHost(value == "" ? "80" : value);
 	else if (key == "Content-Length")
 		this->setContentLength(value);
 	else if (key == "Content-Type" && value.find("boundary=") < std::string::npos)
@@ -150,9 +145,8 @@ Server const &	Request::identifyServer(std::vector<Server> const & servers)
 	switch (matches.size())
 	{
 		case 0:
-			if (zero < 0){
-				this->setStatusCode(INTERNAL_SERVER_ERROR); // JMA: should we also set the state?
-			}
+			if (zero < 0)
+				this->setError(INTERNAL_SERVER_ERROR);
 			return (servers[zero]);
 		case 1:
 			return (servers[matches[0]]);

@@ -44,63 +44,71 @@ pid_t	CGI::getId()
 	return (this->_id);
 }
 
-void	CGI::closePipes()
+void	CGI::closePipes(size_t whichPipes)
 {
 	close(this->_webservToScript[W]);
 	close(this->_webservToScript[R]);
 	close(this->_scriptToWebserv[W]);
-	close(this->_scriptToWebserv[R]);
+	if (whichPipes == R)
+		close(this->_scriptToWebserv[R]);
 }
 
-char	*CGI::protectedStrdup(std::string str, Response & response)
+char	*CGI::protectedStrdup(std::string str)
 {
 	char *newStr = strdup(str.c_str());
 	if (newStr == NULL)
-		response.setState(RES_ERROR);
+		throw CGI::CgiError();
 	return (newStr);
 }
 
-void	CGI::prepareArg(std::string const & scriptName, Response & response)
+void	CGI::prepareArg(std::string const & scriptName)
 {
 	this->_arg = new char*[2];
-	this->_arg[0] = protectedStrdup(scriptName.c_str(), response);
+	this->_arg[0] = protectedStrdup(scriptName.c_str());
 	this->_arg[1] = NULL;
 }
 
-void	CGI::addToEnv(size_t &i, std::string what, Response & response)
+void	CGI::addToEnv(size_t &i, std::string what)
 {
-	this->_env[i++] = protectedStrdup(what.c_str(), response);
+	this->_env[i++] = protectedStrdup(what.c_str());
+}
+
+char	**CGI::copyEnvironToEnv(char **environ, size_t &i)
+{
+	size_t	sizeEnv = 0;
+	
+	while (environ[sizeEnv])
+		sizeEnv++;
+	char	**newEnv = new char*[sizeEnv + 18];
+	for (i = 0; i < sizeEnv; i++)
+		newEnv[i] = this->protectedStrdup(environ[i]);
+	return (newEnv);
 }
 
 void	CGI::prepareEnv(std::string const & scriptName, Response & response)
 {
-	size_t									sizeEnv = 0;
-	size_t									i;
+	size_t									i = 0;
 	extern char								**environ;
 	std::map<std::string, std::string> &	reqHeaders = this->_req.getHeaders();
 
-	while (environ[sizeEnv])
-		sizeEnv++;
-	this->_env = new char*[sizeEnv + 18];
-	for (i = 0; i < sizeEnv; i++)
-		this->_env[i] = protectedStrdup(environ[i], response);
-	addToEnv(i, "PATH_INFO=" + response.getPathInfo(), response);
-	addToEnv(i, "CONTENT_LENGTH=" + reqHeaders["Content-Length"], response);
-	addToEnv(i, "CONTENT_TYPE=" + reqHeaders["Content-Type"], response);
-	addToEnv(i, "GATEWAY_INTERFACE=CGI/1.1", response);
-	addToEnv(i, "REMOTE_HOST=" + reqHeaders["Host"], response);
-	addToEnv(i, "SCRIPT_FILENAME=" + scriptName, response);
-	addToEnv(i, "SCRIPT_NAME=" + scriptName, response);
-	addToEnv(i, "REQUEST_METHOD=" + this->_req.getMethod(), response);
-	addToEnv(i, "UPLOAD_DIR=" + response.getLocation()->getUploadDir(), response);
-	addToEnv(i, "HTTP_COOKIE=", response);
-	addToEnv(i, "HTTP_USER_AGENT=", response);
-	addToEnv(i, "QUERY_STRING=" + this->_req.getQueryString(), response);
-	addToEnv(i, "REMOTE_ADDR=", response);
-	addToEnv(i, "SERVER_NAME=webserv", response);
-	addToEnv(i, "SERVER_SOFTWARE=", response);
-	addToEnv(i, "SERVER_PROTOCOL=HTTP/1.1", response);
-	addToEnv(i, "PATH_TRANSLATED=" + scriptName, response);
+	this->_env = this->copyEnvironToEnv(environ, i);
+	addToEnv(i, "PATH_INFO=" + response.getPathInfo());
+	addToEnv(i, "CONTENT_LENGTH=" + reqHeaders["Content-Length"]);
+	addToEnv(i, "CONTENT_TYPE=" + reqHeaders["Content-Type"]);
+	addToEnv(i, "GATEWAY_INTERFACE=CGI/1.1");
+	addToEnv(i, "REMOTE_HOST=" + reqHeaders["Host"]);
+	addToEnv(i, "SCRIPT_FILENAME=" + scriptName);
+	addToEnv(i, "SCRIPT_NAME=" + scriptName);
+	addToEnv(i, "REQUEST_METHOD=" + this->_req.getMethod());
+	addToEnv(i, "UPLOAD_DIR=" + response.getLocation()->getUploadDir());
+	addToEnv(i, "HTTP_COOKIE=");
+	addToEnv(i, "HTTP_USER_AGENT=");
+	addToEnv(i, "QUERY_STRING=" + this->_req.getQueryString());
+	addToEnv(i, "REMOTE_ADDR=");
+	addToEnv(i, "SERVER_NAME=webserv");
+	addToEnv(i, "SERVER_SOFTWARE=");
+	addToEnv(i, "SERVER_PROTOCOL=HTTP/1.1");
+	addToEnv(i, "PATH_TRANSLATED=" + scriptName);
 	this->_env[i] = NULL;
 }
 
@@ -125,9 +133,7 @@ void	CGI::cgiWrite(Response & response)
 	chunkSize)) == 0 || this->_req.getBody().size() == 0)
 	{
 		response.setState(READ_CGI);
-		close(this->_scriptToWebserv[W]);
-		close(this->_webservToScript[R]);
-		close(this->_webservToScript[W]);
+		closePipes(W);
 	}
 	else if (bytesSent > 0)
 	{
@@ -195,7 +201,7 @@ void	CGI::executeScript()
 {
 	dup2(this->_webservToScript[R], STDIN_FILENO);
 	dup2(this->_scriptToWebserv[W], STDOUT_FILENO);
-	this->closePipes();
+	this->closePipes(R);
 	if (execve(this->_arg[0], this->_arg, this->_env) < 0)
 		exit(INTERNAL_SERVER_ERROR);
 }
