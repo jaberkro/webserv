@@ -54,6 +54,7 @@ class Response {
 		std::string	&		getPathInfo(void);
 		void				setPathInfo(std::string pathInfo);
 		locIterator	const & getLocation(void) const;
+		std::string			getScriptName(void);
 		std::string			getFullResponse(void);
 		std::string			getMessage(void);
 		void				setMessage(std::string);
@@ -96,6 +97,8 @@ class Response {
 		void		checkIfGetIsActuallyDelete(void);
 		void		checkIfReturn(void);
 		void		composeResponse(std::ifstream & file);
+		void		checkIfFilePathIsDirectory();
+
 };
 
 int			deleteFile(Request req, locIterator loc);

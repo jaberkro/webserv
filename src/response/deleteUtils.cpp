@@ -46,7 +46,6 @@ int	deleteFile(Request req, locIterator loc)
 	struct stat fileInfo;
 
 	toRemove = createRemovePath(req, loc);
-	// std::cout << "DELETE path: " << toRemove << std::endl;
 	if (forbiddenToDeleteFileOrFolder(toRemove))
 		return (FORBIDDEN);
 	if (stat(toRemove.c_str(), &fileInfo) != 0)

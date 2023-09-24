@@ -1,6 +1,5 @@
 #include "Request.hpp"
 #include "responseCodes.hpp"
-#include <iostream>	// to be deleted
 
 Request::Request(int connfd, std::string address) : \
 _method (""), \
@@ -13,9 +12,7 @@ _statusCode (OK), \
 _address (address), \
 _contentLength (0), \
 _state (READHEADERS) {
-	std::cout << "***REQUEST CONSTRUCTOR CALLED, connfd is ";
-	std::cout << connfd << " ***" << std::endl;
-	makeLowercase(this->_address); // not sure this is necessary
+	makeLowercase(this->_address);
 }
 
 Request::Request(Request &r) : \

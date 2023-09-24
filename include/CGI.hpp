@@ -19,14 +19,14 @@ class CGI
 		CGI &	operator=(CGI & r);
 
 		void	run(Response & response);
-		void	prepareArg(std::string const & scriptName, Response & response);
+		void	prepareArg(std::string const & scriptName);
 		void	prepareEnv(std::string const & scriptName, Response & response);
 		int*	getWebservToScript();
 		int*	getScriptToWebserv();
 		pid_t	getId();
 		void	cgiRead(Response & response, std::string & fullResponse);
 		void	cgiWrite(Response & response);
-		void	closePipes();
+		void	closePipes(size_t whichPipes);
 
 		std::string	getResponse();
 
@@ -62,8 +62,9 @@ class CGI
 		void	checkChildProcessExitCode(Response & response, \
 		std::string & fullResponse);
 		void	cleanUp(void);
-		void	addToEnv(size_t &i, std::string what, Response & response);
-		char	*protectedStrdup(std::string str, Response & response);
+		void	addToEnv(size_t &i, std::string what);
+		char	*protectedStrdup(std::string str);
+		char** 	copyEnvironToEnv(char **environ, size_t &i);
 };
 
 #endif

@@ -22,7 +22,6 @@ std::vector<Location> const & locations)
 	locIterator	it;
 	std::vector<std::string>				targetSplit;
 
-	// std::cerr << "Finding wildcard loc match" << std::endl;
 	for (it = locations.begin(); it != locations.end(); it++)
 	{
 		if (it->getModifier() != "=" && it->getMatch().find('*') == 0)
@@ -49,8 +48,6 @@ std::vector<std::string> matchSplit)
 
 	for (idx = 0; idx < len; idx++)
 	{
-		// std::cerr << "comparing " << targetSplit[idx] << " and ";
-		// std::cerr << matchSplit[idx] << std::endl;
 		if (idx == targetSplit.size() || targetSplit[idx] != matchSplit[idx])
 		{
 			idx = 0;
@@ -68,7 +65,6 @@ std::vector<Location> const & locations)
 	locIterator	longest = 		locations.end();
 	size_t						idx;
 
-	// std::cerr << "Finding closest loc match" << std::endl;
 	splitUri(target, targetSplit);
 	for (auto it = locations.begin(); it != locations.end(); it++)
 	{
@@ -76,7 +72,6 @@ std::vector<Location> const & locations)
 			continue;
 		std::vector<std::string>	matchSplit;
 		splitUri(it->getMatch(), matchSplit);
-		// std::cerr << "Location " << it->getMatch() << std::endl;
 		idx = compareTargetSplitMatchSplit(targetSplit, matchSplit);
 		if (idx > overlap)
 		{
