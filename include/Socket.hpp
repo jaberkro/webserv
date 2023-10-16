@@ -2,12 +2,9 @@
 # define SOCKET_HPP
 
 #include <iostream>
-// #include <sys/socket.h>
 #include <sys/event.h>
-// #include <sys/types.h>
 #include <netdb.h>
 #include <unistd.h>
-// #include <arpa/inet.h>
 #include <string>
 
 # define SA struct sockaddr
