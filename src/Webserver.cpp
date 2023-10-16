@@ -173,12 +173,12 @@ Webserver::Webserver(std::vector<Server> servers)
 		{
 			try 
 			{
-				Socket sock(servers.at(i).getHost(j), servers.at(i).getPort(j), _kq, evSet);
 				std::cout << "Port: [" << servers.at(i).getPort(j) << "], host: [" << \
 				servers.at(i).getHost(j) << "], servername(s):";
 				for (size_t k = 0; k < servers.at(i).getServerNames().size(); k++)
 					std::cout << " [" << servers.at(i).getServerName(k) << "]";	
 				std::cout << std::endl;			
+				Socket sock(servers.at(i).getHost(j), servers.at(i).getPort(j), _kq, evSet);
 				_sckts.push_back(sock);
 			}
 			catch(const std::exception& e)
