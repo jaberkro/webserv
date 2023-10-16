@@ -8,14 +8,15 @@ class Webserver
 	public:
 		Webserver(std::vector<Server> servers);
 		~Webserver();
-		int							checkIfCgiFd(int evFd);
+
+		int	checkIfCgiFd(int evFd);
 
 		class KeventError : public std::exception {
 			public:
 				KeventError() : message(std::strerror(errno)) {}
 				const char*	what() const throw()
 				{
-					std::cout << "Kevent error: "; // SERVER COULD NOT START BECAUSE OF: KQUEUE
+					std::cout << "Kevent error: ";
 					return (message.c_str());
 				}
 			private:
@@ -37,7 +38,7 @@ class Webserver
 		};
 
 	private:
-		bool						_running; //BS:houden of weg?
+		bool						_running;
 		std::vector<Socket> 		_sckts;
 		std::map<int, Connection>	_connections;
 		std::map<int, int>			_cgiFds; //first one in pair is cgi Fd, second one is corresponding connFd
@@ -55,21 +56,7 @@ class Webserver
 		void						addReadFilter(int fd);
 		void						addTimerFilter(int fd);
 
-		Webserver(const Webserver &src); //private because shouldn't be instantiated!
-		Webserver& operator=(const Webserver &src); //idem
+		Webserver(const Webserver &src);
 };
-
-class serverBlock
-{
-	public:
-		serverBlock() {};
-		~serverBlock() {};
-
-		std::string										serverName;
-		std::vector<std::pair<std::string,std::string>>	serverDirectives;
-};
-
-// dummy functions
-void	serverBlockInit(serverBlock & sb);
 
 #endif
