@@ -60,7 +60,7 @@ void	Request::setHost(std::string host)
 	}
 	catch (std::exception &e)
 	{
-		this->setError(INTERNAL_SERVER_ERROR); // JMA: what should we do here? DM: this :)
+		this->setError(INTERNAL_SERVER_ERROR);
 	}
 }
 
