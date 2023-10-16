@@ -12,9 +12,9 @@ std::map<int, std::string> 	Request::_requestStates =
 void	Request::processReq(int dataSize) 
 {
 	if (this->_state == READHEADERS)
-		readFirstLineAndHeaders(dataSize);
+		this->readFirstLineAndHeaders(dataSize);
 	if (this->_state == READBODY)
-		readBody(dataSize);
+		this->readBody(dataSize);
 }
 
 void	Request::readFirstLineAndHeaders(int &dataSize) 
@@ -36,10 +36,12 @@ void	Request::readFirstLineAndHeaders(int &dataSize)
 		setStatusCode(INTERNAL_SERVER_ERROR);
 	if (bytesRead == 0)
 		this->setState(OVERWRITE);
-	if (this->_state == READBODY && this->_contentLength > 0)
+	if (this->_state == READBODY)
 	{
 		this->_body = processingBuffer.substr(2);
 		this->_bodyLength = _body.length();
+		if (this->_bodyLength == this->_contentLength)
+			this->setState(WRITE);
 		dataSize = 0;
 	}
 	processingBuffer.clear();
@@ -59,7 +61,7 @@ void	Request::parseLines(std::string & processingBuffer)
 		{
 			this->parseFieldLine(line);
 			if (processingBuffer.find("\r\n") == 0)
-				this->setState(this->_method == "POST" ? READBODY : WRITE);
+				this->setState(this->_contentLength > 0 ? READBODY : WRITE);
 		}
 	}
 }

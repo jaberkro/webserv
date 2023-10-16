@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 
 std::map<int, std::string> 	Response::responseCodes = 
 {
@@ -231,7 +232,9 @@ void	Response::identifyErrorPage(Server const & server)
 
 void	Response::checkIfFilePathIsDirectory()
 {
-	if (this->_filePath.find('.') == std::string::npos)
+	struct stat		fileInfo;
+	
+	if (stat(this->_filePath.c_str(), &fileInfo) == 0 && fileInfo.st_mode & S_IFDIR)
 		this->setStatusCode(NOT_FOUND);
 }
 
