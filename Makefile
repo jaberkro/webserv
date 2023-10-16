@@ -86,10 +86,7 @@ fclean: clean
 
 re: fclean all
 
-test: all 
-	@bash ./error_tests/test.sh
-
 debug: CXXFLAGS += -g -fsanitize=address 
 debug: re
 
-.PHONY: all, clean, fclean, re, debug, test
+.PHONY: all, clean, fclean, re, debug
