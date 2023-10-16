@@ -1,5 +1,4 @@
 #include "Webserver.hpp"
-// #include "Connection.hpp"
 
 Connection::Connection()
 {
@@ -88,7 +87,7 @@ int dataSize)
 		this->_newReq->processReq(dataSize);
 		if (this->_newReq->getState() == WRITE)
 		{
-			this->_newReq->printRequest();	// debug
+			// this->_newReq->printRequest();	// debug
 			this->_handlingServer = new Server(this->_newReq->identifyServer(servers));
 			std::cout << "Server: ";
 			std::cout << this->_handlingServer->getServerName(0) << std::endl;
