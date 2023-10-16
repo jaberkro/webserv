@@ -1,4 +1,3 @@
-#!/usr/bin/python3			# TO BE DELETED BEFORE SUBMISSION
 #!/usr/local/bin/python3
 
 import cgi, sys, os #, urllib.parse
@@ -8,10 +7,6 @@ import time # for testing
 cgitb.enable()
 exitCode = 0
 response = ""
-
-print("PYTHON SCRIPT STARTED", file=sys.stderr) # DEBUG - TO BE DELETED
-
-# time.sleep(10)
 
 # if the upload directory does not exist, it will be created
 uploadDir = os.getenv("UPLOAD_DIR")
@@ -32,10 +27,8 @@ if 'file' in form:
 else:
 	exitCode = 400
 
-print("[script] about to send the following response:  ", response, file=sys.stderr) # DEBUG - TO BE DELETED
 sys.stdout.buffer.write(response.encode())
 sys.stdin.close()
 sys.stdout.close()
 
-print("PYTHON SCRIPT FINISHED, exit code is ", exitCode, file=sys.stderr) # DEBUG - TO BE DELETED
 sys.exit(exitCode)

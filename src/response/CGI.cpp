@@ -38,11 +38,15 @@ pid_t	CGI::getId()
 
 void	CGI::closePipes(size_t whichPipes)
 {
-	close(this->_webservToScript[W]);
-	close(this->_webservToScript[R]);
-	close(this->_scriptToWebserv[W]);
+	if (close(this->_webservToScript[W]) < 0)
+		std::cout << "Closing CGI fd failed" << std::endl;
+	if (close(this->_webservToScript[R]) < 0)
+		std::cout << "Closing CGI fd failed" << std::endl;
+	if (close(this->_scriptToWebserv[W]) < 0)
+		std::cout << "Closing CGI fd failed" << std::endl;
 	if (whichPipes == R)
-		close(this->_scriptToWebserv[R]);
+		if (close(this->_scriptToWebserv[R]) < 0)
+			std::cout << "Closing CGI fd failed" << std::endl;
 }
 
 char	*CGI::protectedStrdup(std::string str)
@@ -110,7 +114,10 @@ void	CGI::checkTimeoutChild()
 	std::chrono::duration<double> elapsedSeconds = currentTime - _startTimeChild;
 	
 	if (elapsedSeconds.count() > 5.0)
+	{
+		this->cleanUp();
 		throw CgiScriptTimeout();
+	}
 }
 
 void	CGI::cgiWrite(Response & response)
@@ -133,7 +140,10 @@ void	CGI::cgiWrite(Response & response)
 		pipeFull = bytesSent == chunkSize ? false : true;
 	}
 	else if (bytesSent < 0 && pipeFull == false)
+	{
+		this->cleanUp();
 		throw CgiError();
+	}
 }
 
 void	CGI::checkChildProcessExitCode(Response & response, \
@@ -186,7 +196,10 @@ void	CGI::cgiRead(Response & response, std::string & fullResponse)
 		this->cleanUp();
 	}
 	else if (bytesRead < 0 && pipeEmpty == false)
+	{
+		this->cleanUp();
 		throw CgiError();
+	}
 }
 
 void	CGI::executeScript()
@@ -220,6 +233,7 @@ void	CGI::run(Response & response)
 	catch (std::runtime_error &re)
 	{
 		response.setStatusCode(INTERNAL_SERVER_ERROR);
+		this->cleanUp();
 	}
 }
 
