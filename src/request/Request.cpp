@@ -42,7 +42,7 @@ void	Request::readFirstLineAndHeaders(int &dataSize)
 	{
 		this->_body = processingBuffer.substr(2);
 		this->_bodyLength = _body.length();
-		dataSize = 0;	// DM: this is to prevent getting -1 during the first reading of the body
+		dataSize = 0;
 	}
 	processingBuffer.clear();
 }
@@ -274,24 +274,6 @@ bool	Request::isLocalhost(std::string const &address)
 			count++;
 	} 
 	return (count == 2 ? true : false);
-}
-
-// FOR DEBUGGING ONLY
-void	Request::printServer(Server const & server)
-{
-	std::cout << "--- SERVER ---" << std::endl;
-	std::cout << "Listens:\t\t";
-	for (size_t i = 0; i < server.getListens().size(); i++)
-		std::cout << server.getHost(i) << ":" << server.getPort(i) << "; ";
-	std::cout << std::endl;
-	std::cout << "Server names:\t";
-	for (size_t i = 0; i < server.getServerNames().size(); i++)
-		std::cout << server.getServerName(i) << "; ";
-	std::cout << std::endl;
-	std::cout << "Locations:\t";
-	for (size_t i = 0; i < server.getLocations().size(); i++)
-		std::cout << server.getLocation(i).getMatch() << "; ";
-	std::cout << std::endl << std::endl;
 }
 
 void	Request::printRequest()
