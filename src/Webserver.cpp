@@ -1,20 +1,6 @@
 #include "Webserver.hpp"
-#include "Socket.hpp"
-#include <cstdio>
-#include <cstring>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <sys/event.h>
-#include <sys/time.h>
-#include <fstream>
 #include <fcntl.h>
 #include <csignal>
-#include <vector>
-
-#include "Request.hpp"
-#include "Response.hpp"
-#include "Connection.hpp"
 
 int		Webserver::comparefd(int eventfd)
 {

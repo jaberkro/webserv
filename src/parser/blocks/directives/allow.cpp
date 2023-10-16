@@ -1,5 +1,4 @@
 #include "parse.hpp"
-#include <string>
 #include <iostream>
 
 static bool	isAllowedMethod(std::string toCheck)

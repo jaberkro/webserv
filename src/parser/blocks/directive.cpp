@@ -1,5 +1,4 @@
 #include "parse.hpp"
-#include <string>
 
 t_values	parseDirective(int directive, std::string line, t_values values)
 {

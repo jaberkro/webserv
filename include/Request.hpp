@@ -2,16 +2,13 @@
 # define REQUEST_HPP
 
 # include "Server.hpp"
-# include <string>
-# include <map>
-# include <sys/socket.h>
 
 # define HEADER_END "\r\n\r\n"
 # define SPACES " \t\v\r\f"
 # define UPPERCASE "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 # define MAXLINE 6000
-# define RESPONSELINE 5000 //test, was 5000
+# define RESPONSELINE 5000
 
 enum req {
 	READHEADERS,
@@ -58,10 +55,8 @@ class Request
 		void	setHost(std::string host);
 		void	setState(size_t state);
 		void 	setBody(std::string newBody);
-		void	setError(int statusCode);							
-
-		void	printRequest();	// for debugging purposes, to be deleted
-		void	printServer(Server const & server); // for debugging purposes, to be deleted
+		void	setError(int statusCode);
+		void	printRequest();
 
 	private:
 		std::string							_method;

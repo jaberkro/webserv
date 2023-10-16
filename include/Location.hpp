@@ -1,9 +1,9 @@
 #ifndef LOCATION_HPP
 # define LOCATION_HPP
+
 # include <string>
 # include <vector>
 # include <map>
-# include <utility>
 
 class Location
 {
@@ -16,7 +16,7 @@ class Location
 		void                				setModifier(std::string modifier);
 		const std::string					getModifier(void) const;
 
-		void                				setMatch(std::string match);
+		void								setMatch(std::string match);
 		const std::string   				getMatch(void) const;
 
 		void	            				setRoot(std::string root);

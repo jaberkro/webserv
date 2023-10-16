@@ -1,12 +1,10 @@
 #ifndef RESPONSE_HPP
 # define RESPONSE_HPP
 
-# include "Request.hpp"
 # include "responseCodes.hpp"
-# include "Location.hpp"
 # include "CGI.hpp"
 
-#define DEFAULT_ERROR_PAGE "/defaultError.html"
+# define DEFAULT_ERROR_PAGE "/defaultError.html"
 
 enum resp {
 	PENDING,
