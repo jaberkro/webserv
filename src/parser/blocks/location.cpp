@@ -1,8 +1,6 @@
-#include "Location.hpp"
 #include "parse.hpp"
 #include <iostream>
 #include <fstream>
-#include <utility>
 
 void	storeValuesInLocation(t_values values, Location &location)
 {

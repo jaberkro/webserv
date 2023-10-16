@@ -1,6 +1,5 @@
 #include "parse.hpp"
 #include <fstream>
-#include <string>
 #include <iostream>
 
 int	getValidLine(std::fstream &file, std::string &line)

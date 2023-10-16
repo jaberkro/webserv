@@ -1,5 +1,4 @@
 #include "parse.hpp"
-#include <string>
 #include <iostream>
 
 void checkOneArgumentOnly(std::string line, std::string directive)

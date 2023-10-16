@@ -1,6 +1,5 @@
 #include "parse.hpp"
 #include <iostream>
-#include <string>
 
 t_values	parseUploadDir(std::string line, t_values values)
 {

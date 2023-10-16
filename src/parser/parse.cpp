@@ -1,8 +1,6 @@
 #include "parse.hpp"
-#include "Server.hpp"
 #include <iostream>
 #include <fstream>
-#include <string>
 #include <sys/stat.h>
 
 static bool validExtension(std::string configFile, std::string extension)
