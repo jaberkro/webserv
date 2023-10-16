@@ -16,7 +16,7 @@ class Location
 		void                				setModifier(std::string modifier);
 		const std::string					getModifier(void) const;
 
-		void                				setMatch(std::string match);
+		void								setMatch(std::string match);
 		const std::string   				getMatch(void) const;
 
 		void	            				setRoot(std::string root);
