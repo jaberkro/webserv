@@ -18,10 +18,10 @@ class CGI;
 class Webserver
 {
 	private:
-		bool						_running; //BS:houden of weg?
+		bool						_running;
 		std::vector<Socket> 		_sckts;
 		std::map<int, Connection>	_connections;
-		std::map<int, int>			_cgiFds; //first one in pair is cgi Fd, second one is corresponding connFd
+		std::map<int, int>			_cgiFds; //First one in pair is cgi fd, second one is corresponding connFd
 		int							_kq;
 		struct kevent				_evList;
 		int							comparefd(int fd);
@@ -36,8 +36,8 @@ class Webserver
 		void						addReadFilter(int fd);
 		void						addTimerFilter(int fd);
 
-		Webserver(const Webserver &src); //private because shouldn't be instantiated!
-		Webserver& operator=(const Webserver &src); //idem
+		Webserver(const Webserver &src);
+		Webserver& operator=(const Webserver &src);
 
 	public:
 		Webserver(std::vector<Server> servers);
@@ -49,7 +49,7 @@ class Webserver
 			KeventError() : message(std::strerror(errno)) {}
 			const char*	what() const throw()
 			{
-				std::cout << "Kevent error: "; // SERVER COULD NOT START BECAUSE OF: KQUEUE
+				std::cout << "Kevent error: ";
 				return (message.c_str());
 			}
 		private:

@@ -2,11 +2,6 @@
 #include <iostream>
 #include "Webserver.hpp"
 
-void	func_atexit(void)
-{
-	system("leaks -q webserv");
-}
-
 int	main(int argc, char **argv)
 {
 	std::vector<Server> servers;
@@ -40,8 +35,6 @@ int	main(int argc, char **argv)
 	catch (const std::exception& e)
 	{
 		std::cerr << e.what() << '\n';
-		// IF KQUEUE FAILED: ERROR
 	}
-	atexit(func_atexit);
 	return (0);
 }

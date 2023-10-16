@@ -45,7 +45,8 @@ void	Response::sendResponse(void)
 		if (bytesSent < 0)
 		{
 			this->setState(DONE);
-			close(this->_req.getConnFD());
+			if (close(this->_req.getConnFD()) < 0)
+				std::cout << "Closing fd " << this->_req.getConnFD() << " failed" << std::endl;
 			return ;
 		}
 		else
