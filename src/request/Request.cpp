@@ -1,5 +1,3 @@
-#include "Request.hpp"
-#include "responseCodes.hpp"
 #include "Webserver.hpp"
 
 std::map<int, std::string> 	Request::_requestStates = 

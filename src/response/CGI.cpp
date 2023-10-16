@@ -1,14 +1,6 @@
-#include "CGI.hpp"
 #include "Response.hpp"
-#include <iostream>
-#include <unistd.h>	// for pipe, fork, execve
-#include <cstring>	// for strdup
-#include <string>	// for to_string
-#include <exception>
-#include <cstdio>
-#include <cstdlib>
+#include <unistd.h>
 #include <fcntl.h>
-#include <ctime> 	//for std::time
 
 CGI::CGI(Request & req) : _req(req), _id(-1) {}
 

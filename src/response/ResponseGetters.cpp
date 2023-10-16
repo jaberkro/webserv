@@ -1,5 +1,4 @@
 #include "Response.hpp"
-#include <iostream>
 
 size_t	Response::getFileLength( void ) const
 {

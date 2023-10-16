@@ -1,5 +1,4 @@
 #include "Response.hpp"
-#include <iostream>
 
 locIterator	findExactLocationMatch(std::string target, \
 std::vector<Location> const & locations)

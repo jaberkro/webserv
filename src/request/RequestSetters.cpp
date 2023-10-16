@@ -1,6 +1,4 @@
 #include "Response.hpp"
-#include "Request.hpp"
-#include <iostream>
 
 void	Request::setMethod(std::string method)
 {

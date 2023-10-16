@@ -1,9 +1,4 @@
-#include "Request.hpp"
 #include "Response.hpp"
-#include "Location.hpp"
-#include <string>
-#include <vector>
-#include <iostream>
 #include <sys/stat.h>
 
 bool forbiddenToDeleteFileOrFolder(std::string toRemove)
