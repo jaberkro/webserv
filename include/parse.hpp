@@ -1,9 +1,7 @@
 #ifndef PARSE_HPP
 # define PARSE_HPP
+
 # include "Server.hpp"
-# include "Location.hpp"
-# include <map>
-# include <vector>
 
 typedef struct s_values
 {

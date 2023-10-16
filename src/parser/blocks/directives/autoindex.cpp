@@ -1,5 +1,4 @@
 #include "parse.hpp"
-#include <string>
 #include <iostream>
 
 t_values	parseAutoindex(std::string line, t_values values)

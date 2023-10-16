@@ -1,6 +1,4 @@
-#include "Server.hpp"
 #include "parse.hpp"
-#include <string>
 
 void parseServerNames(Server &server, std::string &line)
 {

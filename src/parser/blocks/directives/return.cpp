@@ -1,5 +1,4 @@
 #include "parse.hpp"
-#include <string>
 
 static bool quotedArgument(std::string text)
 {

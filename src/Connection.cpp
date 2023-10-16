@@ -1,5 +1,5 @@
 #include "Webserver.hpp"
-#include "Connection.hpp"
+// #include "Connection.hpp"
 
 Connection::Connection()
 {
@@ -13,7 +13,7 @@ Connection::Connection()
 
 Connection::~Connection() {}
 
-Connection::Connection(int listenfd, Socket sckt) : _listenfd(listenfd) // ADD STATUSCODE
+Connection::Connection(int listenfd, Socket sckt) : _listenfd(listenfd)
 {
 	this->_newReq = nullptr;
 	this->_newResp = nullptr;
@@ -51,7 +51,6 @@ void	Connection::cleanUp(void)
 
 void	Connection::handleResponse()
 {
-	// std::cerr << "[handle response] req status code is " << Response::_responseCodes.at(this->_newReq->getStatusCode()) << std::endl;
 	if (this->_newReq->getMethod() == "")
 		return;
 	if (this->_newResp == nullptr)
@@ -87,14 +86,10 @@ int dataSize)
 			this->_newReq = new Request(connfd, this->_address);
 		}
 		this->_newReq->processReq(dataSize);
-
-		// std::cerr << "[handle request] statusCode is " << Response::_responseCodes.at(this->_newReq->getStatusCode()) << std::endl;
 		if (this->_newReq->getState() == WRITE)
 		{
 			this->_newReq->printRequest();	// debug
-			// std::cerr << "[handle request] before handling server statusCode is " << Response::_responseCodes.at(this->_newReq->getStatusCode()) << std::endl;
 			this->_handlingServer = new Server(this->_newReq->identifyServer(servers));
-			// std::cerr << "[handle request] after handling server statusCode is " << Response::_responseCodes.at(this->_newReq->getStatusCode()) << std::endl;
 			std::cout << "Server: ";
 			std::cout << this->_handlingServer->getServerName(0) << std::endl;
 		}

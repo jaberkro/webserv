@@ -1,8 +1,8 @@
 #include "Response.hpp"
-#include <istream>
 #include <fstream>
 #include <unistd.h>
-#include <signal.h> //for killing child
+#include <signal.h>
+#include <sys/socket.h>
 
 std::map<int, std::string> 	Response::responseCodes = 
 {

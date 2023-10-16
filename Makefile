@@ -1,6 +1,5 @@
 NAME = webserv
 CXXFLAGS = -Wall -Wextra -Werror -std=c++11 -pedantic
-# CXXFLAGS =  -std=c++11 
 INCLUDE = -I ./include 
 
 SRC_DIR = src

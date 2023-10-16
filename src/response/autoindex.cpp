@@ -1,6 +1,4 @@
 #include "Response.hpp"
-#include <string>
-#include <iostream>
 #include <fstream>
 #include <dirent.h>
 #include <sys/stat.h>

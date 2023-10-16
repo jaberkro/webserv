@@ -1,10 +1,8 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
+
 # include "Location.hpp"
-# include <vector>
-# include <string>
 # include <utility>
-# include <iterator>
 
 class Server
 {

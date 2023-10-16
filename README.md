@@ -18,5 +18,5 @@ make
 
 Execution:
 ```
-./webserv your_configuration_file
+./webserv <your_configuration_file.conf>
 ```
