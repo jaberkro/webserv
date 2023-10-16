@@ -1,16 +1,12 @@
 #ifndef CONNECTION_HPP
 # define CONNECTION_HPP
 
-#include <vector>
-#include "Server.hpp"
-#include "Response.hpp"
-#include "Request.hpp"
-#include "Socket.hpp"
+# include "Response.hpp"
+# include "Socket.hpp"
 
 class Connection
 {
 	public:
-
 		Connection();
 		Connection(int listenfd, Socket sckt);
 		Connection(const Connection & src);
@@ -28,7 +24,6 @@ class Connection
 		void		setTimer(bool state);
 
 	private:
-	
 		Request			*_newReq;
 		Response		*_newResp;
 		Server			*_handlingServer;

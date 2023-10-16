@@ -1,9 +1,9 @@
 #ifndef LOCATION_HPP
 # define LOCATION_HPP
+
 # include <string>
 # include <vector>
 # include <map>
-# include <utility>
 
 class Location
 {

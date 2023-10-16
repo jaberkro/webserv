@@ -1,11 +1,11 @@
 #ifndef CGI_HPP
 # define CGI_HPP
 
-#include <iostream>
-#include "Request.hpp"
+# include "Request.hpp"
+# include <iostream>
 
-#define R 0
-#define W 1
+# define R 0
+# define W 1
 
 class Response;
 
