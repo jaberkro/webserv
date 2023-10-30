@@ -372,17 +372,18 @@ void	Response::performRequest(void)
 {
 	if (this->_req.getMethod() == "GET")
 		this->checkIfGetIsActuallyDelete();
-	this->checkIfMethodAllowed();
+	if (!(this->_req.getMethod() == "GET" || this->_req.getMethod() == "POST" \
+	|| this->_req.getMethod() == "DELETE"))
+		this->setStatusCode(NOT_IMPLEMENTED);
 	if (this->_statusCode == OK)
 	{
+		this->checkIfMethodAllowed();
 		if (this->_req.getMethod() == "POST")
 			this->performPOST();
 		else if (this->_req.getMethod() == "DELETE")
 			this->performDELETE();
 		else if (this->_req.getMethod() == "GET")
 			this->performGET();
-		else
-			this->setStatusCode(NOT_IMPLEMENTED);
 	}	
 }
 
@@ -412,6 +413,7 @@ std::string	Response::findIndexPage(locIterator itLoc)
 			return (*itIdx);
 	}
 	this->setStatusCode(NOT_FOUND);
+	this->_isReady = true;
 	throw std::ios_base::failure("Index file not found");
 }
 
