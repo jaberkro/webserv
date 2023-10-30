@@ -33,14 +33,12 @@ if "multipart/form-data" in contentType:
 	else:
 		exitCode = 400
 else:
-	# print("[script] < WRITE THIS PART!!!!! here comes code that uploads a file> ", file=sys.stderr) # DEBUG - TO BE DELETED
 	contentLen = os.getenv("CONTENT_LENGTH")
 	fileName = "newUpload" + str(contentLen)
 	totalRead = 0
 	with open(uploadDir + "/" + fileName, 'wb') as f:
 		while True:
-			data = sys.stdin.buffer.read(1024)  # Read data in chunks of 1024 bytes
-	# 			print("[python] just read >", data, "<", file=sys.stderr)
+			data = sys.stdin.buffer.read(1024)
 			totalRead += len(data)
 			if data:
 				if "application/x-www-form-urlencoded" in contentType:
@@ -54,5 +52,4 @@ else:
 
 sys.stdin.close()
 sys.stdout.close()
-
 sys.exit(exitCode)
